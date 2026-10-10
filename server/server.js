@@ -37,15 +37,33 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// Serve frontend in production if built
-if (process.env.NODE_ENV === 'production') {
+// Root API Welcome / Status
+app.get('/', (req, res) => {
+  if (process.env.NODE_ENV === 'production' && !process.env.VERCEL) {
+    return res.sendFile(path.resolve(__dirname, '../client', 'dist', 'index.html'));
+  }
+  res.json({
+    status: 'ok',
+    message: '🌸 BabyyGurll Crochet Express & MongoDB API Server',
+    health: '/api/health',
+    products: '/api/products',
+    orders: '/api/orders'
+  });
+});
+
+// Serve frontend in production if built (for traditional monolithic VPS / Render hosting)
+if (process.env.NODE_ENV === 'production' && !process.env.VERCEL) {
   app.use(express.static(path.join(__dirname, '../client/dist')));
   app.get('*', (req, res) => {
     res.sendFile(path.resolve(__dirname, '../client', 'dist', 'index.html'));
   });
 }
 
-// Start Server
-app.listen(PORT, () => {
-  console.log(`✨ BabyyGurll Crochet Express Server running on http://localhost:${PORT}`);
-});
+// Start Server locally or on persistent hosts (Render / Railway / VPS)
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`✨ BabyyGurll Crochet Express Server running on http://localhost:${PORT}`);
+  });
+}
+
+module.exports = app;

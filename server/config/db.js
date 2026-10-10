@@ -10,6 +10,9 @@ let memoryDB = {
 };
 
 const connectDB = async () => {
+  if (isConnected && mongoose.connection.readyState === 1) {
+    return;
+  }
   const mongoUri = process.env.MONGODB_URI;
 
   if (mongoUri) {
