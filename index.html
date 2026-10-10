@@ -1,0 +1,878 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BabyyGurll Crochet | Handcrafted Cute Plushies, Bags & Florals</title>
+  <meta name="description" content="Shop charming handmade crochet amigurumi plushies, floral bouquets, granny square tote bags, and cozy wearables at BabyyGurll Crochet. 100% hypoallergenic milk cotton yarn.">
+  
+  <!-- Favicon Emoji -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220%22%20%220%22%20100%20100%22><text y=%22.9em%22 font-size=%2290%22>🧶</text></svg>">
+
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- Announcement Bar -->
+  <aside class="announcement-bar" id="announcementBar">
+    <span>✨ Free Worldwide Shipping on orders over $45! Handcrafted with 100% Milk Cotton Yarn ✨</span>
+    <span class="badge">Code: BABYYGURLL for 15% OFF</span>
+  </aside>
+
+  <!-- Site Navigation Header -->
+  <header class="site-header" id="siteHeader">
+    <div class="nav-container">
+      <!-- Brand Logo -->
+      <a href="#hero" class="brand-logo" id="brandLogo">
+        <div class="brand-icon-wrapper">🧶</div>
+        <div class="brand-text">
+          <span class="brand-title">BabyyGurll <span>Crochet</span></span>
+          <span class="brand-subtitle">Artisan Yarn Studio</span>
+        </div>
+      </a>
+
+      <!-- Navigation Links -->
+      <nav aria-label="Main Navigation">
+        <ul class="nav-links">
+          <li><a href="#catalog" class="nav-link" id="navAllProducts">Shop All</a></li>
+          <li><a href="#catalog" class="nav-link" data-filter="plushies">Plushies</a></li>
+          <li><a href="#catalog" class="nav-link" data-filter="floral">Bouquets & Home</a></li>
+          <li><a href="#catalog" class="nav-link" data-filter="wearables">Wearables & Bags</a></li>
+          <li><a href="#orderTracking" class="nav-link highlight" id="navOrderTracker">📍 Track Order</a></li>
+        </ul>
+      </nav>
+
+      <!-- Action Controls -->
+      <div class="nav-actions">
+        <!-- Currency Selector -->
+        <select class="currency-select" id="currencySelector" aria-label="Select Currency">
+          <option value="USD">USD ($)</option>
+          <option value="EUR">EUR (€)</option>
+          <option value="GBP">GBP (£)</option>
+          <option value="INR">INR (₹)</option>
+        </select>
+
+        <!-- Account Button -->
+        <button class="action-btn" id="accountBtn" aria-label="User Account">
+          <span class="icon">👤</span>
+          <span id="accountBtnLabel">My Account</span>
+        </button>
+
+        <!-- Cart Trigger Button -->
+        <button class="action-btn cart-btn" id="cartTriggerBtn" aria-label="Shopping Cart">
+          <span class="icon">🛍️</span>
+          <span>Cart</span>
+          <span class="cart-badge" id="cartCountBadge">0</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- Hero Section -->
+    <section class="hero-section" id="hero">
+      <div class="container hero-grid">
+        <div class="hero-content">
+          <div class="hero-pill">
+            <span class="pulse-dot"></span>
+            <span>New Fall Collection • Limited Handcrafted Batches</span>
+          </div>
+          <h1 class="hero-title">
+            Hand-Stitched Magic for <span class="italic-sparkle">Soft Souls</span> & Cozy Hearts.
+          </h1>
+          <p class="hero-description">
+            Each bespoke piece is lovingly crocheted by hand using premium, hypoallergenic milk cotton and cloudfill chenille. Designed to bring gentle whimsy, warmth, and aesthetic joy into your daily rituals.
+          </p>
+
+          <div class="hero-cta-group">
+            <a href="#catalog" class="btn btn-primary" id="heroShopBtn">
+              Explore Collection 🍓
+            </a>
+            <a href="#orderTracking" class="btn btn-secondary" id="heroTrackBtn">
+              Track Your Package 🚚
+            </a>
+          </div>
+
+          <div class="hero-trust-badges">
+            <div class="trust-item">
+              <span class="icon">🧶</span>
+              <span>100% Hand-Crocheted</span>
+            </div>
+            <div class="trust-item">
+              <span class="icon">🌿</span>
+              <span>Hypoallergenic Cotton</span>
+            </div>
+            <div class="trust-item">
+              <span class="icon">⭐</span>
+              <span>4.9/5 (2,400+ Reviews)</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Hero Visual Card -->
+        <div class="hero-visual">
+          <div class="hero-card-stack">
+            <!-- Floating Glass Badges -->
+            <div class="floating-glass-card card-top-right">
+              <div class="floating-icon">🍓</div>
+              <div class="floating-meta">
+                <h4>Strawberry Cow</h4>
+                <p>#1 Bestseller • 184 Loved</p>
+              </div>
+            </div>
+
+            <div class="hero-image-frame">
+              <img src="assets/images/hero-banner.jpg" alt="Artisanal crochet workshop with pastel pink yarn and handmade plushies" width="700" height="525" fetchpriority="high">
+            </div>
+
+            <div class="floating-glass-card card-bottom-left">
+              <div class="floating-icon">✨</div>
+              <div class="floating-meta">
+                <h4>Made with Love</h4>
+                <p>Loop-by-loop craftsmanship</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Highlights Banner -->
+    <section class="highlights-banner">
+      <div class="container">
+        <div class="highlights-grid">
+          <div class="highlight-box">
+            <div class="highlight-icon">🪡</div>
+            <div class="highlight-text">
+              <h4>Slow Fashion & Craft</h4>
+              <p>Zero mass production. Each stitch made with love & intention.</p>
+            </div>
+          </div>
+          <div class="highlight-box">
+            <div class="highlight-icon">🎀</div>
+            <div class="highlight-text">
+              <h4>Aesthetic Gift Ready</h4>
+              <p>Wrapped in Korean matte floral paper with satin ribbon & scented mist.</p>
+            </div>
+          </div>
+          <div class="highlight-box">
+            <div class="highlight-icon">📦</div>
+            <div class="highlight-text">
+              <h4>Live Order Tracking</h4>
+              <p>Follow every stage from yarn winding to front doorstep delivery.</p>
+            </div>
+          </div>
+          <div class="highlight-box">
+            <div class="highlight-icon">💌</div>
+            <div class="highlight-text">
+              <h4>Custom Colorways</h4>
+              <p>Personalized palette options and gift note cards for loved ones.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Product Catalog Section -->
+    <section class="catalog-section" id="catalog">
+      <div class="container">
+        <div class="section-header">
+          <span class="section-tag">Curated Boutique</span>
+          <h2 class="section-title">Handmade Crochet Creations</h2>
+          <p class="section-subtitle">Discover our cutest amigurumi plushies, everlasting bouquets, and trendy everyday totes.</p>
+        </div>
+
+        <!-- Catalog Toolbar: Filters, Search, Sort -->
+        <div class="catalog-toolbar">
+          <div class="filter-tabs" id="categoryFilterTabs">
+            <button class="filter-tab active" data-category="all">All Products</button>
+            <button class="filter-tab" data-category="plushies">Amigurumi Plushies 🐰</button>
+            <button class="filter-tab" data-category="floral">Floral & Home 🌸</button>
+            <button class="filter-tab" data-category="bags">Bags & Totes 👜</button>
+            <button class="filter-tab" data-category="wearables">Wearables ☁️</button>
+            <button class="filter-tab" data-category="accessories">Accessories 🍓</button>
+          </div>
+
+          <div class="toolbar-right">
+            <div class="search-input-wrapper">
+              <span class="search-icon">🔍</span>
+              <input type="text" id="productSearchInput" placeholder="Search products..." autocomplete="off">
+            </div>
+
+            <select class="sort-select" id="catalogSortSelect" aria-label="Sort products">
+              <option value="featured">Featured</option>
+              <option value="price-asc">Price: Low to High</option>
+              <option value="price-desc">Price: High to Low</option>
+              <option value="rating">Highest Rated</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Product Cards Grid -->
+        <div class="products-grid" id="productsGrid">
+          <!-- Populated by JavaScript -->
+        </div>
+      </div>
+    </section>
+
+    <!-- Dedicated Order Tracking Section -->
+    <section class="order-tracking-section" id="orderTracking">
+      <div class="container">
+        <div class="section-header">
+          <span class="section-tag">Live Order Progress</span>
+          <h2 class="section-title">Track Your Crochet Package</h2>
+          <p class="section-subtitle">Enter your Order ID (or select a demo order below) to see live artisanal stitching milestones & courier transit status.</p>
+        </div>
+
+        <div class="tracking-search-card">
+          <div class="track-input-group">
+            <input type="text" class="track-input" id="orderTrackInput" placeholder="Enter Order ID (e.g. BGC-89241)" autocomplete="off">
+            <button class="btn btn-primary" id="trackOrderSubmitBtn">Track Package 🔎</button>
+          </div>
+
+          <div class="quick-sample-chips">
+            <span>Quick test orders:</span>
+            <button class="sample-chip" data-order-id="BGC-89241">BGC-89241 (In Transit)</button>
+            <button class="sample-chip" data-order-id="BGC-91402">BGC-91402 (Handcrafting)</button>
+          </div>
+
+          <!-- Dynamic Order Result Area -->
+          <div class="order-tracking-result" id="orderTrackingResult">
+            <!-- Header Meta -->
+            <div class="tracker-header">
+              <div class="tracker-order-meta">
+                <h3 id="trackerOrderIdDisplay">Order #BGC-89241</h3>
+                <p>Placed on <span id="trackerOrderDateDisplay">Oct 8, 2026</span> • Est. Delivery: <strong id="trackerDeliveryDateDisplay">Oct 12, 2026</strong></p>
+                <p>Carrier: <span id="trackerCarrierDisplay">CraftExpress Priority</span> (Waybill: <code id="trackerWaybillDisplay">TRK-BGC-89241-US</code>)</p>
+              </div>
+
+              <div>
+                <span class="tracker-status-pill status-pill-shipped" id="trackerStatusPill">In Transit</span>
+              </div>
+            </div>
+
+            <!-- Interactive Stage Advance Bar (For Demo & Testing) -->
+            <div class="simulation-control-bar">
+              <div class="sim-info">
+                <span>⚡ Interactive Simulator: Test how order updates progress over time</span>
+              </div>
+              <button class="btn-sim-advance" id="btnAdvanceStage">Advance Next Stage ⏩</button>
+            </div>
+
+            <!-- Visual Progress Stepper -->
+            <div class="tracking-timeline" id="trackingTimelineContainer">
+              <!-- Rendered via JS -->
+            </div>
+
+            <!-- Order Overview Grid -->
+            <div class="order-details-grid">
+              <div>
+                <h5 style="margin-bottom: 0.8rem; font-size: 0.95rem; font-weight: 700;">Package Items</h5>
+                <div class="order-items-list" id="trackerItemsList">
+                  <!-- Rendered via JS -->
+                </div>
+              </div>
+
+              <div class="shipping-recap-box">
+                <h5>Shipping Destination</h5>
+                <p id="trackerRecipientDisplay"><strong>Chloe Bennett</strong></p>
+                <p id="trackerAddressDisplay">742 Evergreen Blossom Way, Apt 4B<br>Portland, OR 97201, United States</p>
+                <p id="trackerPhoneDisplay">Phone: +1 (555) 234-5678</p>
+                <p id="trackerPaymentDisplay" style="margin-top: 0.8rem; font-size: 0.82rem; color: var(--text-muted);">
+                  Paid with: Visa ending in 4242
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Reviews Section -->
+    <section class="testimonials-section">
+      <div class="container">
+        <div class="section-header">
+          <span class="section-tag">Customer Love</span>
+          <h2 class="section-title">Loved by 2,400+ Cozy Souls</h2>
+          <p class="section-subtitle">Real words from our lovely community of crochet collectors.</p>
+        </div>
+
+        <div class="reviews-grid">
+          <div class="review-card">
+            <div>
+              <div class="review-stars">★★★★★</div>
+              <p class="review-quote">"Literally the softest plushie I have ever owned! The stitching is so neat, and the packaging smelled like sweet vanilla. 100/10 recommend BabyyGurll Crochet!"</p>
+            </div>
+            <div class="review-author">
+              <div class="avatar-circle">CM</div>
+              <div class="author-meta">
+                <h5>Chloe M.</h5>
+                <p>Verified Buyer • Strawberry Cow</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="review-card">
+            <div>
+              <div class="review-stars">★★★★★</div>
+              <p class="review-quote">"Ordered this for my bestie's dorm room warming gift. She cried happy tears! They look stunning on her desk and won't ever wilt. The wrapping paper and satin ribbon are perfection."</p>
+            </div>
+            <div class="review-author">
+              <div class="avatar-circle">JP</div>
+              <div class="author-meta">
+                <h5>Jessica P.</h5>
+                <p>Verified Buyer • Pastel Tulip Bouquet</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="review-card">
+            <div>
+              <div class="review-stars">★★★★★</div>
+              <p class="review-quote">"I take this bag everywhere. Super sturdy, straps don't stretch out even when loaded with my iPad and water bottle. Constant compliments whenever I go to coffee shops!"</p>
+            </div>
+            <div class="review-author">
+              <div class="avatar-circle">AK</div>
+              <div class="author-meta">
+                <h5>Aaliyah K.</h5>
+                <p>Verified Buyer • Daisy Granny Square Tote</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FAQ Section -->
+    <section class="faq-section">
+      <div class="container">
+        <div class="section-header">
+          <span class="section-tag">Got Questions?</span>
+          <h2 class="section-title">Frequently Asked Questions</h2>
+        </div>
+
+        <div class="faq-accordion">
+          <div class="faq-item">
+            <button class="faq-question">
+              <span>How do I wash and care for my crochet items?</span>
+              <span class="faq-icon">+</span>
+            </button>
+            <div class="faq-answer">
+              We recommend gentle hand washing in cool water with mild wool detergent. Lay flat on a clean dry towel to air dry. Do not tumble dry, bleach, or wring out yarn fibers to preserve stitch elasticity.
+            </div>
+          </div>
+
+          <div class="faq-item">
+            <button class="faq-question">
+              <span>How long does artisanal handcrafting take?</span>
+              <span class="faq-icon">+</span>
+            </button>
+            <div class="faq-answer">
+              Items marked "Ready to ship" depart our studio within 1-2 business days. Custom or made-to-order creations (like cardigans and large bouquets) take 3-5 crafting days. You can track your order status live at any point!
+            </div>
+          </div>
+
+          <div class="faq-item">
+            <button class="faq-question">
+              <span>Can I request custom colors or personalized name tags?</span>
+              <span class="faq-icon">+</span>
+            </button>
+            <div class="faq-answer">
+              Yes, absolutely! During checkout or in the product customizer, you can add personalization requests or select from our seasonal pastel yarn palette.
+            </div>
+          </div>
+
+          <div class="faq-item">
+            <button class="faq-question">
+              <span>What is your return policy?</span>
+              <span class="faq-icon">+</span>
+            </button>
+            <div class="faq-answer">
+              We want you to adore your purchase! If there is any defect or damage upon arrival, contact us within 14 days and we will gladly arrange a remake or full refund.
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Site Footer -->
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <h3>BabyyGurll Crochet 🧶</h3>
+          <p>Hand-stitched cuteness and heirloom yarn crafts made with gentle intention, premium milk cotton, and aesthetic heart.</p>
+          <div class="social-links">
+            <a href="#" class="social-icon" aria-label="Instagram">📸</a>
+            <a href="#" class="social-icon" aria-label="TikTok">🎵</a>
+            <a href="#" class="social-icon" aria-label="Pinterest">📌</a>
+          </div>
+        </div>
+
+        <div class="footer-col">
+          <h4>Explore</h4>
+          <ul class="footer-links">
+            <li><a href="#catalog">Shop All</a></li>
+            <li><a href="#catalog" data-filter="plushies">Amigurumi Plushies</a></li>
+            <li><a href="#catalog" data-filter="floral">Floral Bouquets</a></li>
+            <li><a href="#catalog" data-filter="wearables">Bags & Wearables</a></li>
+            <li><a href="#orderTracking">Track an Order</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-col">
+          <h4>Customer Care</h4>
+          <ul class="footer-links">
+            <li><a href="#orderTracking">Order Tracking</a></li>
+            <li><a href="#" id="footerSavedAddressesLink">Saved Addresses</a></li>
+            <li><a href="#" id="footerAccountLink">My Account</a></li>
+            <li><a href="#">Shipping & Returns</a></li>
+            <li><a href="#">Yarn Care Guide</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-col">
+          <h4>Stitch Club Newsletter</h4>
+          <p style="color: #BDB0B8; font-size: 0.85rem;">Get early access to secret drops and 15% off your first handcrafted piece.</p>
+          <form class="newsletter-form" id="newsletterForm" onsubmit="event.preventDefault(); alert('Subscribed with love! Welcome to the Stitch Club 🌸');">
+            <input type="email" class="newsletter-input" placeholder="Your email address" autocomplete="email" required>
+            <button type="submit" class="btn btn-primary" style="padding: 0.65rem 1.2rem; font-size: 0.85rem;">Join</button>
+          </form>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <p>&copy; 2026 BabyyGurll Crochet Studio. All rights reserved. Handcrafted with love.</p>
+        <p>Built with Vanilla HTML/CSS/JS • Sustainable Craft Standards</p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ==========================================================================
+       MODALS & DRAWERS
+       ========================================================================== -->
+
+  <!-- Slide-In Cart Drawer -->
+  <div class="drawer-backdrop" id="cartDrawerBackdrop">
+    <div class="cart-drawer" id="cartDrawer" role="dialog" aria-modal="true" aria-label="Shopping Cart Drawer">
+      <div class="cart-header">
+        <h3>🛍️ Your Basket (<span id="cartDrawerCount">0</span>)</h3>
+        <button class="drawer-close-btn" id="closeCartBtn" aria-label="Close cart">&times;</button>
+      </div>
+
+      <!-- Free Shipping Progress Meter -->
+      <div class="shipping-meter-wrap" id="shippingMeterWrap">
+        <div class="shipping-meter-text">
+          <span id="shippingMeterLabel">Add $10.01 for Free Shipping</span>
+          <span id="shippingMeterPercent">78%</span>
+        </div>
+        <div class="meter-track">
+          <div class="meter-fill" id="shippingMeterFill" style="width: 78%;"></div>
+        </div>
+      </div>
+
+      <!-- Cart Items Body -->
+      <div class="cart-items-body" id="cartItemsContainer">
+        <!-- Rendered via JS -->
+      </div>
+
+      <!-- Cart Footer & Summary -->
+      <div class="cart-footer" id="cartFooterArea">
+        <!-- Coupon Form -->
+        <div id="couponArea">
+          <div class="coupon-box">
+            <input type="text" class="coupon-input" id="couponInput" placeholder="Promo code (BABYYGURLL)">
+            <button class="coupon-btn" id="applyCouponBtn">Apply</button>
+          </div>
+          <div id="activeCouponTagContainer"></div>
+        </div>
+
+        <div class="cart-summary-table">
+          <div class="summary-row">
+            <span>Subtotal</span>
+            <span id="summarySubtotal">$0.00</span>
+          </div>
+          <div class="summary-row" id="summaryDiscountRow" style="display: none; color: #2E7D32;">
+            <span>Promo Discount</span>
+            <span id="summaryDiscount">-$0.00</span>
+          </div>
+          <div class="summary-row">
+            <span>Estimated Shipping</span>
+            <span id="summaryShipping">Free</span>
+          </div>
+          <div class="summary-row">
+            <span>Estimated Tax (7%)</span>
+            <span id="summaryTax">$0.00</span>
+          </div>
+          <div class="summary-row total-row">
+            <span>Estimated Total</span>
+            <span id="summaryTotal">$0.00</span>
+          </div>
+        </div>
+
+        <button class="btn btn-primary btn-checkout" id="proceedCheckoutBtn">
+          Proceed to Checkout 🌸
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Product Quick View Modal -->
+  <div class="modal-overlay" id="quickViewModal">
+    <div class="modal-card quick-view-card">
+      <button class="modal-close-btn" id="closeQuickViewBtn">&times;</button>
+      <div class="qv-media">
+        <img id="qvImage" src="" alt="Crochet Product Preview">
+      </div>
+      <div class="qv-content">
+        <span class="qv-badge" id="qvBadge">Bestseller</span>
+        <h3 class="qv-title" id="qvTitle">Product Name</h3>
+        <div class="qv-price-wrap">
+          <span class="qv-price" id="qvPrice">$0.00</span>
+          <span class="original-price" id="qvOriginalPrice" style="text-decoration: line-through; color: var(--text-light);">$0.00</span>
+        </div>
+        <p class="qv-desc" id="qvDescription"></p>
+
+        <div class="qv-specs-box" id="qvSpecs"></div>
+
+        <div class="color-picker-section">
+          <h5>Select Color Palette:</h5>
+          <div class="swatch-options" id="qvColorOptions"></div>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 1.2rem;">
+          <label class="form-label" for="qvCustomNote">Custom Note / Gift Request (Optional):</label>
+          <input type="text" class="form-input" id="qvCustomNote" placeholder="e.g. Please add extra bow ribbon!">
+        </div>
+
+        <div class="qv-cta-row">
+          <button class="btn btn-primary" id="qvAddToCartBtn" style="flex-grow: 1;">
+            Add to Bag 🛍️
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Account & Profile Modal (Login, Register, Saved Addresses, Order History) -->
+  <div class="modal-overlay" id="accountModal">
+    <div class="modal-card account-modal-card">
+      <button class="modal-close-btn" id="closeAccountBtn">&times;</button>
+
+      <!-- Account Tabs -->
+      <div class="account-tabs">
+        <button class="account-tab-btn active" id="tabProfileBtn">My Profile & Addresses</button>
+        <button class="account-tab-btn" id="tabAuthBtn">Login / Switch User</button>
+      </div>
+
+      <!-- Tab View 1: Profile & Saved Addresses -->
+      <div id="profileViewPanel">
+        <div class="profile-hero">
+          <div class="profile-avatar-large" id="profileInitials">CB</div>
+          <div class="profile-info">
+            <h3 id="profileNameDisplay">Chloe Bennett</h3>
+            <p id="profileEmailDisplay">chloe@babyygurll.dev</p>
+            <p id="profilePhoneDisplay">Mobile: +1 (555) 234-5678</p>
+            <span class="tier-badge" id="profileTierDisplay">VIP Stitcher Club 🧶</span>
+          </div>
+        </div>
+
+        <!-- Saved Addresses Section -->
+        <div class="addresses-header">
+          <h4>📍 Saved Delivery Addresses</h4>
+          <button class="btn-add-address" id="btnOpenAddAddress">+ Add New Address</button>
+        </div>
+
+        <div class="addresses-grid" id="savedAddressesList">
+          <!-- Rendered via JS -->
+        </div>
+
+        <!-- Order History Section in Account -->
+        <div class="addresses-header" style="margin-top: 2rem;">
+          <h4>📦 Your Order History</h4>
+        </div>
+        <div id="accountOrderHistoryList" style="display: flex; flex-direction: column; gap: 0.85rem;">
+          <!-- Rendered via JS -->
+        </div>
+
+        <div style="margin-top: 2rem; display: flex; justify-content: flex-end;">
+          <button class="btn btn-secondary" id="logoutBtn" style="color: #C62828;">Log Out</button>
+        </div>
+      </div>
+
+      <!-- Tab View 2: Authentication (Login & Register) -->
+      <div id="authViewPanel" style="display: none;">
+        <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem;">
+          <button class="filter-tab active" id="authModeLoginBtn">Sign In</button>
+          <button class="filter-tab" id="authModeRegisterBtn">Create Account</button>
+        </div>
+
+        <!-- Login Form -->
+        <form id="loginForm" class="form-grid">
+          <div class="form-group">
+            <label class="form-label" for="loginEmail">Email Address</label>
+            <input type="email" class="form-input" id="loginEmail" name="email" autocomplete="email" required value="chloe@babyygurll.dev">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="loginPassword">Password</label>
+            <input type="password" class="form-input" id="loginPassword" name="password" autocomplete="current-password" required value="crochet123">
+          </div>
+          <button type="submit" class="btn btn-primary">Sign In to Account</button>
+          <p style="font-size: 0.8rem; color: var(--text-muted); text-align: center;">Demo account pre-filled for immediate testing!</p>
+        </form>
+
+        <!-- Register Form -->
+        <form id="registerForm" class="form-grid" style="display: none;">
+          <div class="form-group">
+            <label class="form-label" for="regName">Full Name</label>
+            <input type="text" class="form-input" id="regName" name="name" autocomplete="name" required placeholder="e.g. Mia Jenkins">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="regEmail">Email Address</label>
+            <input type="email" class="form-input" id="regEmail" name="email" autocomplete="email" required placeholder="mia@example.com">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="regPhone">Mobile Number</label>
+            <input type="tel" class="form-input" id="regPhone" name="tel" autocomplete="tel" required placeholder="+1 (555) 789-0123">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="regPassword">Create Password</label>
+            <input type="password" class="form-input" id="regPassword" name="password" autocomplete="new-password" required placeholder="••••••••">
+          </div>
+          <button type="submit" class="btn btn-primary">Create Account & Join VIP Club</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add / Edit Address Modal Form -->
+  <div class="modal-overlay" id="addressModal">
+    <div class="modal-card" style="max-width: 540px; padding: 2.2rem;">
+      <button class="modal-close-btn" id="closeAddressModalBtn">&times;</button>
+      <h3 style="font-family: var(--font-serif); font-size: 1.35rem; margin-bottom: 1.25rem;" id="addressModalTitle">
+        Add Saved Address
+      </h3>
+
+      <form id="addressForm" class="form-grid">
+        <input type="hidden" id="addrFormEditId" value="">
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="addrLabel">Address Label</label>
+            <input type="text" class="form-input" id="addrLabel" placeholder="e.g. Home, Studio, Dorm" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="addrFullName">Recipient Full Name</label>
+            <input type="text" class="form-input" id="addrFullName" autocomplete="name" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="addrPhone">Mobile Phone Number</label>
+          <input type="tel" class="form-input" id="addrPhone" autocomplete="tel" placeholder="+1 (555) 000-0000" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="addrStreet">Street Address</label>
+          <textarea class="form-textarea" id="addrStreet" autocomplete="street-address" rows="2" placeholder="Street number, apartment, suite, unit" required></textarea>
+        </div>
+
+        <div class="form-row-3">
+          <div class="form-group">
+            <label class="form-label" for="addrCity">City</label>
+            <input type="text" class="form-input" id="addrCity" autocomplete="address-level2" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="addrState">State</label>
+            <input type="text" class="form-input" id="addrState" autocomplete="address-level1" placeholder="OR" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="addrZip">ZIP / Postal</label>
+            <input type="text" class="form-input" id="addrZip" autocomplete="postal-code" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="addrCountry">Country</label>
+          <select class="form-select" id="addrCountry" autocomplete="country-name">
+            <option value="United States">United States</option>
+            <option value="Canada">Canada</option>
+            <option value="United Kingdom">United Kingdom</option>
+            <option value="Australia">Australia</option>
+            <option value="India">India</option>
+            <option value="Germany">Germany</option>
+          </select>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 0.6rem; margin: 0.5rem 0;">
+          <input type="checkbox" id="addrIsDefault" style="width: 18px; height: 18px; accent-color: var(--primary);">
+          <label for="addrIsDefault" style="font-size: 0.85rem; font-weight: 600; cursor: pointer;">Set as default shipping address</label>
+        </div>
+
+        <button type="submit" class="btn btn-primary" id="saveAddressSubmitBtn">Save Address 💾</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Interactive Multi-Step Checkout Modal -->
+  <div class="modal-overlay" id="checkoutModal">
+    <div class="modal-card checkout-card">
+      <button class="modal-close-btn" id="closeCheckoutBtn">&times;</button>
+
+      <!-- Steps Indicator -->
+      <div class="checkout-steps-bar">
+        <div class="checkout-step-pill active" id="pillStep1">
+          <div class="step-num-circle">1</div>
+          <span>Shipping</span>
+        </div>
+        <div class="checkout-step-pill" id="pillStep2">
+          <div class="step-num-circle">2</div>
+          <span>Delivery</span>
+        </div>
+        <div class="checkout-step-pill" id="pillStep3">
+          <div class="step-num-circle">3</div>
+          <span>Payment</span>
+        </div>
+      </div>
+
+      <!-- Step 1: Shipping Address Selection -->
+      <div class="checkout-step-content" id="checkoutStep1">
+        <h3 style="font-family: var(--font-serif); font-size: 1.35rem; margin-bottom: 0.5rem;">Where should we ship your crochet pieces?</h3>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.25rem;">Select from your saved addresses or specify a new shipping location.</p>
+
+        <div id="checkoutSavedAddressesList" style="display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 1.5rem;">
+          <!-- Populated from store.getAddresses() -->
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1.5rem;">
+          <button class="btn btn-secondary" id="checkoutAddAddressInlineBtn">+ Add Another Address</button>
+          <button class="btn btn-primary" id="btnNextToStep2">Continue to Delivery ➡️</button>
+        </div>
+      </div>
+
+      <!-- Step 2: Delivery Options -->
+      <div class="checkout-step-content" id="checkoutStep2" style="display: none;">
+        <h3 style="font-family: var(--font-serif); font-size: 1.35rem; margin-bottom: 0.5rem;">Choose Shipping Method</h3>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.25rem;">Every parcel is wrapped in eco-friendly cotton with custom wax seal stamp.</p>
+
+        <div style="display: flex; flex-direction: column; gap: 0.9rem; margin-bottom: 1.5rem;">
+          <label style="display: flex; align-items: center; justify-content: space-between; padding: 1.1rem; border: 1px solid var(--primary); border-radius: var(--radius-md); background: #FFF9FA; cursor: pointer;">
+            <div style="display: flex; align-items: center; gap: 0.75rem;">
+              <input type="radio" name="shippingMethod" value="standard" checked style="accent-color: var(--primary);">
+              <div>
+                <strong style="font-size: 0.95rem; color: var(--text-dark);">Standard Craft Courier (3-5 Days)</strong>
+                <p style="font-size: 0.8rem; color: var(--text-muted);">Fully tracked with live yarn progress</p>
+              </div>
+            </div>
+            <span style="font-weight: 700; color: var(--primary);">Free / $4.99</span>
+          </label>
+
+          <label style="display: flex; align-items: center; justify-content: space-between; padding: 1.1rem; border: 1px solid var(--border-subtle); border-radius: var(--radius-md); background: #FFFFFF; cursor: pointer;">
+            <div style="display: flex; align-items: center; gap: 0.75rem;">
+              <input type="radio" name="shippingMethod" value="express" style="accent-color: var(--primary);">
+              <div>
+                <strong style="font-size: 0.95rem; color: var(--text-dark);">Priority Express Studio Delivery (1-2 Days)</strong>
+                <p style="font-size: 0.8rem; color: var(--text-muted);">Rush craft allocation + handwritten calligraphy note</p>
+              </div>
+            </div>
+            <span style="font-weight: 700; color: var(--text-dark);">$9.99</span>
+          </label>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <button class="btn btn-secondary" id="btnBackToStep1">⬅️ Back to Address</button>
+          <button class="btn btn-primary" id="btnNextToStep3">Continue to Payment ➡️</button>
+        </div>
+      </div>
+
+      <!-- Step 3: Payment Method & Place Order -->
+      <div class="checkout-step-content" id="checkoutStep3" style="display: none;">
+        <h3 style="font-family: var(--font-serif); font-size: 1.35rem; margin-bottom: 0.5rem;">Payment Information</h3>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.25rem;">Encrypted & secure simulated checkout.</p>
+
+        <!-- Mock Card Visual -->
+        <div class="mock-card-visual">
+          <div class="card-chip"></div>
+          <div class="card-num-preview">•••• •••• •••• 4242</div>
+          <div class="card-meta-preview">
+            <span id="cardHolderPreview">CHLOE BENNETT</span>
+            <span>10 / 28</span>
+          </div>
+        </div>
+
+        <div class="form-grid" style="margin-bottom: 1.5rem;">
+          <div class="form-group">
+            <label class="form-label" for="cardNumInput">Card Number</label>
+            <input type="text" class="form-input" id="cardNumInput" placeholder="4242 •••• •••• 4242" value="4242 4242 4242 4242">
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="cardExpInput">Expiry Date</label>
+              <input type="text" class="form-input" id="cardExpInput" placeholder="MM/YY" value="10/28">
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="cardCvcInput">CVC Security</label>
+              <input type="text" class="form-input" id="cardCvcInput" placeholder="123" value="789">
+            </div>
+          </div>
+        </div>
+
+        <div style="background: #FFFDFE; border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 1rem; margin-bottom: 1.5rem;">
+          <div class="summary-row" style="font-weight: 700; color: var(--text-dark); margin-bottom: 0;">
+            <span>Total Payable Amount:</span>
+            <span id="checkoutFinalTotalDisplay" style="color: var(--primary); font-size: 1.25rem;">$0.00</span>
+          </div>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <button class="btn btn-secondary" id="btnBackToStep2">⬅️ Back</button>
+          <button class="btn btn-primary" id="btnPlaceOrderFinal" style="padding: 0.95rem 2rem;">
+            Place Order & Stitch Magic 🌸
+          </button>
+        </div>
+      </div>
+
+      <!-- Step 4: Success View -->
+      <div class="checkout-step-content" id="checkoutStepSuccess" style="display: none;">
+        <div class="order-success-card">
+          <div class="success-check-bubble">🎉</div>
+          <h3>Thank you for your order!</h3>
+          <p style="color: var(--text-muted); font-size: 0.95rem;">
+            Your crochet commission has been queued with love. Master artisan Elena is allocating your yarn!
+          </p>
+
+          <div class="order-id-highlight" id="newPlacedOrderId">
+            Order #BGC-00000
+          </div>
+
+          <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.8rem;">
+            A confirmation receipt has been sent to your email. You can monitor each craft milestone in real time.
+          </p>
+
+          <div style="display: flex; justify-content: center; gap: 1rem;">
+            <button class="btn btn-primary" id="btnTrackNewlyPlacedOrder">
+              Track Order Live 🚚
+            </button>
+            <button class="btn btn-secondary" id="btnContinueShoppingAfterSuccess">
+              Continue Shopping
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div class="toast-container" id="toastContainer" aria-live="polite"></div>
+
+  <!-- Confetti Canvas -->
+  <canvas id="confettiCanvas" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 999; display: none;"></canvas>
+
+  <!-- Scripts -->
+  <script src="js/products.js"></script>
+  <script src="js/store.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
