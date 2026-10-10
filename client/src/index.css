@@ -160,6 +160,7 @@ img {
   justify-content: center;
   gap: 0.75rem;
   box-shadow: 0 2px 8px rgba(0, 119, 204, 0.25);
+  transition: var(--transition);
 }
 
 .announcement-bar .badge {
@@ -171,6 +172,33 @@ img {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+
+@media (max-width: 768px) {
+  .announcement-bar {
+    flex-direction: column;
+    gap: 0.3rem;
+    padding: 0.45rem 0.85rem;
+    font-size: 0.76rem;
+    line-height: 1.35;
+  }
+  .announcement-bar .badge {
+    font-size: 0.68rem;
+    padding: 0.12rem 0.55rem;
+  }
+}
+
+@media (max-width: 420px) {
+  .announcement-bar {
+    font-size: 0.72rem;
+    padding: 0.38rem 0.5rem;
+    gap: 0.22rem;
+  }
+  .announcement-bar .badge {
+    font-size: 0.65rem;
+    padding: 0.1rem 0.5rem;
+  }
 }
 
 @keyframes gradientShift {
@@ -547,15 +575,94 @@ img {
   .mobile-hamburger-btn {
     display: flex;
   }
+  .nav-container {
+    padding: 0 1.15rem;
+    gap: 1rem;
+  }
 }
 
-@media (max-width: 600px) {
-  .nav-icon-btn {
-    width: 38px;
-    height: 38px;
+@media (max-width: 640px) {
+  .site-header {
+    border-bottom-color: rgba(204, 234, 255, 0.95);
+  }
+  .nav-container {
+    padding: 0 0.85rem;
+    gap: 0.5rem;
+    height: 60px;
+  }
+  .brand-logo {
+    gap: 0.5rem;
+  }
+  .brand-icon-wrapper {
+    width: 35px;
+    height: 35px;
+    font-size: 1.18rem;
+    border-radius: var(--radius-sm);
   }
   .brand-title {
-    font-size: 1.2rem;
+    font-size: 1.12rem;
+    letter-spacing: -0.01em;
+  }
+  .brand-subtitle {
+    font-size: 0.62rem;
+    letter-spacing: 0.05em;
+  }
+  .nav-actions {
+    gap: 0.4rem;
+  }
+  .nav-icon-btn {
+    width: 36px;
+    height: 36px;
+  }
+  .nav-icon-btn svg {
+    width: 17px;
+    height: 17px;
+  }
+  .nav-cart-badge {
+    min-width: 17px;
+    height: 17px;
+    font-size: 0.68rem;
+    top: -3px;
+    right: -3px;
+    padding: 0 3px;
+  }
+  .mobile-hamburger-btn {
+    width: 36px;
+    height: 36px;
+  }
+}
+
+@media (max-width: 420px) {
+  .nav-container {
+    padding: 0 0.6rem;
+    gap: 0.35rem;
+    height: 56px;
+  }
+  .brand-icon-wrapper {
+    width: 32px;
+    height: 32px;
+    font-size: 1.05rem;
+  }
+  .brand-title {
+    font-size: 1.02rem;
+  }
+  .brand-subtitle {
+    display: none; /* Hide subtitle on tiny mobile screens to avoid any crowding */
+  }
+  .nav-actions {
+    gap: 0.3rem;
+  }
+  .nav-icon-btn {
+    width: 33px;
+    height: 33px;
+  }
+  .nav-icon-btn svg {
+    width: 16px;
+    height: 16px;
+  }
+  .mobile-hamburger-btn {
+    width: 33px;
+    height: 33px;
   }
 }
 
@@ -3280,13 +3387,6 @@ img {
     grid-template-columns: 1fr 1fr;
     gap: 2rem;
   }
-  .tracking-timeline {
-    grid-template-columns: 1fr;
-    gap: 1.8rem;
-  }
-  .tracking-timeline::before {
-    display: none;
-  }
   .order-details-grid {
     grid-template-columns: 1fr;
   }
@@ -3299,11 +3399,59 @@ img {
 }
 
 @media (max-width: 768px) {
+  .container {
+    padding: 0 1rem;
+  }
   .nav-links {
     display: none;
   }
+  .hero-section {
+    padding: 2.2rem 0 3.5rem;
+  }
   .hero-title {
     font-size: 2.15rem;
+    line-height: 1.16;
+    margin-bottom: 1rem;
+  }
+  .hero-description {
+    font-size: 0.96rem;
+    line-height: 1.55;
+    margin-bottom: 1.5rem;
+  }
+  .hero-cta-group {
+    gap: 0.75rem;
+    margin-bottom: 1.8rem;
+  }
+  .hero-cta-group .btn {
+    flex: 1 1 calc(50% - 0.5rem);
+    font-size: 0.88rem;
+    padding: 0.65rem 1rem;
+  }
+  .hero-trust-badges {
+    gap: 0.65rem;
+    flex-wrap: wrap;
+  }
+  .trust-item {
+    font-size: 0.76rem;
+  }
+  .card-top-right {
+    top: 8px;
+    right: 8px;
+    padding: 0.5rem 0.75rem;
+  }
+  .card-bottom-left {
+    bottom: 8px;
+    left: 8px;
+    padding: 0.5rem 0.75rem;
+  }
+  .floating-glass-card .floating-icon {
+    font-size: 1.1rem;
+  }
+  .floating-meta h4 {
+    font-size: 0.8rem;
+  }
+  .floating-meta p {
+    font-size: 0.68rem;
   }
   .highlights-grid {
     grid-template-columns: 1fr;
@@ -3311,17 +3459,216 @@ img {
   .cart-drawer {
     max-width: 100%;
   }
+
+  /* Catalog Controls */
   .catalog-toolbar {
     flex-direction: column;
     align-items: stretch;
+    gap: 0.85rem;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.85rem;
+  }
+  .filter-tabs {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    width: 100%;
+    padding-bottom: 0.4rem;
+    gap: 0.45rem;
+  }
+  .filter-tabs::-webkit-scrollbar {
+    display: none;
+  }
+  .filter-tab {
+    flex-shrink: 0;
+    white-space: nowrap;
+    font-size: 0.8rem;
+    padding: 0.45rem 0.9rem;
+  }
+  .toolbar-right {
+    width: 100%;
+    display: flex;
+    gap: 0.5rem;
+  }
+  .search-input-wrapper {
+    flex: 1;
   }
   .search-input-wrapper input {
     width: 100%;
+    font-size: 0.85rem;
+    padding: 0.55rem 0.85rem 0.55rem 2.2rem;
   }
+  .sort-select {
+    font-size: 0.82rem;
+    padding: 0.55rem 0.75rem;
+  }
+
+  /* Product Cards Grid */
+  .products-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.85rem;
+    margin-bottom: 2.5rem;
+  }
+  .product-card {
+    border-radius: var(--radius-md);
+  }
+  .card-content {
+    padding: 0.85rem 0.75rem;
+  }
+  .product-title {
+    font-size: 0.92rem;
+  }
+  .product-price {
+    font-size: 1rem;
+  }
+  .btn-add-cart-card {
+    padding: 0.55rem;
+    font-size: 0.8rem;
+  }
+
+  /* Forms & Footers */
   .form-row, .form-row-3 {
     grid-template-columns: 1fr;
   }
   .footer-grid {
     grid-template-columns: 1fr;
+  }
+
+  /* Account & Checkout Modals */
+  .account-modal-card,
+  .checkout-card {
+    padding: 1.25rem 0.85rem;
+    width: 95vw;
+    max-height: 92vh;
+    border-radius: var(--radius-lg);
+  }
+  .profile-hero {
+    padding: 0.85rem;
+    gap: 0.85rem;
+    margin-bottom: 1.2rem;
+  }
+  .profile-avatar-large {
+    width: 48px;
+    height: 48px;
+    font-size: 1.2rem;
+  }
+  .profile-info h3 {
+    font-size: 1.05rem;
+  }
+  .account-main-nav {
+    gap: 0.35rem;
+    margin-bottom: 1rem;
+  }
+  .account-nav-btn {
+    font-size: 0.88rem;
+    padding: 0.35rem 0.6rem;
+  }
+  .account-nav-btn.logout-nav-btn {
+    font-size: 0.82rem;
+    padding: 0.3rem 0.6rem;
+  }
+  .order-subtabs-bar {
+    width: 100%;
+    display: flex;
+    padding: 0.2rem;
+  }
+  .order-subtab-pill {
+    flex: 1;
+    justify-content: center;
+    padding: 0.35rem 0.4rem;
+    font-size: 0.75rem;
+    gap: 0.25rem;
+  }
+  .in-progress-order-block,
+  .return-order-block,
+  .delivered-order-block {
+    padding: 0.85rem;
+  }
+  .order-header-meta {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.4rem;
+  }
+  .btn-track-in-progress {
+    width: 100%;
+    justify-content: center;
+    font-size: 0.82rem;
+    padding: 0.55rem 0.85rem;
+  }
+  .tracking-courier-banner {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.65rem;
+  }
+  .btn-sim-advance-inline {
+    width: 100%;
+  }
+
+  /* Responsive Timeline Stepper: Vertical on mobile */
+  .inline-stepper {
+    display: flex;
+    flex-direction: column;
+    gap: 1.15rem;
+    padding-left: 0.25rem;
+    margin: 1.25rem 0 1rem;
+  }
+  .inline-stepper-line-bg {
+    top: 16px;
+    bottom: 16px;
+    left: 17px;
+    width: 3px;
+    height: auto;
+    right: auto;
+  }
+  .inline-stepper-line-fill {
+    top: 16px;
+    left: 17px;
+    width: 3px;
+    right: auto;
+    transition: height 0.4s ease;
+  }
+  .inline-step-node {
+    flex-direction: row;
+    align-items: flex-start;
+    text-align: left;
+    gap: 0.75rem;
+  }
+  .step-node-bubble {
+    width: 32px;
+    height: 32px;
+    font-size: 0.85rem;
+    margin-bottom: 0;
+    flex-shrink: 0;
+  }
+  .step-node-label {
+    font-size: 0.8rem;
+  }
+  .step-node-time {
+    font-size: 0.7rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .hero-title {
+    font-size: 1.85rem;
+  }
+  .hero-cta-group {
+    flex-direction: column;
+    width: 100%;
+  }
+  .hero-cta-group .btn {
+    width: 100%;
+  }
+}
+
+@media (max-width: 360px) {
+  .container {
+    padding: 0 0.75rem;
+  }
+  .products-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
   }
 }
