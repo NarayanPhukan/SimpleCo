@@ -1,51 +1,169 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import { api } from '../services/api';
 import { openRazorpayStandardCheckout } from '../services/razorpay';
 
-export const CheckoutModal = ({ isOpen, onClose, onOpenAddressModal, onOrderPlacedSuccess, onShowToast }) => {
-  const { user } = useAuth();
+const INDIAN_STATES = [
+  "Andhra Pradesh", "Assam", "Bihar", "Chhattisgarh", "Delhi", "Goa", "Gujarat", 
+  "Haryana", "Himachal Pradesh", "Jammu and Kashmir", "Jharkhand", "Karnataka", 
+  "Kerala", "Madhya Pradesh", "Maharashtra", "Odisha", "Punjab", "Rajasthan", 
+  "Tamil Nadu", "Telangana", "Uttar Pradesh", "Uttarakhand", "West Bengal"
+];
+
+export const CheckoutModal = ({
+  isOpen,
+  onClose,
+  onOpenAddressModal,
+  onOpenAccountModal,
+  onOrderPlacedSuccess,
+  onShowToast
+}) => {
+  const { user, addAddress } = useAuth();
   const { cart, getTotals, formatPrice, clearCart, removeCoupon } = useCart();
 
   const [step, setStep] = useState(1);
+  const addresses = user?.savedAddresses || [];
+
   const [selectedAddressId, setSelectedAddressId] = useState(() => {
     const def = user?.savedAddresses?.find(a => a.isDefault);
     return def ? (def._id || def.id) : (user?.savedAddresses?.[0]?._id || '');
   });
+
+  const [showAddressForm, setShowAddressForm] = useState(false);
+  const [addrForm, setAddrForm] = useState({
+    label: 'Home',
+    recipientName: user?.name || '',
+    phone: user?.phone || '',
+    email: user?.email || '',
+    street: '',
+    city: '',
+    state: 'Maharashtra',
+    zip: '',
+    country: 'India'
+  });
+
   const [shippingMethod, setShippingMethod] = useState('standard');
   const [paymentMethod, setPaymentMethod] = useState('razorpay'); // 'razorpay' or 'cod'
   const [placedOrderId, setPlacedOrderId] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
+  // Sync address selection when addresses list changes
+  useEffect(() => {
+    if (addresses.length > 0) {
+      const exists = addresses.some(a => (a._id || a.id) === selectedAddressId);
+      if (!selectedAddressId || !exists) {
+        const def = addresses.find(a => a.isDefault) || addresses[0];
+        setSelectedAddressId(def._id || def.id);
+      }
+    }
+  }, [addresses, selectedAddressId]);
+
+  // Sync user info into address form when user profile becomes available
+  useEffect(() => {
+    if (user) {
+      setAddrForm(prev => ({
+        ...prev,
+        recipientName: prev.recipientName || user.name || '',
+        phone: prev.phone || user.phone || '',
+        email: prev.email || user.email || ''
+      }));
+    }
+  }, [user]);
+
+  // Reset modal state on open
+  useEffect(() => {
+    if (isOpen) {
+      setSubmitting(false);
+      if (step === 4) {
+        setStep(1);
+        setPlacedOrderId('');
+      }
+    }
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   const totals = getTotals();
-  const addresses = user?.savedAddresses || [];
+  const shippingCost = shippingMethod === 'express' ? 149 : totals.shipping;
+  const grandTotal = Math.max(0, totals.subtotal - totals.discount + shippingCost + totals.tax);
 
-  const handleNextToStep2 = () => {
+  const chosenAddr = addresses.find(a => (a._id === selectedAddressId || a.id === selectedAddressId)) 
+    || (addresses.length > 0 ? addresses[0] : addrForm);
+
+  const handleNextToStep2 = async () => {
+    const isAddingAddress = addresses.length === 0 || showAddressForm;
+    if (isAddingAddress) {
+      if (!addrForm.recipientName.trim()) {
+        onShowToast('Please enter recipient full name', '⚠️');
+        return;
+      }
+      const rawDigits = addrForm.phone.replace(/[^0-9]/g, '');
+      if (rawDigits.length < 10) {
+        onShowToast('Please enter a valid 10-digit mobile number', '⚠️');
+        return;
+      }
+      if (!addrForm.street.trim()) {
+        onShowToast('Please enter flat / house / street address', '⚠️');
+        return;
+      }
+      if (!addrForm.city.trim()) {
+        onShowToast('Please enter city / town', '⚠️');
+        return;
+      }
+      const rawZip = addrForm.zip.replace(/[^0-9]/g, '');
+      if (rawZip.length !== 6) {
+        onShowToast('Please enter a valid 6-digit Indian PIN code', '⚠️');
+        return;
+      }
+
+      try {
+        const saved = await addAddress({
+          ...addrForm,
+          phone: rawDigits.length === 10 ? `+91 ${rawDigits}` : addrForm.phone,
+          zip: rawZip,
+          isDefault: addresses.length === 0
+        });
+        if (saved) {
+          const id = saved._id || saved.id;
+          setSelectedAddressId(id);
+        }
+        setShowAddressForm(false);
+        onShowToast('Shipping address confirmed! 📦', '📍');
+        setStep(2);
+        return;
+      } catch (err) {
+        onShowToast('Could not save address: ' + err.message, '⚠️');
+        return;
+      }
+    }
+
     if (!selectedAddressId && addresses.length > 0) {
       setSelectedAddressId(addresses[0]._id || addresses[0].id);
-    }
-    if (!selectedAddressId && addresses.length === 0) {
-      onShowToast('Please add an Indian shipping address first', '⚠️');
-      return;
     }
     setStep(2);
   };
 
   const handlePlaceOrder = async (customAmount = null) => {
     setSubmitting(true);
-    const chosenAddr = addresses.find(a => (a._id === selectedAddressId || a.id === selectedAddressId)) || addresses[0];
 
-    if (!chosenAddr) {
-      onShowToast('Please select or add a shipping address', '⚠️');
+    if (!chosenAddr || (!chosenAddr.street && !addrForm.street)) {
+      onShowToast('Please provide a delivery address first', '⚠️');
       setSubmitting(false);
       setStep(1);
       return;
     }
 
-    const payAmount = customAmount !== null ? customAmount : totals.total;
+    const payAmount = customAmount !== null ? customAmount : grandTotal;
+    const finalTotals = {
+      ...totals,
+      shipping: shippingCost,
+      total: grandTotal
+    };
+
+    const customerEmail = user?.email || chosenAddr?.email || addrForm?.email || 'guest@babyygurll.in';
+    const customerName = chosenAddr?.recipientName || user?.name || addrForm?.recipientName || 'Customer';
+    const customerPhone = chosenAddr?.phone || user?.phone || addrForm?.phone || '';
 
     // Razorpay Standard Checkout Flow
     if (paymentMethod === 'razorpay') {
@@ -53,31 +171,31 @@ export const CheckoutModal = ({ isOpen, onClose, onOpenAddressModal, onOrderPlac
       await openRazorpayStandardCheckout({
         amountInRupees: payAmount,
         prefill: {
-          name: chosenAddr.recipientName || user?.name || '',
-          email: user?.email || '',
-          contact: chosenAddr.phone || user?.phone || ''
+          name: customerName,
+          email: customerEmail,
+          contact: customerPhone
         },
         onSuccess: async (payDetails) => {
           try {
             const orderPayload = {
-              userEmail: user?.email || '',
+              userEmail: customerEmail,
               shippingAddress: chosenAddr,
               paymentMethod: `Razorpay Online (${payDetails.paymentId})`,
               paymentStatus: 'paid',
               razorpayPaymentId: payDetails.paymentId,
               razorpayOrderId: payDetails.orderId,
               items: cart,
-              totals: totals
+              totals: finalTotals
             };
 
             const res = await api.createOrder(orderPayload);
-            const newId = res.data.orderId;
+            const newId = res.data?.orderId || res.orderId || ('BGC-' + Math.floor(10000 + Math.random() * 90000));
             setPlacedOrderId(newId);
             clearCart();
             removeCoupon();
             setStep(4);
             setSubmitting(false);
-            onOrderPlacedSuccess(newId);
+            if (onOrderPlacedSuccess) onOrderPlacedSuccess(newId);
             onShowToast(`Payment verified! Order #${newId} placed successfully! 🌸`, '🎉');
           } catch (createErr) {
             const fallbackId = 'BGC-' + Math.floor(10000 + Math.random() * 90000);
@@ -86,7 +204,7 @@ export const CheckoutModal = ({ isOpen, onClose, onOpenAddressModal, onOrderPlac
             removeCoupon();
             setStep(4);
             setSubmitting(false);
-            onOrderPlacedSuccess(fallbackId);
+            if (onOrderPlacedSuccess) onOrderPlacedSuccess(fallbackId);
             onShowToast(`Order #${fallbackId} recorded with payment ${payDetails.paymentId}! 🌸`, '🎉');
           }
         },
@@ -104,23 +222,23 @@ export const CheckoutModal = ({ isOpen, onClose, onOpenAddressModal, onOrderPlac
 
     // Cash on Delivery Flow
     const orderPayload = {
-      userEmail: user?.email || '',
+      userEmail: customerEmail,
       shippingAddress: chosenAddr,
       paymentMethod: 'Cash on Delivery (COD)',
       paymentStatus: 'pending',
       items: cart,
-      totals: totals
+      totals: finalTotals
     };
 
     try {
       const res = await api.createOrder(orderPayload);
-      const newId = res.data.orderId;
+      const newId = res.data?.orderId || res.orderId || ('BGC-' + Math.floor(10000 + Math.random() * 90000));
       setPlacedOrderId(newId);
       clearCart();
       removeCoupon();
       setStep(4);
       setSubmitting(false);
-      onOrderPlacedSuccess(newId);
+      if (onOrderPlacedSuccess) onOrderPlacedSuccess(newId);
       onShowToast(`Order #${newId} placed via Cash on Delivery! 🌸`, '🎉');
     } catch (err) {
       const fallbackId = 'BGC-' + Math.floor(10000 + Math.random() * 90000);
@@ -129,7 +247,7 @@ export const CheckoutModal = ({ isOpen, onClose, onOpenAddressModal, onOrderPlac
       removeCoupon();
       setStep(4);
       setSubmitting(false);
-      onOrderPlacedSuccess(fallbackId);
+      if (onOrderPlacedSuccess) onOrderPlacedSuccess(fallbackId);
       onShowToast(`Order #${fallbackId} placed successfully! 🌸`, '🎉');
     }
   };
@@ -155,23 +273,151 @@ export const CheckoutModal = ({ isOpen, onClose, onOpenAddressModal, onOrderPlac
           </div>
         </div>
 
-        {/* Step 1: Address Selection */}
+        {/* Step 1: Address Selection / Inline Entry */}
         {step === 1 && (
           <div>
-            <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: '1.35rem', marginBottom: '0.5rem' }}>
-              Where in India should we ship your pieces?
-            </h3>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.4rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+              <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: '1.35rem', margin: 0 }}>
+                {addresses.length === 0 || showAddressForm 
+                  ? 'Enter Delivery Address (Pan-India 🇮🇳)' 
+                  : 'Where should we ship your pieces?'}
+              </h3>
+              {addresses.length > 0 && (
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  style={{ fontSize: '0.8rem', padding: '0.4rem 0.85rem' }}
+                  onClick={() => setShowAddressForm(!showAddressForm)}
+                >
+                  {showAddressForm ? '⬅️ Use Saved Address' : '+ Add Different Address'}
+                </button>
+              )}
+            </div>
+
             <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '1.25rem' }}>
-              Select from your saved addresses or add a new delivery location across India.
+              {addresses.length === 0 || showAddressForm
+                ? 'Delivery across India with tracked courier dispatch & floral scented ribbon packing.'
+                : 'Select from your saved addresses or add a new delivery location across India.'}
             </p>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '1.5rem' }}>
-              {addresses.length === 0 ? (
-                <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-                  No saved addresses found. Click "+ Add Delivery Address" to proceed!
-                </p>
-              ) : (
-                addresses.map((addr) => {
+            {/* Inline Address Form for guest or adding new address */}
+            {(addresses.length === 0 || showAddressForm) ? (
+              <div style={{ background: '#F8FCFF', border: '1.5px solid #D5E8FC', borderRadius: 'var(--radius-md)', padding: '1.3rem', marginBottom: '1.5rem' }}>
+                <div className="form-grid">
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label className="form-label" htmlFor="chkRecipientName">Recipient Full Name *</label>
+                      <input 
+                        type="text" 
+                        id="chkRecipientName" 
+                        className="form-input" 
+                        placeholder="e.g. Ananya Sharma" 
+                        required 
+                        value={addrForm.recipientName}
+                        onChange={e => setAddrForm({ ...addrForm, recipientName: e.target.value })}
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label" htmlFor="chkPhone">Mobile Number (10 Digits) *</label>
+                      <input 
+                        type="tel" 
+                        id="chkPhone" 
+                        className="form-input" 
+                        placeholder="e.g. 9876543210" 
+                        required 
+                        value={addrForm.phone}
+                        onChange={e => setAddrForm({ ...addrForm, phone: e.target.value })}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label className="form-label" htmlFor="chkEmail">Email Address (for order receipts & tracking)</label>
+                      <input 
+                        type="email" 
+                        id="chkEmail" 
+                        className="form-input" 
+                        placeholder="e.g. ananya@example.com" 
+                        value={addrForm.email}
+                        onChange={e => setAddrForm({ ...addrForm, email: e.target.value })}
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label">Address Tag</label>
+                      <div style={{ display: 'flex', gap: '0.4rem', marginTop: '0.2rem' }}>
+                        {['Home', 'Office', 'Hostel', 'Other'].map(type => (
+                          <button
+                            key={type}
+                            type="button"
+                            className={`filter-tab ${addrForm.label === type ? 'active' : ''}`}
+                            style={{ padding: '0.4rem 0.75rem', fontSize: '0.78rem' }}
+                            onClick={() => setAddrForm({ ...addrForm, label: type })}
+                          >
+                            {type}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label" htmlFor="chkStreet">Flat, House No., Building, Street *</label>
+                    <textarea 
+                      id="chkStreet" 
+                      className="form-textarea" 
+                      rows="2" 
+                      placeholder="e.g. Flat 402, Blossom Heights, Linking Road" 
+                      required 
+                      value={addrForm.street}
+                      onChange={e => setAddrForm({ ...addrForm, street: e.target.value })}
+                    />
+                  </div>
+
+                  <div className="form-row-3">
+                    <div className="form-group">
+                      <label className="form-label" htmlFor="chkCity">City / Town *</label>
+                      <input 
+                        type="text" 
+                        id="chkCity" 
+                        className="form-input" 
+                        placeholder="e.g. Mumbai" 
+                        required 
+                        value={addrForm.city}
+                        onChange={e => setAddrForm({ ...addrForm, city: e.target.value })}
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label" htmlFor="chkState">State *</label>
+                      <select 
+                        id="chkState" 
+                        className="form-select"
+                        value={addrForm.state}
+                        onChange={e => setAddrForm({ ...addrForm, state: e.target.value })}
+                      >
+                        {INDIAN_STATES.map(s => <option key={s} value={s}>{s}</option>)}
+                      </select>
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label" htmlFor="chkZip">PIN Code (6 Digits) *</label>
+                      <input 
+                        type="text" 
+                        id="chkZip" 
+                        className="form-input" 
+                        placeholder="400050" 
+                        maxLength={6}
+                        required 
+                        value={addrForm.zip}
+                        onChange={e => setAddrForm({ ...addrForm, zip: e.target.value.replace(/[^0-9]/g, '') })}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              /* Saved Addresses Cards */
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '1.5rem' }}>
+                {addresses.map((addr) => {
                   const id = addr._id || addr.id;
                   const isChecked = selectedAddressId === id;
                   return (
@@ -182,10 +428,11 @@ export const CheckoutModal = ({ isOpen, onClose, onOpenAddressModal, onOrderPlac
                         alignItems: 'flex-start',
                         gap: '0.85rem',
                         padding: '1.1rem',
-                        border: `1px solid ${isChecked ? 'var(--primary)' : 'var(--border-subtle)'}`,
+                        border: `1.5px solid ${isChecked ? 'var(--primary)' : 'var(--border-subtle)'}`,
                         borderRadius: 'var(--radius-md)',
                         background: isChecked ? '#E5F4FF' : '#FFFFFF',
-                        cursor: 'pointer'
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease'
                       }}
                     >
                       <input 
@@ -194,7 +441,7 @@ export const CheckoutModal = ({ isOpen, onClose, onOpenAddressModal, onOrderPlac
                         value={id} 
                         checked={isChecked}
                         onChange={() => setSelectedAddressId(id)}
-                        style={{ marginTop: '3px', accentColor: 'var(--primary)' }}
+                        style={{ marginTop: '4px', accentColor: 'var(--primary)' }}
                       />
                       <div style={{ flexGrow: 1 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.2rem' }}>
@@ -210,15 +457,21 @@ export const CheckoutModal = ({ isOpen, onClose, onOpenAddressModal, onOrderPlac
                       </div>
                     </label>
                   );
-                })
-              )}
-            </div>
+                })}
+              </div>
+            )}
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1.5rem' }}>
-              <button className="btn btn-secondary" onClick={() => onOpenAddressModal(null)}>
-                + Add New Address
-              </button>
-              <button className="btn btn-primary" onClick={handleNextToStep2}>
+              {addresses.length > 0 && showAddressForm ? (
+                <button type="button" className="btn btn-secondary" onClick={() => setShowAddressForm(false)}>
+                  Cancel
+                </button>
+              ) : (
+                <button type="button" className="btn btn-secondary" onClick={onClose}>
+                  Cancel
+                </button>
+              )}
+              <button type="button" className="btn btn-primary" onClick={handleNextToStep2}>
                 Continue to Shipping ➡️
               </button>
             </div>
@@ -288,9 +541,24 @@ export const CheckoutModal = ({ isOpen, onClose, onOpenAddressModal, onOrderPlac
             <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: '1.35rem', marginBottom: '0.5rem' }}>
               Select Payment Method
             </h3>
-            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '1.25rem' }}>
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '1.1rem' }}>
               Safe & encrypted payments for India.
             </p>
+
+            {/* Delivering To Recap Card */}
+            <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 'var(--radius-sm)', padding: '0.75rem 1rem', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
+              <div style={{ fontSize: '0.82rem', color: '#475569' }}>
+                <strong style={{ color: '#0F172A' }}>📍 Ship to: </strong>
+                {chosenAddr?.recipientName} • {chosenAddr?.city}, {chosenAddr?.state} ({chosenAddr?.zip})
+              </div>
+              <button 
+                type="button" 
+                onClick={() => setStep(1)} 
+                style={{ background: 'transparent', border: 'none', color: 'var(--primary)', fontSize: '0.78rem', fontWeight: 600, cursor: 'pointer', textDecoration: 'underline' }}
+              >
+                Change Address
+              </button>
+            </div>
 
             {/* Payment Method Selector Tabs */}
             <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: '0.75rem', marginBottom: '1.25rem' }}>
@@ -351,17 +619,35 @@ export const CheckoutModal = ({ isOpen, onClose, onOpenAddressModal, onOrderPlac
                   <div>
                     <strong style={{ fontSize: '0.92rem', color: 'var(--text-dark)' }}>Cash on Delivery (COD)</strong>
                     <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                      Pay in cash or scan QR when courier delivers your package to your doorstep across India.
+                      Pay in cash or scan courier QR when your package arrives at your doorstep across India.
                     </p>
                   </div>
                 </div>
               </div>
             )}
 
+            {/* Price breakdown */}
             <div style={{ background: '#FFFFFF', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-md)', padding: '1rem', marginBottom: '1.5rem' }}>
-              <div className="summary-row" style={{ fontWeight: 700, color: 'var(--text-dark)', marginBottom: 0 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.35rem' }}>
+                <span>Subtotal ({totals.itemCount} items):</span>
+                <span>{formatPrice(totals.subtotal)}</span>
+              </div>
+              {totals.discount > 0 && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: '#16A34A', marginBottom: '0.35rem' }}>
+                  <span>Discount:</span>
+                  <span>-{formatPrice(totals.discount)}</span>
+                </div>
+              )}
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>
+                <span>Delivery Fee ({shippingMethod === 'express' ? 'Priority Air' : 'Standard'}):</span>
+                <span style={{ color: shippingCost === 0 ? 'var(--primary)' : 'inherit', fontWeight: shippingCost === 0 ? 700 : 400 }}>
+                  {shippingCost === 0 ? 'FREE' : formatPrice(shippingCost)}
+                </span>
+              </div>
+              <div style={{ height: '1px', background: 'var(--border-subtle)', margin: '0.4rem 0' }} />
+              <div className="summary-row" style={{ fontWeight: 700, color: 'var(--text-dark)', marginBottom: 0, marginTop: '0.4rem' }}>
                 <span>Total Payable Amount:</span>
-                <span style={{ color: 'var(--primary)', fontSize: '1.35rem' }}>{formatPrice(totals.total)}</span>
+                <span style={{ color: 'var(--primary)', fontSize: '1.35rem' }}>{formatPrice(grandTotal)}</span>
               </div>
             </div>
 
@@ -390,8 +676,8 @@ export const CheckoutModal = ({ isOpen, onClose, onOpenAddressModal, onOrderPlac
                 >
                   {submitting ? 'Connecting...' : (
                     paymentMethod === 'razorpay' 
-                      ? `Pay ${formatPrice(totals.total)} with Razorpay ⚡` 
-                      : `Place Order via COD (${formatPrice(totals.total)}) 📦`
+                      ? `Pay ${formatPrice(grandTotal)} with Razorpay ⚡` 
+                      : `Place Order via COD (${formatPrice(grandTotal)}) 📦`
                   )}
                 </button>
               </div>
@@ -405,7 +691,7 @@ export const CheckoutModal = ({ isOpen, onClose, onOpenAddressModal, onOrderPlac
             <div className="success-check-bubble">🎉</div>
             <h3>Dhanyavaad! Thank you for your order!</h3>
             <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem' }}>
-              Your crochet order has been safely placed in our MongoDB Atlas database!
+              Your artisanal crochet order has been safely placed and recorded!
             </p>
 
             <div className="order-id-highlight">
@@ -413,11 +699,24 @@ export const CheckoutModal = ({ isOpen, onClose, onOpenAddressModal, onOrderPlac
             </div>
 
             <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '1.8rem' }}>
-              A confirmation receipt has been sent to your email. Your artisan piece will be handcrafted with pure love!
+              A confirmation receipt and tracking updates will be sent to your email. Your artisan piece will be handcrafted with pure love!
             </p>
 
-            <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'center', gap: '0.85rem', flexWrap: 'wrap' }}>
               <button 
+                type="button"
+                className="btn btn-secondary"
+                onClick={() => {
+                  onClose();
+                  if (onOpenAccountModal) {
+                    onOpenAccountModal();
+                  }
+                }}
+              >
+                Track Order Status 🚚
+              </button>
+              <button 
+                type="button"
                 className="btn btn-primary"
                 onClick={() => {
                   onClose();

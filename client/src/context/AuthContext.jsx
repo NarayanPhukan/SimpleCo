@@ -67,15 +67,36 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('bgc_auth_user_inr_v1');
   };
 
-  // Addresses CRUD
+  // Addresses CRUD (supports both logged-in users and guests)
   const addAddress = async (addressData) => {
-    if (!user?.email) return;
     const formatted = { ...addressData, country: 'India' };
+
+    // Guest checkout address handling
+    if (!user || !user.email) {
+      const newAddr = {
+        _id: 'addr_' + Date.now(),
+        ...formatted,
+        isDefault: true
+      };
+      const guestUser = {
+        ...(user || {}),
+        isLoggedIn: false,
+        name: addressData.recipientName || 'Customer',
+        email: addressData.email || user?.email || '',
+        phone: addressData.phone || '',
+        savedAddresses: user?.savedAddresses ? [...user.savedAddresses, newAddr] : [newAddr]
+      };
+      setUser(guestUser);
+      localStorage.setItem('bgc_auth_user_v2', JSON.stringify(guestUser));
+      return newAddr;
+    }
+
     try {
       const res = await api.addAddress(user.email, formatted);
       const updated = { ...user, savedAddresses: res.data };
       setUser(updated);
       localStorage.setItem('bgc_auth_user_v2', JSON.stringify(updated));
+      return res.data[res.data.length - 1];
     } catch (err) {
       const newAddr = {
         _id: 'addr_' + Date.now(),
@@ -90,67 +111,80 @@ export const AuthProvider = ({ children }) => {
       const updated = { ...user, savedAddresses: list };
       setUser(updated);
       localStorage.setItem('bgc_auth_user_v2', JSON.stringify(updated));
+      return newAddr;
     }
   };
 
   const updateAddress = async (addressId, addressData) => {
-    if (!user?.email || !user.savedAddresses) return;
     const formatted = { ...addressData, country: 'India' };
-    try {
-      const res = await api.updateAddress(user.email, addressId, formatted);
-      const updated = { ...user, savedAddresses: res.data };
-      setUser(updated);
-      localStorage.setItem('bgc_auth_user_v2', JSON.stringify(updated));
-    } catch (err) {
-      let list = user.savedAddresses.map(a => {
-        if (a._id === addressId || a.id === addressId) {
-          return { ...a, ...formatted };
-        }
-        if (formatted.isDefault) {
-          return { ...a, isDefault: false };
-        }
-        return a;
-      });
-      const updated = { ...user, savedAddresses: list };
-      setUser(updated);
-      localStorage.setItem('bgc_auth_user_v2', JSON.stringify(updated));
+    if (!user?.savedAddresses) return;
+
+    if (user.email && user.isLoggedIn) {
+      try {
+        const res = await api.updateAddress(user.email, addressId, formatted);
+        const updated = { ...user, savedAddresses: res.data };
+        setUser(updated);
+        localStorage.setItem('bgc_auth_user_v2', JSON.stringify(updated));
+        return;
+      } catch (err) {}
     }
+
+    let list = user.savedAddresses.map(a => {
+      if (a._id === addressId || a.id === addressId) {
+        return { ...a, ...formatted };
+      }
+      if (formatted.isDefault) {
+        return { ...a, isDefault: false };
+      }
+      return a;
+    });
+    const updated = { ...user, savedAddresses: list };
+    setUser(updated);
+    localStorage.setItem('bgc_auth_user_v2', JSON.stringify(updated));
   };
 
   const deleteAddress = async (addressId) => {
-    if (!user?.email || !user.savedAddresses) return;
-    try {
-      const res = await api.deleteAddress(user.email, addressId);
-      const updated = { ...user, savedAddresses: res.data };
-      setUser(updated);
-      localStorage.setItem('bgc_auth_user_v2', JSON.stringify(updated));
-    } catch (err) {
-      const list = user.savedAddresses.filter(a => (a._id !== addressId && a.id !== addressId));
-      if (list.length > 0 && !list.some(a => a.isDefault)) {
-        list[0].isDefault = true;
-      }
-      const updated = { ...user, savedAddresses: list };
-      setUser(updated);
-      localStorage.setItem('bgc_auth_user_v2', JSON.stringify(updated));
+    if (!user?.savedAddresses) return;
+
+    if (user.email && user.isLoggedIn) {
+      try {
+        const res = await api.deleteAddress(user.email, addressId);
+        const updated = { ...user, savedAddresses: res.data };
+        setUser(updated);
+        localStorage.setItem('bgc_auth_user_v2', JSON.stringify(updated));
+        return;
+      } catch (err) {}
     }
+
+    const list = user.savedAddresses.filter(a => (a._id !== addressId && a.id !== addressId));
+    if (list.length > 0 && !list.some(a => a.isDefault)) {
+      list[0].isDefault = true;
+    }
+    const updated = { ...user, savedAddresses: list };
+    setUser(updated);
+    localStorage.setItem('bgc_auth_user_v2', JSON.stringify(updated));
   };
 
   const setDefaultAddress = async (addressId) => {
-    if (!user?.email || !user.savedAddresses) return;
-    try {
-      const res = await api.setDefaultAddress(user.email, addressId);
-      const updated = { ...user, savedAddresses: res.data };
-      setUser(updated);
-      localStorage.setItem('bgc_auth_user_v2', JSON.stringify(updated));
-    } catch (err) {
-      const list = user.savedAddresses.map(a => ({
-        ...a,
-        isDefault: (a._id === addressId || a.id === addressId)
-      }));
-      const updated = { ...user, savedAddresses: list };
-      setUser(updated);
-      localStorage.setItem('bgc_auth_user_v2', JSON.stringify(updated));
+    if (!user?.savedAddresses) return;
+
+    if (user.email && user.isLoggedIn) {
+      try {
+        const res = await api.setDefaultAddress(user.email, addressId);
+        const updated = { ...user, savedAddresses: res.data };
+        setUser(updated);
+        localStorage.setItem('bgc_auth_user_v2', JSON.stringify(updated));
+        return;
+      } catch (err) {}
     }
+
+    const list = user.savedAddresses.map(a => ({
+      ...a,
+      isDefault: (a._id === addressId || a.id === addressId)
+    }));
+    const updated = { ...user, savedAddresses: list };
+    setUser(updated);
+    localStorage.setItem('bgc_auth_user_v2', JSON.stringify(updated));
   };
 
   const getDefaultAddress = () => {

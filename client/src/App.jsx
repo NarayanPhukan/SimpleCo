@@ -311,9 +311,12 @@ export const App = () => {
           setEditingAddress(addr);
           setIsAddressModalOpen(true);
         }}
+        onOpenAccountModal={() => {
+          setIsCheckoutOpen(false);
+          setIsAccountOpen(true);
+        }}
         onOrderPlacedSuccess={() => {
           triggerConfetti();
-          setIsAccountOpen(true);
         }}
         onShowToast={showToast}
       />

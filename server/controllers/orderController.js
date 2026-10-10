@@ -67,7 +67,7 @@ exports.createOrder = async (req, res) => {
 
     const order = await Order.create({
       orderId: newOrderId,
-      userEmail: (userEmail || '').trim().toLowerCase(),
+      userEmail: (userEmail || shippingAddress?.email || 'guest@babyygurll.in').trim().toLowerCase(),
       dateFormatted,
       statusStage: 0,
       statusLabel: 'Order Placed & Yarn Selected',

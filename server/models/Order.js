@@ -22,12 +22,12 @@ const timelineStepSchema = new mongoose.Schema({
 
 const orderSchema = new mongoose.Schema({
   orderId: { type: String, required: true, unique: true, index: true },
-  userEmail: { type: String, required: true, index: true },
+  userEmail: { type: String, default: 'guest@babyygurll.in', index: true },
   dateFormatted: { type: String, required: true },
   statusStage: { type: Number, default: 0, min: 0, max: 4 },
   statusLabel: { type: String, default: 'Order Placed & Yarn Selected' },
   statusCode: { type: String, default: 'received' },
-  carrier: { type: String, default: 'CraftExpress Priority Courier' },
+  carrier: { type: String, default: 'BlueDart Express India' },
   trackingNumber: { type: String, required: true },
   estimatedDelivery: { type: String, required: true },
   shippingAddress: {
@@ -37,7 +37,7 @@ const orderSchema = new mongoose.Schema({
     city: { type: String, required: true },
     state: { type: String, required: true },
     zip: { type: String, required: true },
-    country: { type: String, default: 'United States' }
+    country: { type: String, default: 'India' }
   },
   paymentMethod: { type: String, default: 'Razorpay Online' },
   paymentStatus: { type: String, default: 'pending' },
