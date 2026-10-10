@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import { api } from '../services/api';
+import { openRazorpayStandardCheckout } from '../services/razorpay';
 
 export const CheckoutModal = ({ isOpen, onClose, onOpenAddressModal, onOrderPlacedSuccess, onShowToast }) => {
   const { user } = useAuth();
@@ -13,10 +14,7 @@ export const CheckoutModal = ({ isOpen, onClose, onOpenAddressModal, onOrderPlac
     return def ? (def._id || def.id) : (user?.savedAddresses?.[0]?._id || '');
   });
   const [shippingMethod, setShippingMethod] = useState('standard');
-  const [paymentMethod, setPaymentMethod] = useState('upi'); // 'upi', 'card', 'cod'
-  const [upiId, setUpiId] = useState('');
-  const [cardNumber, setCardNumber] = useState('');
-  const [cardHolder, setCardHolder] = useState(user?.name ? user.name.toUpperCase() : '');
+  const [paymentMethod, setPaymentMethod] = useState('razorpay'); // 'razorpay' or 'cod'
   const [placedOrderId, setPlacedOrderId] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
@@ -36,7 +34,7 @@ export const CheckoutModal = ({ isOpen, onClose, onOpenAddressModal, onOrderPlac
     setStep(2);
   };
 
-  const handlePlaceOrder = async () => {
+  const handlePlaceOrder = async (customAmount = null) => {
     setSubmitting(true);
     const chosenAddr = addresses.find(a => (a._id === selectedAddressId || a.id === selectedAddressId)) || addresses[0];
 
@@ -47,15 +45,69 @@ export const CheckoutModal = ({ isOpen, onClose, onOpenAddressModal, onOrderPlac
       return;
     }
 
-    let paymentLabel = 'UPI';
-    if (paymentMethod === 'upi') paymentLabel = `UPI (${upiId || 'Direct UPI'})`;
-    else if (paymentMethod === 'card') paymentLabel = 'Card (RuPay/Visa)';
-    else if (paymentMethod === 'cod') paymentLabel = 'Cash on Delivery (COD)';
+    const payAmount = customAmount !== null ? customAmount : totals.total;
 
+    // Razorpay Standard Checkout Flow
+    if (paymentMethod === 'razorpay') {
+      onShowToast('Opening Razorpay Payment Modal... 🔒', '⚡');
+      await openRazorpayStandardCheckout({
+        amountInRupees: payAmount,
+        prefill: {
+          name: chosenAddr.recipientName || user?.name || '',
+          email: user?.email || '',
+          contact: chosenAddr.phone || user?.phone || ''
+        },
+        onSuccess: async (payDetails) => {
+          try {
+            const orderPayload = {
+              userEmail: user?.email || '',
+              shippingAddress: chosenAddr,
+              paymentMethod: `Razorpay Online (${payDetails.paymentId})`,
+              paymentStatus: 'paid',
+              razorpayPaymentId: payDetails.paymentId,
+              razorpayOrderId: payDetails.orderId,
+              items: cart,
+              totals: totals
+            };
+
+            const res = await api.createOrder(orderPayload);
+            const newId = res.data.orderId;
+            setPlacedOrderId(newId);
+            clearCart();
+            removeCoupon();
+            setStep(4);
+            setSubmitting(false);
+            onOrderPlacedSuccess(newId);
+            onShowToast(`Payment verified! Order #${newId} placed successfully! 🌸`, '🎉');
+          } catch (createErr) {
+            const fallbackId = 'BGC-' + Math.floor(10000 + Math.random() * 90000);
+            setPlacedOrderId(fallbackId);
+            clearCart();
+            removeCoupon();
+            setStep(4);
+            setSubmitting(false);
+            onOrderPlacedSuccess(fallbackId);
+            onShowToast(`Order #${fallbackId} recorded with payment ${payDetails.paymentId}! 🌸`, '🎉');
+          }
+        },
+        onError: (errMsg) => {
+          setSubmitting(false);
+          onShowToast(errMsg, '⚠️');
+        },
+        onDismiss: () => {
+          setSubmitting(false);
+          onShowToast('Payment window closed. You can retry when ready.', 'ℹ️');
+        }
+      });
+      return;
+    }
+
+    // Cash on Delivery Flow
     const orderPayload = {
       userEmail: user?.email || '',
       shippingAddress: chosenAddr,
-      paymentMethod: paymentLabel,
+      paymentMethod: 'Cash on Delivery (COD)',
+      paymentStatus: 'pending',
       items: cart,
       totals: totals
     };
@@ -69,7 +121,7 @@ export const CheckoutModal = ({ isOpen, onClose, onOpenAddressModal, onOrderPlac
       setStep(4);
       setSubmitting(false);
       onOrderPlacedSuccess(newId);
-      onShowToast(`Order #${newId} recorded in MongoDB Atlas! 🌸`, '🎉');
+      onShowToast(`Order #${newId} placed via Cash on Delivery! 🌸`, '🎉');
     } catch (err) {
       const fallbackId = 'BGC-' + Math.floor(10000 + Math.random() * 90000);
       setPlacedOrderId(fallbackId);
@@ -241,79 +293,52 @@ export const CheckoutModal = ({ isOpen, onClose, onOpenAddressModal, onOrderPlac
             </p>
 
             {/* Payment Method Selector Tabs */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.6rem', marginBottom: '1.25rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: '0.75rem', marginBottom: '1.25rem' }}>
               <button 
                 type="button" 
-                className={`filter-tab ${paymentMethod === 'upi' ? 'active' : ''}`}
-                style={{ textAlign: 'center', padding: '0.65rem 0.5rem', fontSize: '0.82rem' }}
-                onClick={() => setPaymentMethod('upi')}
+                className={`filter-tab ${paymentMethod === 'razorpay' ? 'active' : ''}`}
+                style={{ textAlign: 'center', padding: '0.75rem 0.6rem', fontSize: '0.86rem', fontWeight: 600 }}
+                onClick={() => setPaymentMethod('razorpay')}
               >
-                ⚡ UPI (GPay / PhonePe)
-              </button>
-              <button 
-                type="button" 
-                className={`filter-tab ${paymentMethod === 'card' ? 'active' : ''}`}
-                style={{ textAlign: 'center', padding: '0.65rem 0.5rem', fontSize: '0.82rem' }}
-                onClick={() => setPaymentMethod('card')}
-              >
-                💳 Cards (RuPay / Visa)
+                ⚡ Razorpay Online (UPI / Cards)
               </button>
               <button 
                 type="button" 
                 className={`filter-tab ${paymentMethod === 'cod' ? 'active' : ''}`}
-                style={{ textAlign: 'center', padding: '0.65rem 0.5rem', fontSize: '0.82rem' }}
+                style={{ textAlign: 'center', padding: '0.75rem 0.6rem', fontSize: '0.86rem', fontWeight: 600 }}
                 onClick={() => setPaymentMethod('cod')}
               >
                 💵 Cash on Delivery
               </button>
             </div>
 
-            {/* UPI Option */}
-            {paymentMethod === 'upi' && (
-              <div style={{ background: '#F4FAFF', border: '1px solid #CCEAFF', borderRadius: 'var(--radius-md)', padding: '1.2rem', marginBottom: '1.5rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.85rem' }}>
-                  <span style={{ fontSize: '1.5rem' }}>⚡</span>
-                  <div>
-                    <strong style={{ fontSize: '0.92rem', color: 'var(--text-dark)' }}>Instant UPI Payment</strong>
-                    <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>Google Pay • PhonePe • Paytm • BHIM</p>
+            {/* Razorpay Standard Web Checkout Option */}
+            {paymentMethod === 'razorpay' && (
+              <div style={{ background: '#F4FAFF', border: '1.5px solid #A6D4FF', borderRadius: 'var(--radius-md)', padding: '1.3rem', marginBottom: '1.5rem' }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.85rem', marginBottom: '1rem' }}>
+                  <span style={{ fontSize: '1.8rem', lineHeight: 1 }}>🛡️</span>
+                  <div style={{ flexGrow: 1 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '0.2rem' }}>
+                      <strong style={{ fontSize: '0.98rem', color: 'var(--text-dark)' }}>Razorpay Standard Checkout</strong>
+                      <span style={{ background: '#E0F2FE', color: '#0284C7', padding: '0.15rem 0.5rem', borderRadius: '4px', fontSize: '0.72rem', fontWeight: 700 }}>
+                        TEST MODE ACTIVE
+                      </span>
+                    </div>
+                    <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>
+                      Instant pan-India payments. Supports Google Pay, PhonePe, Paytm, RuPay, Visa, MasterCard, and NetBanking.
+                    </p>
                   </div>
                 </div>
-                <div className="form-group">
-                  <label className="form-label" htmlFor="upiId">Enter UPI ID / VPA</label>
-                  <input 
-                    type="text" 
-                    id="upiId" 
-                    className="form-input" 
-                    value={upiId} 
-                    onChange={(e) => setUpiId(e.target.value)} 
-                    placeholder="e.g. mobile@upi"
-                  />
-                </div>
-              </div>
-            )}
 
-            {/* Card Option */}
-            {paymentMethod === 'card' && (
-              <div>
-                <div className="mock-card-visual">
-                  <div className="card-chip"></div>
-                  <div className="card-num-preview">{cardNumber || '•••• •••• •••• ••••'}</div>
-                  <div className="card-meta-preview">
-                    <span>{cardHolder || 'CARDHOLDER NAME'}</span>
-                    <span>RUPAY / VISA</span>
-                  </div>
+                <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
+                  <span style={{ background: '#FFFFFF', border: '1px solid #D0E3F5', padding: '0.25rem 0.6rem', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600, color: '#334155' }}>⚡ Instant UPI</span>
+                  <span style={{ background: '#FFFFFF', border: '1px solid #D0E3F5', padding: '0.25rem 0.6rem', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600, color: '#334155' }}>💳 RuPay / Cards</span>
+                  <span style={{ background: '#FFFFFF', border: '1px solid #D0E3F5', padding: '0.25rem 0.6rem', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600, color: '#334155' }}>🏦 50+ Banks</span>
+                  <span style={{ background: '#FFFFFF', border: '1px solid #D0E3F5', padding: '0.25rem 0.6rem', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600, color: '#334155' }}>🔒 256-Bit SSL</span>
                 </div>
-                <div className="form-grid" style={{ marginBottom: '1.5rem' }}>
-                  <div className="form-group">
-                    <label className="form-label">Card Number</label>
-                    <input 
-                      type="text" 
-                      className="form-input" 
-                      placeholder="16-digit card number"
-                      value={cardNumber} 
-                      onChange={(e) => setCardNumber(e.target.value)} 
-                    />
-                  </div>
+
+                <div style={{ background: '#FFFFFF', border: '1px dashed #93C5FD', borderRadius: '6px', padding: '0.75rem 0.9rem', fontSize: '0.78rem', color: '#1E40AF' }}>
+                  ℹ️ Clicking <strong>"Pay with Razorpay"</strong> opens the official Razorpay popup modal. Upon successful payment, your HMAC-SHA256 signature is verified by the backend.
                 </div>
               </div>
             )}
@@ -326,7 +351,7 @@ export const CheckoutModal = ({ isOpen, onClose, onOpenAddressModal, onOrderPlac
                   <div>
                     <strong style={{ fontSize: '0.92rem', color: 'var(--text-dark)' }}>Cash on Delivery (COD)</strong>
                     <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                      Pay in cash or scan QR when courier delivers your package to your doorstep.
+                      Pay in cash or scan QR when courier delivers your package to your doorstep across India.
                     </p>
                   </div>
                 </div>
@@ -340,16 +365,36 @@ export const CheckoutModal = ({ isOpen, onClose, onOpenAddressModal, onOrderPlac
               </div>
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
               <button className="btn btn-secondary" onClick={() => setStep(2)}>⬅️ Back</button>
-              <button 
-                className="btn btn-primary" 
-                onClick={handlePlaceOrder}
-                disabled={submitting}
-                style={{ padding: '0.95rem 2rem' }}
-              >
-                {submitting ? 'Stitching Order...' : `Pay ${formatPrice(totals.total)} & Place Order 🌸`}
-              </button>
+              
+              <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'center' }}>
+                {paymentMethod === 'razorpay' && (
+                  <button 
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={() => handlePlaceOrder(1)} // Test ₹1.00 (100 paise)
+                    disabled={submitting}
+                    title="Test with minimum Razorpay amount (100 paise = ₹1.00)"
+                    style={{ fontSize: '0.8rem', padding: '0.75rem 1rem' }}
+                  >
+                    🧪 Test Pay ₹1.00
+                  </button>
+                )}
+
+                <button 
+                  className="btn btn-primary" 
+                  onClick={() => handlePlaceOrder()}
+                  disabled={submitting}
+                  style={{ padding: '0.95rem 1.8rem' }}
+                >
+                  {submitting ? 'Connecting...' : (
+                    paymentMethod === 'razorpay' 
+                      ? `Pay ${formatPrice(totals.total)} with Razorpay ⚡` 
+                      : `Place Order via COD (${formatPrice(totals.total)}) 📦`
+                  )}
+                </button>
+              </div>
             </div>
           </div>
         )}

@@ -5,7 +5,16 @@ const shiprocketService = require('../services/shiprocketService');
 // @route   POST /api/orders
 exports.createOrder = async (req, res) => {
   try {
-    const { userEmail, shippingAddress, paymentMethod, items, totals } = req.body;
+    const {
+      userEmail,
+      shippingAddress,
+      paymentMethod,
+      paymentStatus,
+      razorpayPaymentId,
+      razorpayOrderId,
+      items,
+      totals
+    } = req.body;
 
     const newOrderId = 'BGC-' + Math.floor(10000 + Math.random() * 90000);
     const trackingNumber = 'TRK-' + newOrderId + '-IN';
@@ -67,7 +76,10 @@ exports.createOrder = async (req, res) => {
       trackingNumber,
       estimatedDelivery: estDate,
       shippingAddress,
-      paymentMethod: paymentMethod || 'Online Payment',
+      paymentMethod: paymentMethod || 'Razorpay Online',
+      paymentStatus: paymentStatus || (paymentMethod?.toLowerCase().includes('cod') ? 'pending' : 'paid'),
+      razorpayPaymentId: razorpayPaymentId || '',
+      razorpayOrderId: razorpayOrderId || '',
       subtotal: totals.subtotal,
       discount: totals.discount || 0,
       shippingCost: totals.shipping || 0,

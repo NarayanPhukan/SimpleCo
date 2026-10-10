@@ -162,5 +162,44 @@ export const api = {
     const res = await fetch(`${API_BASE}/shipping/track/${encodeURIComponent(awb)}`);
     if (!res.ok) throw new Error('AWB tracking lookup failed');
     return res.json();
+  },
+
+  // Razorpay Standard Web Checkout API
+  async createRazorpayOrder(payload) {
+    const res = await fetch(`${API_BASE}/create-order`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || 'Failed to initialize Razorpay checkout order');
+    }
+    return res.json();
+  },
+
+  async verifyRazorpayPayment(payload) {
+    const res = await fetch(`${API_BASE}/verify-payment`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || 'Payment signature verification failed');
+    }
+    return res.json();
+  },
+
+  async getRazorpayKey() {
+    try {
+      const res = await fetch(`${API_BASE}/razorpay-key`);
+      if (res.ok) {
+        const data = await res.json();
+        return data.key_id;
+      }
+    } catch (e) {}
+    return import.meta.env.VITE_RAZORPAY_KEY_ID || '';
   }
 };
+

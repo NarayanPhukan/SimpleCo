@@ -39,7 +39,10 @@ const orderSchema = new mongoose.Schema({
     zip: { type: String, required: true },
     country: { type: String, default: 'United States' }
   },
-  paymentMethod: { type: String, default: 'Visa ending in 4242' },
+  paymentMethod: { type: String, default: 'Razorpay Online' },
+  paymentStatus: { type: String, default: 'pending' },
+  razorpayPaymentId: { type: String, default: '' },
+  razorpayOrderId: { type: String, default: '' },
   subtotal: { type: Number, required: true },
   discount: { type: Number, default: 0 },
   shippingCost: { type: Number, default: 0 },
