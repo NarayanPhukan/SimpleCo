@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 const { MemoryCollection } = require('./memoryStore');
-const { seedProducts, seedUser, seedOrders } = require('../data/seedData');
+const { seedProducts } = require('../data/seedData');
 
 let isConnected = false;
 let memoryDB = {
@@ -40,37 +40,20 @@ const connectDB = async () => {
   // Fallback to embedded in-memory MongoDB store
   console.log('🌸 Operating in embedded in-memory MongoDB mode (Zero-config out of the box)!');
   memoryDB.products = new MemoryCollection(seedProducts);
-  memoryDB.users = new MemoryCollection([seedUser]);
-  memoryDB.orders = new MemoryCollection(seedOrders);
-  console.log(`🌱 Seeded ${seedProducts.length} crochet products, 1 demo user, and 1 tracked order in MongoDB memory store.`);
+  memoryDB.users = new MemoryCollection([]);
+  memoryDB.orders = new MemoryCollection([]);
+  console.log(`🌱 Initialized ${seedProducts.length} crochet products in MongoDB memory store.`);
 };
 
 const seedAtlasDatabase = async () => {
   try {
     const Product = require('../models/Product');
-    const User = require('../models/User');
-    const Order = require('../models/Order');
 
     const productCount = await Product.countDocuments();
     if (productCount === 0) {
       console.log('🌱 Seeding initial products to MongoDB Atlas...');
       await Product.insertMany(seedProducts);
       console.log(`✅ Seeded ${seedProducts.length} crochet products in Atlas.`);
-    }
-
-    const userCount = await User.countDocuments();
-    if (userCount === 0) {
-      console.log('🌱 Seeding default user (Ananya Sharma) to MongoDB Atlas...');
-      await User.create(seedUser);
-      console.log('✅ Seeded default user in Atlas.');
-    }
-
-    for (const ord of seedOrders) {
-      const exists = await Order.findOne({ orderId: ord.orderId });
-      if (!exists) {
-        await Order.create(ord);
-        console.log(`✅ Seeded order ${ord.orderId} in Atlas.`);
-      }
     }
   } catch (err) {
     console.error('Error during Atlas database seeding:', err.message);

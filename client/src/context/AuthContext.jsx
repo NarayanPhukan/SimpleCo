@@ -3,49 +3,20 @@ import { api } from '../services/api';
 
 const AuthContext = createContext();
 
-const DEFAULT_USER = {
-  isLoggedIn: true,
-  name: 'Ananya Sharma',
-  email: 'ananya@babyygurll.in',
-  phone: '+91 98765 43210',
-  memberTier: 'VIP Stitcher Club 🧶',
-  savedAddresses: [
-    {
-      _id: 'addr_1',
-      label: 'Home (Apartment)',
-      recipientName: 'Ananya Sharma',
-      phone: '+91 98765 43210',
-      street: 'Flat 402, Blossom Heights, Linking Road, Bandra West',
-      city: 'Mumbai',
-      state: 'Maharashtra',
-      zip: '400050',
-      country: 'India',
-      isDefault: true
-    },
-    {
-      _id: 'addr_2',
-      label: 'Design Studio',
-      recipientName: 'Ananya Sharma',
-      phone: '+91 98111 22334',
-      street: 'Studio 12, Indiranagar 100ft Road',
-      city: 'Bengaluru',
-      state: 'Karnataka',
-      zip: '560038',
-      country: 'India',
-      isDefault: false
-    }
-  ]
-};
-
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(() => {
-    const saved = localStorage.getItem('bgc_auth_user_inr_v1');
-    return saved ? JSON.parse(saved) : DEFAULT_USER;
+    // Purge legacy dummy user cache
+    const legacy = localStorage.getItem('bgc_auth_user_inr_v1');
+    if (legacy) {
+      localStorage.removeItem('bgc_auth_user_inr_v1');
+    }
+    const saved = localStorage.getItem('bgc_auth_user_v2');
+    return saved ? JSON.parse(saved) : null;
   });
 
   const [loading, setLoading] = useState(false);
 
-  // Sync with MongoDB backend on mount
+  // Sync with MongoDB backend if a valid logged-in user exists
   useEffect(() => {
     if (user && user.email) {
       api.getMe(user.email)
@@ -53,7 +24,7 @@ export const AuthProvider = ({ children }) => {
           if (res.data) {
             const updated = { ...res.data, isLoggedIn: true };
             setUser(updated);
-            localStorage.setItem('bgc_auth_user_inr_v1', JSON.stringify(updated));
+            localStorage.setItem('bgc_auth_user_v2', JSON.stringify(updated));
           }
         })
         .catch(() => {});
@@ -66,19 +37,12 @@ export const AuthProvider = ({ children }) => {
       const res = await api.login(email, password);
       const userData = { ...res.data, isLoggedIn: true };
       setUser(userData);
-      localStorage.setItem('bgc_auth_user_inr_v1', JSON.stringify(userData));
+      localStorage.setItem('bgc_auth_user_v2', JSON.stringify(userData));
       setLoading(false);
       return { success: true, user: userData };
     } catch (err) {
-      const fallback = {
-        ...DEFAULT_USER,
-        email,
-        name: email.split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
-      };
-      setUser(fallback);
-      localStorage.setItem('bgc_auth_user_inr_v1', JSON.stringify(fallback));
       setLoading(false);
-      return { success: true, user: fallback };
+      return { success: false, message: err.message || 'Invalid email or password' };
     }
   };
 
@@ -88,76 +52,55 @@ export const AuthProvider = ({ children }) => {
       const res = await api.register({ ...userData, country: 'India' });
       const created = { ...res.data, isLoggedIn: true };
       setUser(created);
-      localStorage.setItem('bgc_auth_user_inr_v1', JSON.stringify(created));
+      localStorage.setItem('bgc_auth_user_v2', JSON.stringify(created));
       setLoading(false);
       return { success: true, user: created };
     } catch (err) {
-      const fallback = {
-        isLoggedIn: true,
-        name: userData.name,
-        email: userData.email,
-        phone: userData.phone || '+91 98765 00000',
-        memberTier: 'VIP Stitcher Club 🧶',
-        savedAddresses: [
-          {
-            _id: 'addr_' + Date.now(),
-            label: 'Home',
-            recipientName: userData.name,
-            phone: userData.phone || '+91 98765 00000',
-            street: '12 Garden Avenue',
-            city: 'New Delhi',
-            state: 'Delhi',
-            zip: '110001',
-            country: 'India',
-            isDefault: true
-          }
-        ]
-      };
-      setUser(fallback);
-      localStorage.setItem('bgc_auth_user_inr_v1', JSON.stringify(fallback));
       setLoading(false);
-      return { success: true, user: fallback };
+      return { success: false, message: err.message || 'Registration failed' };
     }
   };
 
   const logout = () => {
-    const loggedOut = { ...user, isLoggedIn: false };
-    setUser(loggedOut);
-    localStorage.setItem('bgc_auth_user_inr_v1', JSON.stringify(loggedOut));
+    setUser(null);
+    localStorage.removeItem('bgc_auth_user_v2');
+    localStorage.removeItem('bgc_auth_user_inr_v1');
   };
 
   // Addresses CRUD
   const addAddress = async (addressData) => {
+    if (!user?.email) return;
     const formatted = { ...addressData, country: 'India' };
     try {
       const res = await api.addAddress(user.email, formatted);
       const updated = { ...user, savedAddresses: res.data };
       setUser(updated);
-      localStorage.setItem('bgc_auth_user_inr_v1', JSON.stringify(updated));
+      localStorage.setItem('bgc_auth_user_v2', JSON.stringify(updated));
     } catch (err) {
       const newAddr = {
         _id: 'addr_' + Date.now(),
         ...formatted,
-        isDefault: formatted.isDefault || user.savedAddresses.length === 0
+        isDefault: formatted.isDefault || (user.savedAddresses?.length || 0) === 0
       };
-      let list = [...user.savedAddresses];
+      let list = user.savedAddresses ? [...user.savedAddresses] : [];
       if (newAddr.isDefault) {
         list = list.map(a => ({ ...a, isDefault: false }));
       }
       list.push(newAddr);
       const updated = { ...user, savedAddresses: list };
       setUser(updated);
-      localStorage.setItem('bgc_auth_user_inr_v1', JSON.stringify(updated));
+      localStorage.setItem('bgc_auth_user_v2', JSON.stringify(updated));
     }
   };
 
   const updateAddress = async (addressId, addressData) => {
+    if (!user?.email || !user.savedAddresses) return;
     const formatted = { ...addressData, country: 'India' };
     try {
       const res = await api.updateAddress(user.email, addressId, formatted);
       const updated = { ...user, savedAddresses: res.data };
       setUser(updated);
-      localStorage.setItem('bgc_auth_user_inr_v1', JSON.stringify(updated));
+      localStorage.setItem('bgc_auth_user_v2', JSON.stringify(updated));
     } catch (err) {
       let list = user.savedAddresses.map(a => {
         if (a._id === addressId || a.id === addressId) {
@@ -170,16 +113,17 @@ export const AuthProvider = ({ children }) => {
       });
       const updated = { ...user, savedAddresses: list };
       setUser(updated);
-      localStorage.setItem('bgc_auth_user_inr_v1', JSON.stringify(updated));
+      localStorage.setItem('bgc_auth_user_v2', JSON.stringify(updated));
     }
   };
 
   const deleteAddress = async (addressId) => {
+    if (!user?.email || !user.savedAddresses) return;
     try {
       const res = await api.deleteAddress(user.email, addressId);
       const updated = { ...user, savedAddresses: res.data };
       setUser(updated);
-      localStorage.setItem('bgc_auth_user_inr_v1', JSON.stringify(updated));
+      localStorage.setItem('bgc_auth_user_v2', JSON.stringify(updated));
     } catch (err) {
       const list = user.savedAddresses.filter(a => (a._id !== addressId && a.id !== addressId));
       if (list.length > 0 && !list.some(a => a.isDefault)) {
@@ -187,16 +131,17 @@ export const AuthProvider = ({ children }) => {
       }
       const updated = { ...user, savedAddresses: list };
       setUser(updated);
-      localStorage.setItem('bgc_auth_user_inr_v1', JSON.stringify(updated));
+      localStorage.setItem('bgc_auth_user_v2', JSON.stringify(updated));
     }
   };
 
   const setDefaultAddress = async (addressId) => {
+    if (!user?.email || !user.savedAddresses) return;
     try {
       const res = await api.setDefaultAddress(user.email, addressId);
       const updated = { ...user, savedAddresses: res.data };
       setUser(updated);
-      localStorage.setItem('bgc_auth_user_inr_v1', JSON.stringify(updated));
+      localStorage.setItem('bgc_auth_user_v2', JSON.stringify(updated));
     } catch (err) {
       const list = user.savedAddresses.map(a => ({
         ...a,
@@ -204,7 +149,7 @@ export const AuthProvider = ({ children }) => {
       }));
       const updated = { ...user, savedAddresses: list };
       setUser(updated);
-      localStorage.setItem('bgc_auth_user_inr_v1', JSON.stringify(updated));
+      localStorage.setItem('bgc_auth_user_v2', JSON.stringify(updated));
     }
   };
 

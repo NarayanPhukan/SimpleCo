@@ -94,7 +94,7 @@ export const AddressModal = ({ isOpen, editAddress, onClose, onShowToast }) => {
                 className="form-input" 
                 autoComplete="name" 
                 required 
-                placeholder="e.g. Ananya Sharma"
+                placeholder="Recipient Full Name"
                 value={formData.recipientName}
                 onChange={(e) => setFormData({ ...formData, recipientName: e.target.value })}
               />

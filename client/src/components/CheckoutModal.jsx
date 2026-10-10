@@ -14,9 +14,9 @@ export const CheckoutModal = ({ isOpen, onClose, onOpenAddressModal, onOrderPlac
   });
   const [shippingMethod, setShippingMethod] = useState('standard');
   const [paymentMethod, setPaymentMethod] = useState('upi'); // 'upi', 'card', 'cod'
-  const [upiId, setUpiId] = useState('ananya@okhdfcbank');
-  const [cardNumber, setCardNumber] = useState('4532 •••• •••• 8821');
-  const [cardHolder, setCardHolder] = useState(user?.name ? user.name.toUpperCase() : 'ANANYA SHARMA');
+  const [upiId, setUpiId] = useState('');
+  const [cardNumber, setCardNumber] = useState('');
+  const [cardHolder, setCardHolder] = useState(user?.name ? user.name.toUpperCase() : '');
   const [placedOrderId, setPlacedOrderId] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
@@ -40,22 +40,21 @@ export const CheckoutModal = ({ isOpen, onClose, onOpenAddressModal, onOrderPlac
     setSubmitting(true);
     const chosenAddr = addresses.find(a => (a._id === selectedAddressId || a.id === selectedAddressId)) || addresses[0];
 
+    if (!chosenAddr) {
+      onShowToast('Please select or add a shipping address', '⚠️');
+      setSubmitting(false);
+      setStep(1);
+      return;
+    }
+
     let paymentLabel = 'UPI';
-    if (paymentMethod === 'upi') paymentLabel = `UPI (${upiId})`;
-    else if (paymentMethod === 'card') paymentLabel = 'Card ending in 8821 (RuPay/Visa)';
+    if (paymentMethod === 'upi') paymentLabel = `UPI (${upiId || 'Direct UPI'})`;
+    else if (paymentMethod === 'card') paymentLabel = 'Card (RuPay/Visa)';
     else if (paymentMethod === 'cod') paymentLabel = 'Cash on Delivery (COD)';
 
     const orderPayload = {
-      userEmail: user?.email || 'ananya@babyygurll.in',
-      shippingAddress: chosenAddr || {
-        recipientName: user?.name || 'Customer',
-        phone: user?.phone || '+91 98765 43210',
-        street: 'Flat 402, Blossom Heights, Linking Road, Bandra West',
-        city: 'Mumbai',
-        state: 'Maharashtra',
-        zip: '400050',
-        country: 'India'
-      },
+      userEmail: user?.email || '',
+      shippingAddress: chosenAddr,
       paymentMethod: paymentLabel,
       items: cart,
       totals: totals
@@ -298,9 +297,9 @@ export const CheckoutModal = ({ isOpen, onClose, onOpenAddressModal, onOrderPlac
               <div>
                 <div className="mock-card-visual">
                   <div className="card-chip"></div>
-                  <div className="card-num-preview">•••• •••• •••• 8821</div>
+                  <div className="card-num-preview">{cardNumber || '•••• •••• •••• ••••'}</div>
                   <div className="card-meta-preview">
-                    <span>{cardHolder}</span>
+                    <span>{cardHolder || 'CARDHOLDER NAME'}</span>
                     <span>RUPAY / VISA</span>
                   </div>
                 </div>
@@ -310,6 +309,7 @@ export const CheckoutModal = ({ isOpen, onClose, onOpenAddressModal, onOrderPlac
                     <input 
                       type="text" 
                       className="form-input" 
+                      placeholder="16-digit card number"
                       value={cardNumber} 
                       onChange={(e) => setCardNumber(e.target.value)} 
                     />

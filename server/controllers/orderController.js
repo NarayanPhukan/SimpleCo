@@ -58,7 +58,7 @@ exports.createOrder = async (req, res) => {
 
     const order = await Order.create({
       orderId: newOrderId,
-      userEmail: userEmail || 'ananya@babyygurll.in',
+      userEmail: (userEmail || '').trim().toLowerCase(),
       dateFormatted,
       statusStage: 0,
       statusLabel: 'Order Placed & Yarn Selected',
@@ -67,7 +67,7 @@ exports.createOrder = async (req, res) => {
       trackingNumber,
       estimatedDelivery: estDate,
       shippingAddress,
-      paymentMethod: paymentMethod || 'Visa ending in 4242',
+      paymentMethod: paymentMethod || 'Online Payment',
       subtotal: totals.subtotal,
       discount: totals.discount || 0,
       shippingCost: totals.shipping || 0,
@@ -92,7 +92,10 @@ exports.createOrder = async (req, res) => {
 // @route   GET /api/orders
 exports.getOrders = async (req, res) => {
   try {
-    const userEmail = req.query.email || 'ananya@babyygurll.in';
+    const userEmail = req.query.email ? req.query.email.trim().toLowerCase() : null;
+    if (!userEmail) {
+      return res.json({ success: true, data: [] });
+    }
     const orders = await Order.find({ userEmail }).sort({ createdAt: -1 });
     res.json({ success: true, data: orders });
   } catch (error) {

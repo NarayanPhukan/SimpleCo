@@ -18,41 +18,7 @@ const CURRENCY_RATES = {
 };
 
 // Initial Seed Data
-const DEFAULT_USER = {
-  isLoggedIn: true,
-  id: "usr_chloe_01",
-  name: "Chloe Bennett",
-  email: "chloe@babyygurll.dev",
-  phone: "+1 (555) 234-5678",
-  memberTier: "VIP Stitcher Club 🧶",
-  memberSince: "March 2026",
-  savedAddresses: [
-    {
-      id: "addr_1",
-      label: "Home (Apartment)",
-      recipientName: "Chloe Bennett",
-      phone: "+1 (555) 234-5678",
-      street: "742 Evergreen Blossom Way, Apt 4B",
-      city: "Portland",
-      state: "OR",
-      zip: "97201",
-      country: "United States",
-      isDefault: true
-    },
-    {
-      id: "addr_2",
-      label: "Design Studio & Dorm",
-      recipientName: "Chloe Bennett",
-      phone: "+1 (555) 345-9876",
-      street: "1208 Craftworks Blvd, Suite 210",
-      city: "Seattle",
-      state: "WA",
-      zip: "98101",
-      country: "United States",
-      isDefault: false
-    }
-  ]
-};
+const DEFAULT_USER = null;
 
 const DEFAULT_ORDERS = [
   {
@@ -248,19 +214,21 @@ class Store {
   loadUser() {
     const raw = localStorage.getItem(STORAGE_KEYS.USER);
     if (!raw) {
-      // Seed default user for immediate great experience
-      localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(DEFAULT_USER));
-      return { ...DEFAULT_USER };
+      return null;
     }
     try {
       return JSON.parse(raw);
     } catch (e) {
-      return { ...DEFAULT_USER };
+      return null;
     }
   }
 
   saveUser() {
-    localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(this.user));
+    if (this.user) {
+      localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(this.user));
+    } else {
+      localStorage.removeItem(STORAGE_KEYS.USER);
+    }
   }
 
   getUser() {
@@ -268,17 +236,16 @@ class Store {
   }
 
   login(email, password, remember = true) {
-    // If logging into default demo account or custom
     if (!this.user || this.user.email !== email) {
       this.user = {
         isLoggedIn: true,
         id: "usr_" + Date.now(),
         name: email.split("@")[0].replace(/[._]/g, " ").replace(/\b\w/g, c => c.toUpperCase()),
         email: email,
-        phone: "+1 (555) 890-1234",
+        phone: "+91 98765 00000",
         memberTier: "VIP Stitcher Club 🧶",
         memberSince: "October 2026",
-        savedAddresses: DEFAULT_USER.savedAddresses
+        savedAddresses: []
       };
     } else {
       this.user.isLoggedIn = true;

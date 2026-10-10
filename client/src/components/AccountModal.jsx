@@ -21,9 +21,9 @@ export const AccountModal = ({ isOpen, onClose, onOpenAddressModal, onShowToast 
   const [orders, setOrders] = useState([]);
   const [loadingOrders, setLoadingOrders] = useState(false);
 
-  // Login form state (prefilled with demo account for instant testing)
-  const [loginEmail, setLoginEmail] = useState('ananya@babyygurll.in');
-  const [loginPassword, setLoginPassword] = useState('password123');
+  // Login form state
+  const [loginEmail, setLoginEmail] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
 
   // Register form state
   const [regName, setRegName] = useState('');
@@ -589,9 +589,6 @@ export const AccountModal = ({ isOpen, onClose, onOpenAddressModal, onShowToast 
                 <button type="submit" className="btn btn-primary" style={{ marginTop: '0.5rem' }}>
                   Sign In to Account
                 </button>
-                <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', textAlign: 'center' }}>
-                  Demo credentials pre-filled for instant testing!
-                </p>
               </form>
             ) : (
               <form onSubmit={handleRegisterSubmit} className="form-grid">
@@ -603,7 +600,7 @@ export const AccountModal = ({ isOpen, onClose, onOpenAddressModal, onShowToast 
                     className="form-input" 
                     autoComplete="name" 
                     required 
-                    placeholder="e.g. Ananya Sharma"
+                    placeholder="Full Name"
                     value={regName}
                     onChange={(e) => setRegName(e.target.value)}
                   />
@@ -616,7 +613,7 @@ export const AccountModal = ({ isOpen, onClose, onOpenAddressModal, onShowToast 
                     className="form-input" 
                     autoComplete="email" 
                     required 
-                    placeholder="ananya@example.com"
+                    placeholder="name@example.com"
                     value={regEmail}
                     onChange={(e) => setRegEmail(e.target.value)}
                   />

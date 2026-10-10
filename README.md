@@ -25,7 +25,7 @@ A boutique handcrafted crochet e-commerce web application built using the full *
    * Off-canvas drawer with interactive free shipping meter (unlocks at ₹999).
    * Pan-India currency (`INR ₹`) and coupon promo engine (`BABYYGURLL`, `CUTIE10`, `FREESHIP`).
 3. **User Account & Saved Addresses System**:
-   * Pre-configured demo user: `Ananya Sharma` (`ananya@babyygurll.in`).
+   * Users register/login with custom credentials and start unauthenticated by default.
    * Clean 3-tab Account system: **Orders**, **Address**, and **Logout**.
    * Manage multiple delivery destinations (*Home*, *Design Studio*) with full Indian address and PIN code support.
 4. **Order Management & Real-Time Tracking**:
