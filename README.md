@@ -33,9 +33,9 @@ A boutique handcrafted crochet e-commerce web application built using the full *
    * Dedicated **Track Order Live 🚚** action button under each in-progress order.
    * 5-Stage Crafting Timeline: *Order Placed* ➔ *Handmade with Love* ➔ *Ribbon Wrapped* ➔ *In Transit* ➔ *Delivered*.
    * Interactive Simulator (`Advance Next Stage ⏩`) to step through live MongoDB order stages.
-   * Return and exchange requests with BlueDart reverse pickup tracking.
+   * Return and exchange requests with doorstep reverse pickup tracking.
 5. **Shiprocket Logistics API Integration**:
-   * Official Shiprocket API integration for real-time courier serviceability and rates across India (BlueDart, Delhivery, DTDC).
+   * Official Shiprocket API integration for real-time courier serviceability and rates across India.
    * Live AWB tracking and automated order dispatching.
 6. **Multi-Step Checkout Flow**:
    * Step 1: Select or create saved shipping addresses.

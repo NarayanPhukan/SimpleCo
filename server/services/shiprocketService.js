@@ -68,8 +68,8 @@ class ShiprocketService {
         isSimulated: true,
         estimatedDays: 3,
         couriers: [
-          { name: 'BlueDart Express', rate: 0, etd: '2-3 Days', rating: 4.8 },
-          { name: 'Delhivery Surface', rate: 0, etd: '3-4 Days', rating: 4.6 }
+          { name: 'Priority Express Delivery', rate: 0, etd: '2-3 Days', rating: 4.8 },
+          { name: 'Standard Surface Delivery', rate: 0, etd: '3-4 Days', rating: 4.6 }
         ]
       };
     }

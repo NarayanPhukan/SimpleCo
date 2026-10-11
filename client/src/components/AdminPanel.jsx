@@ -236,7 +236,7 @@ export const AdminPanel = ({ isOpen, onClose, onShowToast, onProductCatalogUpdat
         codAvailable: true,
         prepaidAvailable: true,
         estimatedDays: '3-4 Business Days',
-        courier: 'BlueDart Express & Delhivery Surface'
+        courier: 'Standard & Express Doorstep Delivery'
       });
     }
   };
@@ -1305,7 +1305,7 @@ export const AdminPanel = ({ isOpen, onClose, onShowToast, onProductCatalogUpdat
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.5rem' }}>
                   <div style={{ background: '#FFFFFF', padding: '1.75rem', borderRadius: '12px', border: '1px solid #E2E8F0' }}>
                     <h4 style={{ margin: '0 0 1rem 0', fontSize: '1.05rem', fontWeight: 700 }}>
-                      Logistics & Courier Serviceability
+                      Logistics & Delivery Serviceability
                     </h4>
                     <p style={{ fontSize: '0.85rem', color: '#64748B', marginBottom: '1.25rem' }}>
                       Test live delivery coverage and COD options across India:
@@ -1334,7 +1334,7 @@ export const AdminPanel = ({ isOpen, onClose, onShowToast, onProductCatalogUpdat
                         <div style={{ color: '#15803D', lineHeight: 1.5 }}>
                           <div>• Region: {pincodeResult.city}, {pincodeResult.state}</div>
                           <div>• Est. Delivery: {pincodeResult.estimatedDays}</div>
-                          <div>• Couriers: {pincodeResult.courier}</div>
+                          <div>• Delivery Service: {pincodeResult.courier}</div>
                           <div>• Cash on Delivery: {pincodeResult.codAvailable ? 'Available' : 'Prepaid Only'}</div>
                         </div>
                       </div>

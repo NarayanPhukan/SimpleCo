@@ -27,7 +27,7 @@ const orderSchema = new mongoose.Schema({
   statusStage: { type: Number, default: 0, min: 0, max: 4 },
   statusLabel: { type: String, default: 'Order Placed & Yarn Selected' },
   statusCode: { type: String, default: 'received' },
-  carrier: { type: String, default: 'BlueDart Express India' },
+  carrier: { type: String, default: 'Express Delivery' },
   trackingNumber: { type: String, required: true },
   estimatedDelivery: { type: String, required: true },
   shippingAddress: {

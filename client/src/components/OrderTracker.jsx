@@ -102,7 +102,7 @@ export const OrderTracker = ({ trackOrderId, onShowToast }) => {
                     Placed on {order.dateFormatted} • Est. Delivery: <strong>{order.estimatedDelivery}</strong>
                   </p>
                   <p>
-                    Carrier: {order.carrier} (Waybill: <code>{order.trackingNumber}</code>)
+                    Waybill / Tracking: <code>{order.trackingNumber}</code>
                   </p>
                 </div>
 

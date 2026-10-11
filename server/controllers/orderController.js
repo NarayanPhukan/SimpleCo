@@ -53,7 +53,7 @@ exports.createOrder = async (req, res) => {
         time: 'Pending Pickup',
         completed: false,
         current: false,
-        desc: 'Carrier scan: BlueDart Express tracking will activate upon studio dispatch.'
+        desc: 'Departed from studio: Tracking waybill will activate upon transit scan.'
       },
       {
         stage: 'delivered',
@@ -72,7 +72,7 @@ exports.createOrder = async (req, res) => {
       statusStage: 0,
       statusLabel: 'Order Placed & Yarn Selected',
       statusCode: 'received',
-      carrier: 'BlueDart Express India',
+      carrier: 'Express Delivery',
       trackingNumber,
       estimatedDelivery: estDate,
       shippingAddress,
@@ -237,10 +237,10 @@ exports.requestOrderReturn = async (req, res) => {
 
     const { reason } = req.body;
     order.statusCode = 'returned';
-    order.statusLabel = 'Return Requested • BlueDart Courier Pickup Scheduled';
+    order.statusLabel = 'Return Requested • Doorstep Pickup Scheduled';
     order.returnReason = reason || 'Customer requested return / exchange';
     order.returnDate = new Date().toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' });
-    order.returnStatus = 'Pickup Scheduled with BlueDart Express Courier';
+    order.returnStatus = 'Pickup Scheduled with Doorstep Courier';
 
     await order.save();
     res.json({ success: true, data: order });

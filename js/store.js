@@ -28,7 +28,7 @@ const DEFAULT_ORDERS = [
     statusStage: 3, // 0: received, 1: crafted, 2: packed, 3: shipped, 4: delivered
     statusLabel: "In Transit with Courier",
     statusCode: "shipped",
-    carrier: "CraftExpress Priority Courier",
+    carrier: "Express Delivery",
     trackingNumber: "TRK-BGC-89241-US",
     estimatedDelivery: "Oct 12, 2026",
     shippingAddress: {
@@ -87,7 +87,7 @@ const DEFAULT_ORDERS = [
         time: "Oct 10, 08:20 AM",
         completed: true,
         current: true,
-        desc: "Carrier scan: CraftExpress Portland sorting center. Package en route to destination."
+        desc: "Departed from studio: Tracking waybill will activate upon transit scan."
       },
       {
         stage: "delivered",
@@ -574,7 +574,7 @@ class Store {
       statusStage: 0, // Just received
       statusLabel: "Order Placed & Spun",
       statusCode: "received",
-      carrier: "CraftExpress Priority Courier",
+      carrier: "Express Delivery",
       trackingNumber: trackingNumber,
       estimatedDelivery: estDate,
       shippingAddress: shippingAddress,
@@ -627,7 +627,7 @@ class Store {
           time: "Pending Pickup",
           completed: false,
           current: false,
-          desc: "Carrier scan: CraftExpress tracking will activate upon studio dispatch."
+          desc: "Departed from studio: Tracking waybill will activate upon transit scan."
         },
         {
           stage: "delivered",

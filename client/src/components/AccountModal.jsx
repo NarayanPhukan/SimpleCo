@@ -295,9 +295,9 @@ export const AccountModal = ({ isOpen, onClose, onOpenAddressModal, onShowToast 
                               <div className="inline-live-tracking-panel">
                                 <div className="tracking-courier-banner">
                                   <div>
-                                    <span className="courier-badge">Courier Partner</span>
-                                    <div className="courier-name">{ord.carrier}</div>
-                                    <div className="waybill-code">Waybill: <code>{ord.trackingNumber}</code></div>
+                                    <span className="courier-badge">Delivery Details</span>
+                                    <div className="courier-name">Tracked Express Delivery</div>
+                                    <div className="waybill-code">Waybill / Tracking: <code>{ord.trackingNumber}</code></div>
                                   </div>
                                   <button 
                                     className="btn-sim-advance-inline"
@@ -392,7 +392,7 @@ export const AccountModal = ({ isOpen, onClose, onOpenAddressModal, onShowToast 
                             </div>
                             <div className="spec-row">
                               <span className="spec-title">Reverse Logistics:</span>
-                              <span className="spec-value">BlueDart Express Reverse Pickup (Sealed parcel collected)</span>
+                              <span className="spec-value">Doorstep Reverse Pickup (Sealed parcel collected)</span>
                             </div>
                           </div>
                         </div>

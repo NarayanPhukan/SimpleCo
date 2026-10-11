@@ -30,7 +30,7 @@ router.get('/track/:awb', async (req, res) => {
   if (!trackingData) {
     return res.status(404).json({
       success: false,
-      message: `Tracking info for AWB ${awb} currently handled by BlueDart India Network.`
+      message: `Tracking info for AWB ${awb} currently in transit with express delivery network.`
     });
   }
   res.json({ success: true, data: trackingData });

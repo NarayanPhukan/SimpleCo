@@ -501,7 +501,7 @@ export const CheckoutModal = ({
                   />
                   <div>
                     <strong style={{ fontSize: '0.95rem', color: 'var(--text-dark)' }}>Pan-India Standard Delivery (3-5 Days)</strong>
-                    <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Via BlueDart / Delhivery Surface with live SMS tracking</p>
+                    <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Tracked express delivery across India with live SMS updates</p>
                   </div>
                 </div>
                 <span style={{ fontWeight: 700, color: 'var(--primary)' }}>
