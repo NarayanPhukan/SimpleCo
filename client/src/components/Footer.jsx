@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-export const Footer = ({ onOpenAccount, onScrollToTrack, onSelectCategory, onShowToast }) => {
+export const Footer = ({ onOpenAccount, onScrollToTrack, onSelectCategory, onOpenAdmin, onShowToast }) => {
   const [newsletterEmail, setNewsletterEmail] = useState('');
 
   const handleSubscribe = (e) => {
@@ -51,6 +51,7 @@ export const Footer = ({ onOpenAccount, onScrollToTrack, onSelectCategory, onSho
               <li><a href="#orderTracking" onClick={(e) => { e.preventDefault(); onScrollToTrack(); }}>Order Tracking</a></li>
               <li><a href="#account" onClick={(e) => { e.preventDefault(); onOpenAccount(); }}>Saved Addresses</a></li>
               <li><a href="#account" onClick={(e) => { e.preventDefault(); onOpenAccount(); }}>My Account</a></li>
+              <li><a href="#admin" onClick={(e) => { e.preventDefault(); if (onOpenAdmin) onOpenAdmin(); }} style={{ color: 'var(--primary)', fontWeight: 600 }}>⚡ Studio Admin Portal</a></li>
               <li><a href="#">Shipping & Returns</a></li>
               <li><a href="#">Yarn Care Guide</a></li>
             </ul>

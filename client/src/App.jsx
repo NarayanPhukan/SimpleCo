@@ -16,6 +16,7 @@ import { CheckoutModal } from './components/CheckoutModal';
 import { Reviews } from './components/Reviews';
 import { FAQ } from './components/FAQ';
 import { Footer } from './components/Footer';
+import { AdminPanel } from './components/AdminPanel';
 
 export const App = () => {
   const [products, setProducts] = useState([]);
@@ -31,6 +32,7 @@ export const App = () => {
   const [editingAddress, setEditingAddress] = useState(null);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [quickViewProduct, setQuickViewProduct] = useState(null);
+  const [isAdminOpen, setIsAdminOpen] = useState(false);
 
   // Toasts
   const [toasts, setToasts] = useState([]);
@@ -64,6 +66,18 @@ export const App = () => {
   useEffect(() => {
     loadProducts();
   }, [activeCategory, searchQuery, sortOrder]);
+
+  // Listen for #admin or #studio hash in URL
+  useEffect(() => {
+    const handleHash = () => {
+      if (window.location.hash === '#admin' || window.location.hash === '#studio') {
+        setIsAdminOpen(true);
+      }
+    };
+    handleHash();
+    window.addEventListener('hashchange', handleHash);
+    return () => window.removeEventListener('hashchange', handleHash);
+  }, []);
 
   // Confetti Animation
   const triggerConfetti = () => {
@@ -135,6 +149,7 @@ export const App = () => {
       <Navbar 
         onOpenAccount={() => setIsAccountOpen(true)}
         onOpenCart={() => setIsCartOpen(true)}
+        onOpenAdmin={() => setIsAdminOpen(true)}
         onSelectCategory={(cat) => setActiveCategory(cat)}
       />
 
@@ -262,6 +277,7 @@ export const App = () => {
         onOpenAccount={() => setIsAccountOpen(true)}
         onScrollToTrack={() => setIsAccountOpen(true)}
         onSelectCategory={(cat) => setActiveCategory(cat)}
+        onOpenAdmin={() => setIsAdminOpen(true)}
         onShowToast={showToast}
       />
 
@@ -319,6 +335,18 @@ export const App = () => {
           triggerConfetti();
         }}
         onShowToast={showToast}
+      />
+
+      <AdminPanel 
+        isOpen={isAdminOpen}
+        onClose={() => {
+          setIsAdminOpen(false);
+          if (window.location.hash === '#admin' || window.location.hash === '#studio') {
+            window.history.pushState(null, '', window.location.pathname);
+          }
+        }}
+        onShowToast={showToast}
+        onProductCatalogUpdated={loadProducts}
       />
 
       {/* Toast Notification Container */}

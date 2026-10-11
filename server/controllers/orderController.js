@@ -100,16 +100,65 @@ exports.createOrder = async (req, res) => {
   }
 };
 
-// @desc    Get user's past orders
+// @desc    Get user's past orders or all orders for Admin
 // @route   GET /api/orders
 exports.getOrders = async (req, res) => {
   try {
     const userEmail = req.query.email ? req.query.email.trim().toLowerCase() : null;
-    if (!userEmail) {
-      return res.json({ success: true, data: [] });
+    const query = (req.query.all === 'true' || !userEmail) ? {} : { userEmail };
+    const orders = await Order.find(query).sort({ createdAt: -1 });
+    res.json({ success: true, count: orders.length, data: orders });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// @desc    Update order status directly (Admin)
+// @route   PATCH /api/orders/:orderId/status
+exports.updateOrderStatus = async (req, res) => {
+  try {
+    const cleanId = req.params.orderId.trim().toUpperCase();
+    const order = await Order.findOne({ orderId: cleanId });
+    if (!order) {
+      return res.status(404).json({ success: false, message: 'Order not found' });
     }
-    const orders = await Order.find({ userEmail }).sort({ createdAt: -1 });
-    res.json({ success: true, data: orders });
+
+    const { statusCode, statusLabel, paymentStatus } = req.body;
+    if (statusCode) order.statusCode = statusCode;
+    if (statusLabel) order.statusLabel = statusLabel;
+    if (paymentStatus) order.paymentStatus = paymentStatus;
+
+    const stages = ['received', 'crafted', 'packed', 'shipped', 'delivered'];
+    const stageIdx = stages.indexOf(statusCode);
+    if (stageIdx !== -1) {
+      order.statusStage = stageIdx;
+      if (!statusLabel) {
+        const labels = [
+          'Order Placed & Yarn Selected',
+          'Artisan Handcrafting in Progress',
+          'Ribbon Wrapped & Sweet Scented',
+          'In Transit with Courier',
+          'Delivered with Love 🌸'
+        ];
+        order.statusLabel = labels[stageIdx];
+      }
+      order.timeline.forEach((item, idx) => {
+        if (idx < stageIdx) {
+          item.completed = true;
+          item.current = false;
+        } else if (idx === stageIdx) {
+          item.completed = true;
+          item.current = true;
+          item.time = 'Updated just now (' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + ')';
+        } else {
+          item.completed = false;
+          item.current = false;
+        }
+      });
+    }
+
+    await order.save();
+    res.json({ success: true, data: order });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }

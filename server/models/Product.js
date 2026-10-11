@@ -56,6 +56,26 @@ const Product = {
     const { isConnected, memoryDB } = getDBState();
     if (isConnected) return MongooseProduct.countDocuments(query);
     return memoryDB.products.countDocuments(query);
+  },
+  findByIdAndUpdate: (id, update, options) => {
+    const { isConnected, memoryDB } = getDBState();
+    if (isConnected) return MongooseProduct.findByIdAndUpdate(id, update, options);
+    return memoryDB.products.findByIdAndUpdate(id, update, options);
+  },
+  findByIdAndDelete: (id) => {
+    const { isConnected, memoryDB } = getDBState();
+    if (isConnected) return MongooseProduct.findByIdAndDelete(id);
+    return memoryDB.products.findByIdAndDelete(id);
+  },
+  findOneAndUpdate: (query, update, options) => {
+    const { isConnected, memoryDB } = getDBState();
+    if (isConnected) return MongooseProduct.findOneAndUpdate(query, update, options);
+    return memoryDB.products.findOneAndUpdate(query, update, options);
+  },
+  findOneAndDelete: (query) => {
+    const { isConnected, memoryDB } = getDBState();
+    if (isConnected) return MongooseProduct.findOneAndDelete(query);
+    return memoryDB.products.findOneAndDelete(query);
   }
 };
 

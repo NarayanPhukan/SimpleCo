@@ -136,6 +136,36 @@ class MemoryCollection {
   async countDocuments(query = {}) {
     return this.data.filter(doc => this._match(doc, query)).length;
   }
+
+  async findByIdAndUpdate(id, update, options = {}) {
+    const idx = this.data.findIndex(doc => doc._id === id || doc.id === id);
+    if (idx === -1) return null;
+    const doc = this.data[idx];
+    Object.assign(doc, update);
+    return new MemoryDocument(doc, this);
+  }
+
+  async findByIdAndDelete(id) {
+    const idx = this.data.findIndex(doc => doc._id === id || doc.id === id);
+    if (idx === -1) return null;
+    const removed = this.data.splice(idx, 1)[0];
+    return new MemoryDocument(removed, this);
+  }
+
+  async findOneAndUpdate(query, update, options = {}) {
+    const idx = this.data.findIndex(doc => this._match(doc, query));
+    if (idx === -1) return null;
+    const doc = this.data[idx];
+    Object.assign(doc, update);
+    return new MemoryDocument(doc, this);
+  }
+
+  async findOneAndDelete(query) {
+    const idx = this.data.findIndex(doc => this._match(doc, query));
+    if (idx === -1) return null;
+    const removed = this.data.splice(idx, 1)[0];
+    return new MemoryDocument(removed, this);
+  }
 }
 
 module.exports = { MemoryCollection, MemoryDocument, enhanceAddressesArray };

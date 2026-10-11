@@ -20,6 +20,43 @@ export const api = {
     return res.json();
   },
 
+  async createProduct(productData) {
+    const res = await fetch(`${API_BASE}/products`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(productData)
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || 'Failed to create product');
+    }
+    return res.json();
+  },
+
+  async updateProduct(id, productData) {
+    const res = await fetch(`${API_BASE}/products/${encodeURIComponent(id)}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(productData)
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || 'Failed to update product');
+    }
+    return res.json();
+  },
+
+  async deleteProduct(id) {
+    const res = await fetch(`${API_BASE}/products/${encodeURIComponent(id)}`, {
+      method: 'DELETE'
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || 'Failed to delete product');
+    }
+    return res.json();
+  },
+
   // Auth & Addresses
   async login(email, password) {
     const res = await fetch(`${API_BASE}/auth/login`, {
@@ -106,8 +143,15 @@ export const api = {
   },
 
   async getOrders(email) {
-    const res = await fetch(`${API_BASE}/orders?email=${encodeURIComponent(email)}`);
+    const url = email ? `${API_BASE}/orders?email=${encodeURIComponent(email)}` : `${API_BASE}/orders?all=true`;
+    const res = await fetch(url);
     if (!res.ok) throw new Error('Failed to fetch orders');
+    return res.json();
+  },
+
+  async getAllOrders() {
+    const res = await fetch(`${API_BASE}/orders?all=true`);
+    if (!res.ok) throw new Error('Failed to fetch all orders');
     return res.json();
   },
 
@@ -125,6 +169,19 @@ export const api = {
       method: 'PATCH'
     });
     if (!res.ok) throw new Error('Failed to advance order stage');
+    return res.json();
+  },
+
+  async updateOrderStatus(orderId, statusData) {
+    const res = await fetch(`${API_BASE}/orders/${encodeURIComponent(orderId)}/status`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(statusData)
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || 'Failed to update order status');
+    }
     return res.json();
   },
 
