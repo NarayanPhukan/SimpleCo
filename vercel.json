@@ -1,7 +1,7 @@
 {
   "version": 2,
-  "installCommand": "npm install && npm install --prefix client",
-  "buildCommand": "npm run build --prefix client",
+  "installCommand": "if [ -d \"client\" ]; then npm install && npm install --prefix client; else npm install; fi",
+  "buildCommand": "if [ -d \"client\" ]; then npm run build --prefix client; else npm run build; fi",
   "outputDirectory": "client/dist",
   "functions": {
     "api/index.js": {
