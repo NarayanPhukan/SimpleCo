@@ -30,7 +30,7 @@ export const Navbar = ({ onOpenAccount, onOpenCart, onOpenAdmin, onSelectCategor
           </div>
           <div className="brand-text">
             <span className="brand-title">BabyyGurll <span className="brand-accent">Crochet</span></span>
-            <span className="brand-subtitle">Artisanal Studio • India</span>
+            <span className="brand-subtitle">Handmade with love • India</span>
           </div>
         </a>
 

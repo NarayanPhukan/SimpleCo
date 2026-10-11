@@ -26,7 +26,7 @@ export const Footer = ({ onOpenAccount, onScrollToTrack, onSelectCategory, onOpe
           <div className="footer-brand">
             <h3>BabyyGurll Crochet</h3>
             <p>
-              Hand-stitched bespoke crafts made with gentle intention, premium milk cotton, and heirloom quality.
+              Handmade crochet plushies, bouquets, and accessories made one stitch at a time with love, patience, and soft milk cotton yarn.
             </p>
             <div className="social-links">
               <a href="#" className="social-icon" aria-label="Instagram" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -62,8 +62,8 @@ export const Footer = ({ onOpenAccount, onScrollToTrack, onSelectCategory, onOpe
 
           <div className="footer-col">
             <h4>Stitch Club Newsletter</h4>
-            <p style={{ color: '#99D5FF', fontSize: '0.85rem' }}>
-              Get early access to secret drops and 15% off your first handcrafted piece.
+            <p style={{ color: '#D4BFC4', fontSize: '0.85rem' }}>
+              Be the first to hear about new handmade drops and get 15% off your first order.
             </p>
             <form className="newsletter-form" onSubmit={handleSubscribe}>
               <input 
@@ -83,9 +83,9 @@ export const Footer = ({ onOpenAccount, onScrollToTrack, onSelectCategory, onOpe
         </div>
 
         <div className="footer-bottom">
-          <p>&copy; 2026 BabyyGurll Crochet Studio India. All rights reserved. Handcrafted with love.</p>
+          <p>&copy; 2026 BabyyGurll Crochet. Handcrafted with love in India. 🌸</p>
           <p>
-            Nationwide Express Tracked Dispatch • 
+            Carefully packed & shipped across India • 
             <a 
               href="#admin" 
               onClick={(e) => { e.preventDefault(); if (onOpenAdmin) onOpenAdmin(); }} 

@@ -4,9 +4,9 @@ const { seedProducts } = require('../data/seedData');
 
 let isConnected = false;
 let memoryDB = {
-  products: null,
-  users: null,
-  orders: null
+  products: new MemoryCollection(seedProducts),
+  users: new MemoryCollection([]),
+  orders: new MemoryCollection([])
 };
 
 const connectDB = async () => {

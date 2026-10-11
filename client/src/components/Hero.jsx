@@ -8,37 +8,37 @@ export const Hero = ({ onExplore }) => {
         <div className="hero-content">
           <div className="hero-pill">
             <span className="pulse-dot"></span>
-            <span>Handmade in India • Limited Artisanal Batches</span>
+            <span>Handmade in small batches right here in India 🧶</span>
           </div>
           <h1 className="hero-title">
-            Hand-Stitched Magic for <span className="italic-sparkle">Soft Souls</span> & Cozy Hearts.
+            Handmade with love for <span className="italic-sparkle">cozy days</span> & gentle hearts.
           </h1>
           <p className="hero-description">
-            Each bespoke piece is lovingly crocheted by hand using premium, hypoallergenic milk cotton and cloudfill chenille. Designed to bring gentle whimsy, warmth, and aesthetic joy into your daily rituals.
+            Hey there! We crochet every single piece by hand using soft, snuggly milk-cotton yarn. No factory machines, no rushing — just cute handmade companions made to make you smile every day.
           </p>
 
           <div className="hero-cta-group">
             <button className="btn btn-primary" onClick={onExplore} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
-              <span>Explore Collection</span>
+              <span>Browse Collection</span>
               <IconArrowRight size={16} />
             </button>
             <a href="#catalog" className="btn btn-secondary">
-              View Bestsellers
+              See What's New
             </a>
           </div>
 
           <div className="hero-trust-badges">
             <div className="trust-item">
               <span className="icon" style={{ display: 'inline-flex', alignItems: 'center' }}><IconAward size={16} /></span>
-              <span>100% Hand-Crocheted</span>
+              <span>Hand-crocheted with care</span>
             </div>
             <div className="trust-item">
               <span className="icon" style={{ display: 'inline-flex', alignItems: 'center' }}><IconTruck size={16} /></span>
-              <span>Pan-India Delivery</span>
+              <span>Delivered across India</span>
             </div>
             <div className="trust-item">
               <span className="icon" style={{ display: 'inline-flex', alignItems: 'center' }}><IconShield size={16} /></span>
-              <span>4.9/5 Rating (2,400+ Orders)</span>
+              <span>Over 2,000+ happy homes 💕</span>
             </div>
           </div>
         </div>
@@ -52,14 +52,14 @@ export const Hero = ({ onExplore }) => {
               </div>
               <div className="floating-meta">
                 <h4>Strawberry Cow</h4>
-                <p>#1 Bestseller • Verified Craft</p>
+                <p>Everyone's favorite little buddy 🍓</p>
               </div>
             </div>
 
             <div className="hero-image-frame">
               <img 
                 src="/assets/images/hero-banner.jpg" 
-                alt="Artisanal crochet workshop with pastel pink yarn and handmade plushies" 
+                alt="Handmade crochet creations with pastel yarn and cute plushies" 
                 width="700" 
                 height="525" 
                 fetchPriority="high" 
@@ -71,8 +71,8 @@ export const Hero = ({ onExplore }) => {
                 <IconShield size={18} />
               </div>
               <div className="floating-meta">
-                <h4>Artisanal Quality</h4>
-                <p>Loop-by-loop craftsmanship</p>
+                <h4>Stitch by Stitch</h4>
+                <p>Pure soft milk-cotton yarn 🌸</p>
               </div>
             </div>
           </div>

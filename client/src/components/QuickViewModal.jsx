@@ -48,15 +48,15 @@ export const QuickViewModal = ({ product, onClose, onShowToast, onOpenCart }) =>
           <p className="qv-desc">{product.description}</p>
 
           <div className="qv-specs-box">
-            <strong>Artisan Specifications:</strong><br />
+            <strong>Details & Care:</strong><br />
             • Yarn: {product.specs?.yarn || '100% Milk Cotton'}<br />
-            • Dimensions: {product.specs?.height || product.specs?.dimensions || 'Handmade scale'}<br />
-            • Lead Time: {product.leadTime}<br />
+            • Size: {product.specs?.height || product.specs?.dimensions || 'Handmade scale'}<br />
+            • Making time: {product.leadTime}<br />
             • Care: {product.specs?.care || 'Hand wash cold, air dry'}
           </div>
 
           <div className="color-picker-section">
-            <h5>Select Color Palette:</h5>
+            <h5>Choose your color:</h5>
             <div className="swatch-options">
               {product.colors && product.colors.map((c, i) => (
                 <button
@@ -72,12 +72,12 @@ export const QuickViewModal = ({ product, onClose, onShowToast, onOpenCart }) =>
           </div>
 
           <div className="form-group" style={{ marginBottom: '1.2rem' }}>
-            <label className="form-label" htmlFor="qvNote">Custom Note / Gift Request (Optional):</label>
+            <label className="form-label" htmlFor="qvNote">Gift note or custom color request (Optional):</label>
             <input 
               type="text" 
               id="qvNote" 
               className="form-input" 
-              placeholder="e.g. Please add extra bow ribbon!" 
+              placeholder="e.g. Can you add a handwritten birthday note?" 
               value={customNote}
               onChange={(e) => setCustomNote(e.target.value)}
             />

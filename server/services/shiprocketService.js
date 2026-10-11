@@ -1,10 +1,83 @@
 // Shiprocket API Integration Service
 // Official API Docs: https://apidocs.shiprocket.in/
 
+const https = require('https');
+const dns = require('dns').promises;
+
 const SHIPROCKET_BASE_URL = 'https://apiv2.shiprocket.in/v1/external';
 
 let cachedToken = null;
 let tokenExpiresAt = null;
+let resolvedShiprocketIPs = null;
+
+async function getShiprocketIPs() {
+  if (resolvedShiprocketIPs && resolvedShiprocketIPs.length > 0) return resolvedShiprocketIPs;
+  try {
+    const resolver = new dns.Resolver();
+    resolver.setServers(['8.8.8.8', '1.1.1.1']);
+    resolvedShiprocketIPs = await resolver.resolve4('apiv2.shiprocket.in');
+    return resolvedShiprocketIPs;
+  } catch (e) {
+    return null;
+  }
+}
+
+async function requestShiprocket(endpointPath, options = {}) {
+  // Try standard fetch first
+  try {
+    const res = await fetch(`${SHIPROCKET_BASE_URL}${endpointPath}`, options);
+    const data = await res.json();
+    return { ok: res.ok, status: res.status, data };
+  } catch (err) {
+    // Fallback to direct HTTPS request using public DNS resolvers if local DNS fails
+    try {
+      const ips = await getShiprocketIPs();
+      if (!ips || ips.length === 0) throw err;
+
+      return await new Promise((resolve, reject) => {
+        const bodyStr = options.body || '';
+        const req = https.request({
+          hostname: 'apiv2.shiprocket.in',
+          path: `/v1/external${endpointPath}`,
+          method: options.method || 'GET',
+          headers: {
+            ...options.headers,
+            ...(bodyStr ? { 'Content-Length': Buffer.byteLength(bodyStr) } : {})
+          },
+          lookup: (hostname, lookupOpts, callback) => {
+            if (typeof lookupOpts === 'function') {
+              callback = lookupOpts;
+              lookupOpts = {};
+            }
+            if (lookupOpts && lookupOpts.all) {
+              callback(null, ips.map(ip => ({ address: ip, family: 4 })));
+            } else {
+              callback(null, ips[0], 4);
+            }
+          }
+        }, (res) => {
+          let dataStr = '';
+          res.on('data', chunk => dataStr += chunk);
+          res.on('end', () => {
+            try {
+              const parsed = JSON.parse(dataStr);
+              resolve({ ok: res.statusCode >= 200 && res.statusCode < 300, status: res.statusCode, data: parsed });
+            } catch (e) {
+              resolve({ ok: false, status: res.statusCode, data: { message: dataStr } });
+            }
+          });
+        });
+
+        req.on('error', reject);
+        if (bodyStr) req.write(bodyStr);
+        req.end();
+      });
+    } catch (fallbackErr) {
+      console.warn('[Shiprocket] Request error:', err.message);
+      return { ok: false, status: 500, error: err.message, data: { message: err.message } };
+    }
+  }
+}
 
 class ShiprocketService {
   constructor() {
@@ -32,7 +105,7 @@ class ShiprocketService {
     }
 
     try {
-      const response = await fetch(`${SHIPROCKET_BASE_URL}/auth/login`, {
+      const res = await requestShiprocket('/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -41,9 +114,9 @@ class ShiprocketService {
         })
       });
 
-      const data = await response.json();
+      const data = res.data;
 
-      if (!response.ok || !data.token) {
+      if (!res.ok || !data.token) {
         console.warn('[Shiprocket] Auth warning:', data.message || 'Login failed');
         return null;
       }
@@ -75,17 +148,15 @@ class ShiprocketService {
     }
 
     try {
-      const url = `${SHIPROCKET_BASE_URL}/courier/serviceability?pickup_postcode=${pickupPostcode}&delivery_postcode=${deliveryPostcode}&weight=${weightKg}&cod=${cod}`;
-      const response = await fetch(url, {
+      const res = await requestShiprocket(`/courier/serviceability?pickup_postcode=${pickupPostcode}&delivery_postcode=${deliveryPostcode}&weight=${weightKg}&cod=${cod}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         }
       });
-      const data = await response.json();
       return {
-        isAvailable: data.status === 200,
-        data: data.data || data
+        isAvailable: res.status === 200,
+        data: res.data?.data || res.data
       };
     } catch (err) {
       return { isAvailable: false, error: err.message };
@@ -100,15 +171,14 @@ class ShiprocketService {
     }
 
     try {
-      const response = await fetch(`${SHIPROCKET_BASE_URL}/courier/track/awb/${encodeURIComponent(awbNumber)}`, {
+      const res = await requestShiprocket(`/courier/track/awb/${encodeURIComponent(awbNumber)}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         }
       });
 
-      const data = await response.json();
-      return data;
+      return res.data;
     } catch (err) {
       console.warn('Shiprocket tracking error:', err.message);
       return null;
@@ -123,15 +193,14 @@ class ShiprocketService {
     }
 
     try {
-      const response = await fetch(`${SHIPROCKET_BASE_URL}/courier/track?order_id=${encodeURIComponent(orderId)}`, {
+      const res = await requestShiprocket(`/courier/track?order_id=${encodeURIComponent(orderId)}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         }
       });
 
-      const data = await response.json();
-      return data;
+      return res.data;
     } catch (err) {
       return null;
     }
@@ -182,7 +251,7 @@ class ShiprocketService {
         weight: 0.4
       };
 
-      const response = await fetch(`${SHIPROCKET_BASE_URL}/orders/create/adhoc`, {
+      const res = await requestShiprocket('/orders/create/adhoc', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -191,8 +260,7 @@ class ShiprocketService {
         body: JSON.stringify(payload)
       });
 
-      const result = await response.json();
-      return result;
+      return res.data;
     } catch (err) {
       console.warn('Shiprocket order creation error:', err.message);
       return { error: err.message };

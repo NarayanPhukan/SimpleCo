@@ -11,8 +11,8 @@ export const Highlights = () => {
               <IconStudio size={22} />
             </div>
             <div className="highlight-text">
-              <h4>Slow Fashion & Craft</h4>
-              <p>Zero mass production. Each stitch made with care and intention.</p>
+              <h4>Slow, Mindful Craft</h4>
+              <p>Zero factory molds. Every piece is hand-hooked one stitch at a time.</p>
             </div>
           </div>
           <div className="highlight-box">
@@ -20,8 +20,8 @@ export const Highlights = () => {
               <IconAward size={22} />
             </div>
             <div className="highlight-text">
-              <h4>Gift-Ready Packaging</h4>
-              <p>Wrapped in signature matte parchment with satin ribbon finishing.</p>
+              <h4>Cute Gift Packaging</h4>
+              <p>Wrapped in pretty paper with ribbons & a sweet handwritten note.</p>
             </div>
           </div>
           <div className="highlight-box">
@@ -30,7 +30,7 @@ export const Highlights = () => {
             </div>
             <div className="highlight-text">
               <h4>Live Order Tracking</h4>
-              <p>Follow every stage from yarn winding to front doorstep delivery.</p>
+              <p>Follow your order step-by-step from yarn winding to your doorstep.</p>
             </div>
           </div>
           <div className="highlight-box">
@@ -38,8 +38,8 @@ export const Highlights = () => {
               <IconTag size={22} />
             </div>
             <div className="highlight-text">
-              <h4>Custom Colorways</h4>
-              <p>Personalized palette options and complimentary gift cards.</p>
+              <h4>Custom Colors & Notes</h4>
+              <p>Want a special shade or a gift message? Just tell us at checkout!</p>
             </div>
           </div>
         </div>

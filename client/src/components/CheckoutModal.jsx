@@ -166,9 +166,9 @@ export const CheckoutModal = ({
     const customerName = chosenAddr?.recipientName || user?.name || addrForm?.recipientName || 'Customer';
     const customerPhone = chosenAddr?.phone || user?.phone || addrForm?.phone || '';
 
-    // Razorpay Standard Checkout Flow
+    // Online Payment Checkout Flow
     if (paymentMethod === 'razorpay') {
-      onShowToast('Opening Razorpay Payment Modal...', '✓');
+      onShowToast('Opening secure payment gateway...', '✓');
       await openRazorpayStandardCheckout({
         amountInRupees: payAmount,
         prefill: {
@@ -181,7 +181,7 @@ export const CheckoutModal = ({
             const orderPayload = {
               userEmail: customerEmail,
               shippingAddress: chosenAddr,
-              paymentMethod: `Razorpay Online (${payDetails.paymentId})`,
+              paymentMethod: `Online Payment (${payDetails.paymentId})`,
               paymentStatus: 'paid',
               razorpayPaymentId: payDetails.paymentId,
               razorpayOrderId: payDetails.orderId,
@@ -297,13 +297,13 @@ export const CheckoutModal = ({
 
             <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '1.25rem' }}>
               {addresses.length === 0 || showAddressForm
-                ? 'Delivery across India with tracked courier dispatch & floral scented ribbon packing.'
+                ? 'Handcrafted with love, packed with ribbons and dispatched safely across India.'
                 : 'Select from your saved addresses or add a new delivery location across India.'}
             </p>
 
             {/* Inline Address Form for guest or adding new address */}
             {(addresses.length === 0 || showAddressForm) ? (
-              <div style={{ background: '#F8FCFF', border: '1.5px solid #D5E8FC', borderRadius: 'var(--radius-md)', padding: '1.3rem', marginBottom: '1.5rem' }}>
+              <div style={{ background: 'var(--bg-warm)', border: '1.5px solid var(--border-card)', borderRadius: 'var(--radius-md)', padding: '1.3rem', marginBottom: '1.5rem' }}>
                 <div className="form-grid">
                   <div className="form-row">
                     <div className="form-group">
@@ -431,7 +431,7 @@ export const CheckoutModal = ({
                         padding: '1.1rem',
                         border: `1.5px solid ${isChecked ? 'var(--primary)' : 'var(--border-subtle)'}`,
                         borderRadius: 'var(--radius-md)',
-                        background: isChecked ? '#E5F4FF' : '#FFFFFF',
+                        background: isChecked ? 'var(--primary-light)' : '#FFFFFF',
                         cursor: 'pointer',
                         transition: 'all 0.2s ease'
                       }}
@@ -491,7 +491,7 @@ export const CheckoutModal = ({
             </p>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.9rem', marginBottom: '1.5rem' }}>
-              <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1.1rem', border: `1px solid ${shippingMethod === 'standard' ? 'var(--primary)' : 'var(--border-subtle)'}`, borderRadius: 'var(--radius-md)', background: shippingMethod === 'standard' ? '#E5F4FF' : '#FFFFFF', cursor: 'pointer' }}>
+              <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1.1rem', border: `1px solid ${shippingMethod === 'standard' ? 'var(--primary)' : 'var(--border-subtle)'}`, borderRadius: 'var(--radius-md)', background: shippingMethod === 'standard' ? 'var(--primary-light)' : '#FFFFFF', cursor: 'pointer' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                   <input 
                     type="radio" 
@@ -511,7 +511,7 @@ export const CheckoutModal = ({
                 </span>
               </label>
 
-              <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1.1rem', border: `1px solid ${shippingMethod === 'express' ? 'var(--primary)' : 'var(--border-subtle)'}`, borderRadius: 'var(--radius-md)', background: shippingMethod === 'express' ? '#E5F4FF' : '#FFFFFF', cursor: 'pointer' }}>
+              <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1.1rem', border: `1px solid ${shippingMethod === 'express' ? 'var(--primary)' : 'var(--border-subtle)'}`, borderRadius: 'var(--radius-md)', background: shippingMethod === 'express' ? 'var(--primary-light)' : '#FFFFFF', cursor: 'pointer' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                   <input 
                     type="radio" 
@@ -576,7 +576,7 @@ export const CheckoutModal = ({
                 style={{ textAlign: 'center', padding: '0.75rem 0.6rem', fontSize: '0.86rem', fontWeight: 600 }}
                 onClick={() => setPaymentMethod('razorpay')}
               >
-                Razorpay Online (UPI / Cards)
+                Online Payment (UPI, Cards, NetBanking)
               </button>
               <button 
                 type="button" 
@@ -590,16 +590,16 @@ export const CheckoutModal = ({
 
             {/* Razorpay Standard Web Checkout Option */}
             {paymentMethod === 'razorpay' && (
-              <div style={{ background: '#F4FAFF', border: '1.5px solid #A6D4FF', borderRadius: 'var(--radius-md)', padding: '1.3rem', marginBottom: '1.5rem' }}>
+              <div style={{ background: 'var(--bg-warm)', border: '1.5px solid var(--border-card)', borderRadius: 'var(--radius-md)', padding: '1.3rem', marginBottom: '1.5rem' }}>
                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.85rem', marginBottom: '1rem' }}>
                   <div style={{ color: 'var(--primary)', marginTop: '0.2rem' }}>
                     <IconShield size={22} />
                   </div>
                   <div style={{ flexGrow: 1 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '0.2rem' }}>
-                      <strong style={{ fontSize: '0.98rem', color: 'var(--text-dark)' }}>Razorpay Standard Checkout</strong>
-                      <span style={{ background: '#E0F2FE', color: '#0284C7', padding: '0.15rem 0.5rem', borderRadius: '4px', fontSize: '0.72rem', fontWeight: 700 }}>
-                        SECURE GATEWAY
+                      <strong style={{ fontSize: '0.98rem', color: 'var(--text-dark)' }}>Online Payment</strong>
+                      <span style={{ background: 'var(--primary-light)', color: 'var(--primary)', padding: '0.15rem 0.5rem', borderRadius: '4px', fontSize: '0.72rem', fontWeight: 700 }}>
+                        SECURE 256-BIT SSL
                       </span>
                     </div>
                     <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>
@@ -609,21 +609,21 @@ export const CheckoutModal = ({
                 </div>
 
                 <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
-                  <span style={{ background: '#FFFFFF', border: '1px solid #D0E3F5', padding: '0.25rem 0.6rem', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600, color: '#334155' }}>Instant UPI</span>
-                  <span style={{ background: '#FFFFFF', border: '1px solid #D0E3F5', padding: '0.25rem 0.6rem', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600, color: '#334155' }}>RuPay / Cards</span>
-                  <span style={{ background: '#FFFFFF', border: '1px solid #D0E3F5', padding: '0.25rem 0.6rem', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600, color: '#334155' }}>NetBanking</span>
-                  <span style={{ background: '#FFFFFF', border: '1px solid #D0E3F5', padding: '0.25rem 0.6rem', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600, color: '#334155' }}>256-Bit SSL Secure</span>
+                  <span style={{ background: '#FFFFFF', border: '1px solid var(--border-card)', padding: '0.25rem 0.6rem', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-dark)' }}>Instant UPI</span>
+                  <span style={{ background: '#FFFFFF', border: '1px solid var(--border-card)', padding: '0.25rem 0.6rem', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-dark)' }}>RuPay / Cards</span>
+                  <span style={{ background: '#FFFFFF', border: '1px solid var(--border-card)', padding: '0.25rem 0.6rem', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-dark)' }}>NetBanking</span>
+                  <span style={{ background: '#FFFFFF', border: '1px solid var(--border-card)', padding: '0.25rem 0.6rem', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-dark)' }}>256-Bit SSL Secure</span>
                 </div>
 
-                <div style={{ background: '#FFFFFF', border: '1px dashed #93C5FD', borderRadius: '6px', padding: '0.75rem 0.9rem', fontSize: '0.78rem', color: '#1E40AF' }}>
-                  Clicking <strong>"Pay with Razorpay"</strong> opens the official Razorpay checkout modal. Upon successful authorization, payment is verified securely by the server.
+                <div style={{ background: '#FFFFFF', border: '1px dashed var(--border-card)', borderRadius: '6px', padding: '0.75rem 0.9rem', fontSize: '0.78rem', color: 'var(--text-main)' }}>
+                  Clicking <strong>"Pay Securely"</strong> opens the secure payment window. Supports Google Pay, PhonePe, Paytm, all Cards, and NetBanking.
                 </div>
               </div>
             )}
 
             {/* Cash on Delivery */}
             {paymentMethod === 'cod' && (
-              <div style={{ background: '#F4FAFF', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-md)', padding: '1.2rem', marginBottom: '1.5rem' }}>
+              <div style={{ background: 'var(--bg-warm)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-md)', padding: '1.2rem', marginBottom: '1.5rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                   <div style={{ color: 'var(--primary)' }}>
                     <IconPackage size={22} />
@@ -669,20 +669,7 @@ export const CheckoutModal = ({
                 <span>Back</span>
               </button>
               
-              <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'center' }}>
-                {paymentMethod === 'razorpay' && (
-                  <button 
-                    type="button"
-                    className="btn btn-secondary"
-                    onClick={() => handlePlaceOrder(1)} // Test ₹1.00 (100 paise)
-                    disabled={submitting}
-                    title="Test with minimum Razorpay amount (100 paise = ₹1.00)"
-                    style={{ fontSize: '0.8rem', padding: '0.75rem 1rem' }}
-                  >
-                    Test Pay ₹1.00
-                  </button>
-                )}
-
+              <div>
                 <button 
                   className="btn btn-primary" 
                   onClick={() => handlePlaceOrder()}
@@ -691,7 +678,7 @@ export const CheckoutModal = ({
                 >
                   {submitting ? 'Connecting...' : (
                     paymentMethod === 'razorpay' 
-                      ? `Pay ${formatPrice(grandTotal)} with Razorpay` 
+                      ? `Pay Securely ${formatPrice(grandTotal)}` 
                       : `Place Order via COD (${formatPrice(grandTotal)})`
                   )}
                 </button>

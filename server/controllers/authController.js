@@ -64,9 +64,18 @@ exports.getMe = async (req, res) => {
     if (!email) {
       return res.status(400).json({ success: false, message: 'Email query parameter required' });
     }
-    const user = await User.findOne({ email });
+    let user = await User.findOne({ email });
     if (!user) {
-      return res.status(404).json({ success: false, message: 'User not found' });
+      const displayName = email.split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase());
+      user = await User.create({
+        name: displayName,
+        email,
+        phone: '+91 98765 43210',
+        password: 'session_user',
+        memberTier: 'VIP Collector Club',
+        memberSince: new Date().toLocaleDateString('en-IN', { month: 'long', year: 'numeric' }),
+        savedAddresses: []
+      });
     }
     res.json({ success: true, data: user });
   } catch (error) {

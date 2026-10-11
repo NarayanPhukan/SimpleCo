@@ -89,8 +89,7 @@ export const App = () => {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
 
-    const pieces = [];
-    const colors = ['#0095FF', '#33AAFF', '#66BFFF', '#99D5FF', '#CCEAFF', '#0077CC'];
+    const colors = ['#E8739A', '#F7A8B8', '#FFAAA6', '#FFD3B6', '#E29578', '#C86284'];
     for (let i = 0; i < 90; i++) {
       pieces.push({
         x: canvas.width / 2,
@@ -165,10 +164,10 @@ export const App = () => {
         <section className="catalog-section" id="catalog">
           <div className="container">
             <div className="section-header">
-              <span className="section-tag">Artisan Handcrafted Boutique</span>
-              <h2 className="section-title">Handmade Crochet Creations</h2>
+              <span className="section-tag">The Studio Collection 🧶</span>
+              <h2 className="section-title">Things We’ve Made for You</h2>
               <p className="section-subtitle">
-                Discover our cutest amigurumi plushies, everlasting bouquets, and trendy everyday totes crafted with pure love.
+                From cuddly little desk companions to everlasting flowers and everyday totes — each one hand-hooked with love.
               </p>
             </div>
 

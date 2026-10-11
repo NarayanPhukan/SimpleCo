@@ -282,7 +282,7 @@ export const AdminPanel = ({ isOpen, onClose, onShowToast, onProductCatalogUpdat
     return sum + (o.paymentStatus === 'paid' ? amt : 0);
   }, 0);
   const activeOrdersCount = orders.filter(o => o.statusCode !== 'delivered' && o.statusCode !== 'returned').length;
-  const razorpayOrdersCount = orders.filter(o => o.paymentMethod?.toLowerCase().includes('razorpay')).length;
+  const razorpayOrdersCount = orders.filter(o => o.paymentMethod?.toLowerCase().includes('razorpay') || o.paymentMethod?.toLowerCase().includes('online')).length;
   const codOrdersCount = orders.filter(o => o.paymentMethod?.toLowerCase().includes('cod') || o.paymentMethod?.toLowerCase().includes('cash')).length;
 
   return (

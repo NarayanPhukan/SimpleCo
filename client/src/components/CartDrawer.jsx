@@ -44,7 +44,7 @@ export const CartDrawer = ({ isOpen, onClose, onProceedCheckout, onShowToast, on
           <div className="shipping-meter-text">
             <span>
               {totals.remainingForFreeShipping <= 0 
-                ? "You have unlocked Free Shipping" 
+                ? "Yay! You've unlocked Free Shipping ✨" 
                 : `Add ${formatPrice(totals.remainingForFreeShipping)} more for Free Shipping`}
             </span>
             <span>{pct}%</span>
@@ -62,7 +62,7 @@ export const CartDrawer = ({ isOpen, onClose, onProceedCheckout, onShowToast, on
                 <IconBag size={48} />
               </span>
               <h4>Your bag is currently empty</h4>
-              <p>Explore our soft pastel plushies, bouquets, and heirloom totes.</p>
+              <p>Find cute plushies, flowers, or totes to adopt! 🌸</p>
               <button className="btn btn-primary" onClick={() => { onClose(); onExplore(); }} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
                 <span>Start Browsing</span>
                 <IconArrowRight size={16} />
