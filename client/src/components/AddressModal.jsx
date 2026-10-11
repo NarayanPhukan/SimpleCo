@@ -56,10 +56,10 @@ export const AddressModal = ({ isOpen, editAddress, onClose, onShowToast }) => {
     e.preventDefault();
     if (editAddress) {
       await updateAddress(editAddress._id || editAddress.id, formData);
-      onShowToast('Address updated in MongoDB! 💾', '📍');
+      onShowToast('Address updated successfully! 💾', '📍');
     } else {
       await addAddress(formData);
-      onShowToast('New address saved to MongoDB! 🏡', '📍');
+      onShowToast('New delivery address saved! 🏡', '📍');
     }
     onClose();
   };

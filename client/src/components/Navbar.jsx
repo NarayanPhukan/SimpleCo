@@ -62,17 +62,6 @@ export const Navbar = ({ onOpenAccount, onOpenCart, onOpenAdmin, onSelectCategor
 
         {/* Right Action Controls (Account & Cart Logo Buttons) */}
         <div className="nav-actions">
-          {/* Studio Admin Button */}
-          <button 
-            className="nav-icon-btn" 
-            onClick={onOpenAdmin} 
-            aria-label="Studio Admin Panel"
-            title="Studio Admin Dashboard (Orders & Catalog)"
-            style={{ fontSize: '1rem', background: '#F0F9FF', border: '1px solid #BAE6FD', color: '#0284C7' }}
-          >
-            ⚡
-          </button>
-
           {/* Account Logo Button */}
           <button 
             className="nav-icon-btn nav-account-btn" 
@@ -147,11 +136,6 @@ export const Navbar = ({ onOpenAccount, onOpenCart, onOpenAdmin, onSelectCategor
             <li>
               <a href="#catalog" onClick={(e) => handleNavCategory(e, 'wearables')}>
                 ☁️ Wearables & Cardigans
-              </a>
-            </li>
-            <li style={{ borderTop: '1px solid var(--border-subtle)', marginTop: '0.5rem', paddingTop: '0.5rem' }}>
-              <a href="#admin" onClick={(e) => { e.preventDefault(); setMobileMenuOpen(false); onOpenAdmin(); }} style={{ color: 'var(--primary)', fontWeight: 700 }}>
-                ⚡ Studio Admin Panel
               </a>
             </li>
           </ul>

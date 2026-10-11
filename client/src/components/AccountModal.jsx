@@ -222,7 +222,7 @@ export const AccountModal = ({ isOpen, onClose, onOpenAddressModal, onShowToast 
                 {loadingOrders && (
                   <div style={{ textAlign: 'center', padding: '2rem 0', color: 'var(--text-muted)' }}>
                     <span style={{ fontSize: '1.8rem', display: 'inline-block', animation: 'spin 1s infinite' }}>🧶</span>
-                    <p style={{ marginTop: '0.4rem', fontSize: '0.88rem' }}>Loading live orders from MongoDB...</p>
+                    <p style={{ marginTop: '0.4rem', fontSize: '0.88rem' }}>Loading your orders...</p>
                   </div>
                 )}
 
@@ -302,7 +302,7 @@ export const AccountModal = ({ isOpen, onClose, onOpenAddressModal, onShowToast 
                                   <button 
                                     className="btn-sim-advance-inline"
                                     onClick={() => handleAdvanceStage(ord.orderId)}
-                                    title="Advance to next stage in live MongoDB"
+                                    title="Simulate next tracking stage"
                                   >
                                     Advance Next Stage ⏩
                                   </button>
@@ -503,7 +503,7 @@ export const AccountModal = ({ isOpen, onClose, onOpenAddressModal, onShowToast 
                                 className="addr-action-btn" 
                                 onClick={async () => {
                                   await setDefaultAddress(id);
-                                  onShowToast('Default address updated in MongoDB', '📍');
+                                  onShowToast('Default address updated! 📍', '📍');
                                 }}
                               >
                                 Make Default

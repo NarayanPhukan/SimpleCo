@@ -164,10 +164,10 @@ export const App = () => {
         <section className="catalog-section" id="catalog">
           <div className="container">
             <div className="section-header">
-              <span className="section-tag">Curated MERN Boutique</span>
+              <span className="section-tag">Artisan Handcrafted Boutique</span>
               <h2 className="section-title">Handmade Crochet Creations</h2>
               <p className="section-subtitle">
-                Discover our cutest amigurumi plushies, everlasting bouquets, and trendy everyday totes stored in MongoDB.
+                Discover our cutest amigurumi plushies, everlasting bouquets, and trendy everyday totes crafted with pure love.
               </p>
             </div>
 
@@ -242,7 +242,7 @@ export const App = () => {
               {loadingProducts ? (
                 <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '3rem 0' }}>
                   <div style={{ fontSize: '2.5rem', animation: 'spin 1s infinite' }}>🧶</div>
-                  <p style={{ marginTop: '0.5rem', color: 'var(--text-muted)' }}>Loading crochet creations from MongoDB...</p>
+                  <p style={{ marginTop: '0.5rem', color: 'var(--text-muted)' }}>Loading handcrafted crochet pieces...</p>
                 </div>
               ) : products.length === 0 ? (
                 <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '4rem 1rem' }}>

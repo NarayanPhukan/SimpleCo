@@ -51,7 +51,6 @@ export const Footer = ({ onOpenAccount, onScrollToTrack, onSelectCategory, onOpe
               <li><a href="#orderTracking" onClick={(e) => { e.preventDefault(); onScrollToTrack(); }}>Order Tracking</a></li>
               <li><a href="#account" onClick={(e) => { e.preventDefault(); onOpenAccount(); }}>Saved Addresses</a></li>
               <li><a href="#account" onClick={(e) => { e.preventDefault(); onOpenAccount(); }}>My Account</a></li>
-              <li><a href="#admin" onClick={(e) => { e.preventDefault(); if (onOpenAdmin) onOpenAdmin(); }} style={{ color: 'var(--primary)', fontWeight: 600 }}>⚡ Studio Admin Portal</a></li>
               <li><a href="#">Shipping & Returns</a></li>
               <li><a href="#">Yarn Care Guide</a></li>
             </ul>
@@ -80,8 +79,17 @@ export const Footer = ({ onOpenAccount, onScrollToTrack, onSelectCategory, onOpe
         </div>
 
         <div className="footer-bottom">
-          <p>&copy; 2026 BabyyGurll Crochet Studio. All rights reserved. Handcrafted with love.</p>
-          <p>Full MERN Stack • MongoDB, Express, React & Node.js</p>
+          <p>&copy; 2026 BabyyGurll Crochet Studio India. All rights reserved. Handcrafted with love.</p>
+          <p>
+            Nationwide Express Tracked Dispatch • 
+            <a 
+              href="#admin" 
+              onClick={(e) => { e.preventDefault(); if (onOpenAdmin) onOpenAdmin(); }} 
+              style={{ marginLeft: '0.5rem', color: 'var(--text-muted)', textDecoration: 'none', fontSize: '0.75rem' }}
+            >
+              Studio Staff Portal 🔒
+            </a>
+          </p>
         </div>
       </div>
     </footer>

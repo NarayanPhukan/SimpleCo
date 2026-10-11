@@ -60,10 +60,10 @@ export const OrderTracker = ({ trackOrderId, onShowToast }) => {
     <section className="order-tracking-section" id="orderTracking">
       <div className="container">
         <div className="section-header">
-          <span className="section-tag">Live Order Progress (MERN Stack)</span>
+          <span className="section-tag">Live Order Tracking</span>
           <h2 className="section-title">Track Your Crochet Package</h2>
           <p className="section-subtitle">
-            Enter your Order ID (or select a demo order below) to query live MongoDB documents & track transit status.
+            Enter your Order ID (or select a sample below) to track real-time delivery status across India.
           </p>
         </div>
 
@@ -116,7 +116,7 @@ export const OrderTracker = ({ trackOrderId, onShowToast }) => {
               {/* Simulation Advance Bar */}
               <div className="simulation-control-bar">
                 <div className="sim-info">
-                  <span>⚡ Interactive Simulator: Advance live MongoDB order stages</span>
+                  <span>⚡ Live Tracking Simulation: Test parcel status updates</span>
                 </div>
                 <button className="btn-sim-advance" onClick={handleAdvanceStage}>
                   Advance Next Stage ⏩
