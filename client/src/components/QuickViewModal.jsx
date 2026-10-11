@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useCart } from '../context/CartContext';
+import { IconBag } from './Icons';
 
 export const QuickViewModal = ({ product, onClose, onShowToast, onOpenCart }) => {
   const { formatPrice, addToCart } = useCart();
@@ -17,7 +18,7 @@ export const QuickViewModal = ({ product, onClose, onShowToast, onOpenCart }) =>
 
   const handleAddToCart = () => {
     addToCart(product, selectedColor, 1, customNote);
-    onShowToast(`Added ${product.name} (${selectedColor}) to bag! 🛍️`, '🌸');
+    onShowToast(`Added ${product.name} (${selectedColor}) to bag`, '✓');
     onClose();
     onOpenCart();
   };
@@ -83,8 +84,9 @@ export const QuickViewModal = ({ product, onClose, onShowToast, onOpenCart }) =>
           </div>
 
           <div className="qv-cta-row">
-            <button className="btn btn-primary" onClick={handleAddToCart} style={{ flexGrow: 1 }}>
-              Add to Bag 🛍️
+            <button className="btn btn-primary" onClick={handleAddToCart} style={{ flexGrow: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
+              <IconBag size={18} />
+              <span>Add to Bag</span>
             </button>
           </div>
         </div>

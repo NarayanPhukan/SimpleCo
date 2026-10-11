@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import { api } from '../services/api';
 import { openRazorpayStandardCheckout } from '../services/razorpay';
+import { IconShield, IconPackage, IconArrowRight, IconArrowLeft, IconCheck, IconBag, IconTruck } from './Icons';
 
 const INDIAN_STATES = [
   "Andhra Pradesh", "Assam", "Bihar", "Chhattisgarh", "Delhi", "Goa", "Gujarat", 
@@ -95,25 +96,25 @@ export const CheckoutModal = ({
     const isAddingAddress = addresses.length === 0 || showAddressForm;
     if (isAddingAddress) {
       if (!addrForm.recipientName.trim()) {
-        onShowToast('Please enter recipient full name', '⚠️');
+        onShowToast('Please enter recipient full name', '!');
         return;
       }
       const rawDigits = addrForm.phone.replace(/[^0-9]/g, '');
       if (rawDigits.length < 10) {
-        onShowToast('Please enter a valid 10-digit mobile number', '⚠️');
+        onShowToast('Please enter a valid 10-digit mobile number', '!');
         return;
       }
       if (!addrForm.street.trim()) {
-        onShowToast('Please enter flat / house / street address', '⚠️');
+        onShowToast('Please enter flat / house / street address', '!');
         return;
       }
       if (!addrForm.city.trim()) {
-        onShowToast('Please enter city / town', '⚠️');
+        onShowToast('Please enter city / town', '!');
         return;
       }
       const rawZip = addrForm.zip.replace(/[^0-9]/g, '');
       if (rawZip.length !== 6) {
-        onShowToast('Please enter a valid 6-digit Indian PIN code', '⚠️');
+        onShowToast('Please enter a valid 6-digit Indian PIN code', '!');
         return;
       }
 
@@ -129,11 +130,11 @@ export const CheckoutModal = ({
           setSelectedAddressId(id);
         }
         setShowAddressForm(false);
-        onShowToast('Shipping address confirmed! 📦', '📍');
+        onShowToast('Shipping address confirmed', '✓');
         setStep(2);
         return;
       } catch (err) {
-        onShowToast('Could not save address: ' + err.message, '⚠️');
+        onShowToast('Could not save address: ' + err.message, '!');
         return;
       }
     }
@@ -148,7 +149,7 @@ export const CheckoutModal = ({
     setSubmitting(true);
 
     if (!chosenAddr || (!chosenAddr.street && !addrForm.street)) {
-      onShowToast('Please provide a delivery address first', '⚠️');
+      onShowToast('Please provide a delivery address first', '!');
       setSubmitting(false);
       setStep(1);
       return;
@@ -167,7 +168,7 @@ export const CheckoutModal = ({
 
     // Razorpay Standard Checkout Flow
     if (paymentMethod === 'razorpay') {
-      onShowToast('Opening Razorpay Payment Modal... 🔒', '⚡');
+      onShowToast('Opening Razorpay Payment Modal...', '✓');
       await openRazorpayStandardCheckout({
         amountInRupees: payAmount,
         prefill: {
@@ -196,7 +197,7 @@ export const CheckoutModal = ({
             setStep(4);
             setSubmitting(false);
             if (onOrderPlacedSuccess) onOrderPlacedSuccess(newId);
-            onShowToast(`Payment verified! Order #${newId} placed successfully! 🌸`, '🎉');
+            onShowToast(`Payment verified! Order #${newId} placed successfully`, '✓');
           } catch (createErr) {
             const fallbackId = 'BGC-' + Math.floor(10000 + Math.random() * 90000);
             setPlacedOrderId(fallbackId);
@@ -205,16 +206,16 @@ export const CheckoutModal = ({
             setStep(4);
             setSubmitting(false);
             if (onOrderPlacedSuccess) onOrderPlacedSuccess(fallbackId);
-            onShowToast(`Order #${fallbackId} recorded with payment ${payDetails.paymentId}! 🌸`, '🎉');
+            onShowToast(`Order #${fallbackId} recorded with payment ${payDetails.paymentId}`, '✓');
           }
         },
         onError: (errMsg) => {
           setSubmitting(false);
-          onShowToast(errMsg, '⚠️');
+          onShowToast(errMsg, '!');
         },
         onDismiss: () => {
           setSubmitting(false);
-          onShowToast('Payment window closed. You can retry when ready.', 'ℹ️');
+          onShowToast('Payment window closed. You can retry when ready.', 'ℹ');
         }
       });
       return;
@@ -239,7 +240,7 @@ export const CheckoutModal = ({
       setStep(4);
       setSubmitting(false);
       if (onOrderPlacedSuccess) onOrderPlacedSuccess(newId);
-      onShowToast(`Order #${newId} placed via Cash on Delivery! 🌸`, '🎉');
+      onShowToast(`Order #${newId} placed via Cash on Delivery`, '✓');
     } catch (err) {
       const fallbackId = 'BGC-' + Math.floor(10000 + Math.random() * 90000);
       setPlacedOrderId(fallbackId);
@@ -248,7 +249,7 @@ export const CheckoutModal = ({
       setStep(4);
       setSubmitting(false);
       if (onOrderPlacedSuccess) onOrderPlacedSuccess(fallbackId);
-      onShowToast(`Order #${fallbackId} placed successfully! 🌸`, '🎉');
+      onShowToast(`Order #${fallbackId} placed successfully`, '✓');
     }
   };
 
@@ -279,7 +280,7 @@ export const CheckoutModal = ({
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.4rem', flexWrap: 'wrap', gap: '0.5rem' }}>
               <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: '1.35rem', margin: 0 }}>
                 {addresses.length === 0 || showAddressForm 
-                  ? 'Enter Delivery Address (Pan-India 🇮🇳)' 
+                  ? 'Enter Delivery Address (Pan-India)' 
                   : 'Where should we ship your pieces?'}
               </h3>
               {addresses.length > 0 && (
@@ -449,10 +450,10 @@ export const CheckoutModal = ({
                           {addr.isDefault && <span className="default-pill">DEFAULT</span>}
                         </div>
                         <div style={{ fontSize: '0.88rem', fontWeight: 600, color: 'var(--text-dark)' }}>
-                          {addr.recipientName} • 📞 {addr.phone}
+                          {addr.recipientName} • Phone: {addr.phone}
                         </div>
                         <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>
-                          {addr.street}, {addr.city}, {addr.state} - {addr.zip}, India 🇮🇳
+                          {addr.street}, {addr.city}, {addr.state} - {addr.zip}, India
                         </div>
                       </div>
                     </label>
@@ -471,8 +472,9 @@ export const CheckoutModal = ({
                   Cancel
                 </button>
               )}
-              <button type="button" className="btn btn-primary" onClick={handleNextToStep2}>
-                Continue to Shipping ➡️
+              <button type="button" className="btn btn-primary" onClick={handleNextToStep2} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
+                <span>Continue to Shipping</span>
+                <IconArrowRight size={16} />
               </button>
             </div>
           </div>
@@ -529,8 +531,14 @@ export const CheckoutModal = ({
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <button className="btn btn-secondary" onClick={() => setStep(1)}>⬅️ Back to Address</button>
-              <button className="btn btn-primary" onClick={() => setStep(3)}>Continue to Payment ➡️</button>
+              <button className="btn btn-secondary" onClick={() => setStep(1)} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
+                <IconArrowLeft size={16} />
+                <span>Back to Address</span>
+              </button>
+              <button className="btn btn-primary" onClick={() => setStep(3)} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
+                <span>Continue to Payment</span>
+                <IconArrowRight size={16} />
+              </button>
             </div>
           </div>
         )}
@@ -548,7 +556,7 @@ export const CheckoutModal = ({
             {/* Delivering To Recap Card */}
             <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 'var(--radius-sm)', padding: '0.75rem 1rem', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
               <div style={{ fontSize: '0.82rem', color: '#475569' }}>
-                <strong style={{ color: '#0F172A' }}>📍 Ship to: </strong>
+                <strong style={{ color: '#0F172A' }}>Ship to: </strong>
                 {chosenAddr?.recipientName} • {chosenAddr?.city}, {chosenAddr?.state} ({chosenAddr?.zip})
               </div>
               <button 
@@ -568,7 +576,7 @@ export const CheckoutModal = ({
                 style={{ textAlign: 'center', padding: '0.75rem 0.6rem', fontSize: '0.86rem', fontWeight: 600 }}
                 onClick={() => setPaymentMethod('razorpay')}
               >
-                ⚡ Razorpay Online (UPI / Cards)
+                Razorpay Online (UPI / Cards)
               </button>
               <button 
                 type="button" 
@@ -576,7 +584,7 @@ export const CheckoutModal = ({
                 style={{ textAlign: 'center', padding: '0.75rem 0.6rem', fontSize: '0.86rem', fontWeight: 600 }}
                 onClick={() => setPaymentMethod('cod')}
               >
-                💵 Cash on Delivery
+                Cash on Delivery
               </button>
             </div>
 
@@ -584,12 +592,14 @@ export const CheckoutModal = ({
             {paymentMethod === 'razorpay' && (
               <div style={{ background: '#F4FAFF', border: '1.5px solid #A6D4FF', borderRadius: 'var(--radius-md)', padding: '1.3rem', marginBottom: '1.5rem' }}>
                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.85rem', marginBottom: '1rem' }}>
-                  <span style={{ fontSize: '1.8rem', lineHeight: 1 }}>🛡️</span>
+                  <div style={{ color: 'var(--primary)', marginTop: '0.2rem' }}>
+                    <IconShield size={22} />
+                  </div>
                   <div style={{ flexGrow: 1 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '0.2rem' }}>
                       <strong style={{ fontSize: '0.98rem', color: 'var(--text-dark)' }}>Razorpay Standard Checkout</strong>
                       <span style={{ background: '#E0F2FE', color: '#0284C7', padding: '0.15rem 0.5rem', borderRadius: '4px', fontSize: '0.72rem', fontWeight: 700 }}>
-                        TEST MODE ACTIVE
+                        SECURE GATEWAY
                       </span>
                     </div>
                     <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>
@@ -599,14 +609,14 @@ export const CheckoutModal = ({
                 </div>
 
                 <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
-                  <span style={{ background: '#FFFFFF', border: '1px solid #D0E3F5', padding: '0.25rem 0.6rem', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600, color: '#334155' }}>⚡ Instant UPI</span>
-                  <span style={{ background: '#FFFFFF', border: '1px solid #D0E3F5', padding: '0.25rem 0.6rem', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600, color: '#334155' }}>💳 RuPay / Cards</span>
-                  <span style={{ background: '#FFFFFF', border: '1px solid #D0E3F5', padding: '0.25rem 0.6rem', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600, color: '#334155' }}>🏦 50+ Banks</span>
-                  <span style={{ background: '#FFFFFF', border: '1px solid #D0E3F5', padding: '0.25rem 0.6rem', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600, color: '#334155' }}>🔒 256-Bit SSL</span>
+                  <span style={{ background: '#FFFFFF', border: '1px solid #D0E3F5', padding: '0.25rem 0.6rem', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600, color: '#334155' }}>Instant UPI</span>
+                  <span style={{ background: '#FFFFFF', border: '1px solid #D0E3F5', padding: '0.25rem 0.6rem', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600, color: '#334155' }}>RuPay / Cards</span>
+                  <span style={{ background: '#FFFFFF', border: '1px solid #D0E3F5', padding: '0.25rem 0.6rem', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600, color: '#334155' }}>NetBanking</span>
+                  <span style={{ background: '#FFFFFF', border: '1px solid #D0E3F5', padding: '0.25rem 0.6rem', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600, color: '#334155' }}>256-Bit SSL Secure</span>
                 </div>
 
                 <div style={{ background: '#FFFFFF', border: '1px dashed #93C5FD', borderRadius: '6px', padding: '0.75rem 0.9rem', fontSize: '0.78rem', color: '#1E40AF' }}>
-                  ℹ️ Clicking <strong>"Pay with Razorpay"</strong> opens the official Razorpay popup modal. Upon successful payment, your HMAC-SHA256 signature is verified by the backend.
+                  Clicking <strong>"Pay with Razorpay"</strong> opens the official Razorpay checkout modal. Upon successful authorization, payment is verified securely by the server.
                 </div>
               </div>
             )}
@@ -615,11 +625,13 @@ export const CheckoutModal = ({
             {paymentMethod === 'cod' && (
               <div style={{ background: '#F4FAFF', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-md)', padding: '1.2rem', marginBottom: '1.5rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                  <span style={{ fontSize: '1.6rem' }}>📦</span>
+                  <div style={{ color: 'var(--primary)' }}>
+                    <IconPackage size={22} />
+                  </div>
                   <div>
                     <strong style={{ fontSize: '0.92rem', color: 'var(--text-dark)' }}>Cash on Delivery (COD)</strong>
                     <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                      Pay in cash or scan courier QR when your package arrives at your doorstep across India.
+                      Pay in cash or scan delivery QR when your package arrives at your doorstep across India.
                     </p>
                   </div>
                 </div>
@@ -652,7 +664,10 @@ export const CheckoutModal = ({
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
-              <button className="btn btn-secondary" onClick={() => setStep(2)}>⬅️ Back</button>
+              <button className="btn btn-secondary" onClick={() => setStep(2)} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
+                <IconArrowLeft size={16} />
+                <span>Back</span>
+              </button>
               
               <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'center' }}>
                 {paymentMethod === 'razorpay' && (
@@ -664,7 +679,7 @@ export const CheckoutModal = ({
                     title="Test with minimum Razorpay amount (100 paise = ₹1.00)"
                     style={{ fontSize: '0.8rem', padding: '0.75rem 1rem' }}
                   >
-                    🧪 Test Pay ₹1.00
+                    Test Pay ₹1.00
                   </button>
                 )}
 
@@ -676,8 +691,8 @@ export const CheckoutModal = ({
                 >
                   {submitting ? 'Connecting...' : (
                     paymentMethod === 'razorpay' 
-                      ? `Pay ${formatPrice(grandTotal)} with Razorpay ⚡` 
-                      : `Place Order via COD (${formatPrice(grandTotal)}) 📦`
+                      ? `Pay ${formatPrice(grandTotal)} with Razorpay` 
+                      : `Place Order via COD (${formatPrice(grandTotal)})`
                   )}
                 </button>
               </div>
@@ -688,10 +703,12 @@ export const CheckoutModal = ({
         {/* Step 4: Success View */}
         {step === 4 && (
           <div className="order-success-card">
-            <div className="success-check-bubble">🎉</div>
-            <h3>Dhanyavaad! Thank you for your order!</h3>
+            <div className="success-check-bubble" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <IconCheck size={32} />
+            </div>
+            <h3>Thank you for your order</h3>
             <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem' }}>
-              Your artisanal crochet order has been safely placed and recorded!
+              Your artisanal crochet order has been safely placed and recorded.
             </p>
 
             <div className="order-id-highlight">
@@ -699,7 +716,7 @@ export const CheckoutModal = ({
             </div>
 
             <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '1.8rem' }}>
-              A confirmation receipt and tracking updates will be sent to your email. Your artisan piece will be handcrafted with pure love!
+              A confirmation receipt and tracking updates have been sent to your email.
             </p>
 
             <div style={{ display: 'flex', justifyContent: 'center', gap: '0.85rem', flexWrap: 'wrap' }}>
@@ -713,7 +730,7 @@ export const CheckoutModal = ({
                   }
                 }}
               >
-                Track Order Status 🚚
+                Track Order Status
               </button>
               <button 
                 type="button"
@@ -724,7 +741,7 @@ export const CheckoutModal = ({
                   if (catElem) catElem.scrollIntoView({ behavior: 'smooth' });
                 }}
               >
-                Continue Shopping 🛍️
+                Continue Shopping
               </button>
             </div>
           </div>

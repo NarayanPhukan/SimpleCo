@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useCart } from '../context/CartContext';
+import { IconBag, IconArrowRight, IconClose } from './Icons';
 
 export const CartDrawer = ({ isOpen, onClose, onProceedCheckout, onShowToast, onExplore }) => {
   const { cart, updateQuantity, removeFromCart, coupon, applyCoupon, removeCoupon, getTotals, formatPrice } = useCart();
@@ -16,16 +17,16 @@ export const CartDrawer = ({ isOpen, onClose, onProceedCheckout, onShowToast, on
     if (!couponCode.trim()) return;
     const res = applyCoupon(couponCode);
     if (res.success) {
-      onShowToast(`Promo "${res.coupon.code}" applied! 🎉`, '🏷️');
+      onShowToast(`Promo "${res.coupon.code}" applied`, '✓');
       setCouponCode('');
     } else {
-      onShowToast(res.message, '⚠️');
+      onShowToast(res.message, '!');
     }
   };
 
   const handleRemoveCoupon = () => {
     removeCoupon();
-    onShowToast('Coupon removed', '🏷️');
+    onShowToast('Coupon removed', '✓');
   };
 
   return (
@@ -34,7 +35,7 @@ export const CartDrawer = ({ isOpen, onClose, onProceedCheckout, onShowToast, on
     }}>
       <div className="cart-drawer" role="dialog" aria-modal="true" aria-label="Shopping Cart">
         <div className="cart-header">
-          <h3>🛍️ Your Basket ({totals.itemCount})</h3>
+          <h3>Shopping Bag ({totals.itemCount})</h3>
           <button className="drawer-close-btn" onClick={onClose} aria-label="Close cart">&times;</button>
         </div>
 
@@ -43,7 +44,7 @@ export const CartDrawer = ({ isOpen, onClose, onProceedCheckout, onShowToast, on
           <div className="shipping-meter-text">
             <span>
               {totals.remainingForFreeShipping <= 0 
-                ? "🎉 You've unlocked Free Standard Shipping!" 
+                ? "You have unlocked Free Shipping" 
                 : `Add ${formatPrice(totals.remainingForFreeShipping)} more for Free Shipping`}
             </span>
             <span>{pct}%</span>
@@ -57,11 +58,14 @@ export const CartDrawer = ({ isOpen, onClose, onProceedCheckout, onShowToast, on
         <div className="cart-items-body">
           {cart.length === 0 ? (
             <div className="cart-empty-state">
-              <span className="cart-empty-icon">🧺</span>
-              <h4>Your basket is feeling empty</h4>
+              <span className="cart-empty-icon" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+                <IconBag size={48} />
+              </span>
+              <h4>Your bag is currently empty</h4>
               <p>Explore our soft pastel plushies, bouquets, and heirloom totes.</p>
-              <button className="btn btn-primary" onClick={() => { onClose(); onExplore(); }}>
-                Start Browsing 🍓
+              <button className="btn btn-primary" onClick={() => { onClose(); onExplore(); }} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
+                <span>Start Browsing</span>
+                <IconArrowRight size={16} />
               </button>
             </div>
           ) : (
@@ -85,10 +89,10 @@ export const CartDrawer = ({ isOpen, onClose, onProceedCheckout, onShowToast, on
                     <span className="cart-item-price">{formatPrice(item.price * item.quantity)}</span>
                     <button 
                       className="cart-remove-btn" 
-                      onClick={() => { removeFromCart(index); onShowToast('Item removed from basket', '🧺'); }}
+                      onClick={() => { removeFromCart(index); onShowToast('Item removed from bag', '✓'); }}
                       title="Remove item"
                     >
-                      ✕
+                      <IconClose size={14} />
                     </button>
                   </div>
                 </div>
@@ -115,7 +119,7 @@ export const CartDrawer = ({ isOpen, onClose, onProceedCheckout, onShowToast, on
 
               {coupon && (
                 <div className="active-coupon-tag">
-                  <span>🏷️ Coupon Applied: <strong>{coupon.code}</strong> ({coupon.label})</span>
+                  <span>Coupon Applied: <strong>{coupon.code}</strong> ({coupon.label})</span>
                   <span className="remove-coupon-btn" onClick={handleRemoveCoupon} title="Remove coupon">&times;</span>
                 </div>
               )}
@@ -146,8 +150,9 @@ export const CartDrawer = ({ isOpen, onClose, onProceedCheckout, onShowToast, on
               </div>
             </div>
 
-            <button className="btn btn-primary btn-checkout" onClick={onProceedCheckout}>
-              Proceed to Checkout 🌸
+            <button className="btn btn-primary btn-checkout" onClick={onProceedCheckout} style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
+              <span>Proceed to Checkout</span>
+              <IconArrowRight size={16} />
             </button>
           </div>
         )}

@@ -138,7 +138,7 @@ exports.updateOrderStatus = async (req, res) => {
           'Artisan Handcrafting in Progress',
           'Ribbon Wrapped & Sweet Scented',
           'In Transit with Courier',
-          'Delivered with Love 🌸'
+          'Delivered to Doorstep'
         ];
         order.statusLabel = labels[stageIdx];
       }
@@ -197,7 +197,7 @@ exports.advanceOrderStage = async (req, res) => {
         'Artisan Handcrafting in Progress',
         'Ribbon Wrapped & Sweet Scented',
         'In Transit with Courier',
-        'Delivered with Love 🌸'
+        'Delivered to Doorstep'
       ];
       order.statusLabel = labels[order.statusStage];
       order.statusCode = stages[order.statusStage];

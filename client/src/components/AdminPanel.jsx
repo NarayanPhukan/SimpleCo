@@ -1,6 +1,21 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { api } from '../services/api';
 import { useCart } from '../context/CartContext';
+import {
+  IconClose,
+  IconCheck,
+  IconArrowRight,
+  IconPackage,
+  IconPlus,
+  IconTrash,
+  IconEdit,
+  IconRefresh,
+  IconTag,
+  IconStudio,
+  IconChart,
+  IconSettings,
+  IconUpload
+} from './Icons';
 
 // Studio Photo Library presets with human titles and zero raw paths shown
 const STUDIO_PHOTO_PRESETS = [
@@ -105,7 +120,7 @@ export const AdminPanel = ({ isOpen, onClose, onShowToast, onProductCatalogUpdat
       setIsAuthenticated(true);
       sessionStorage.setItem('bgc_admin_auth', 'true');
       setAuthError('');
-      onShowToast('Signed in to Studio Management Portal', '🔒');
+      onShowToast('Signed in to Studio Management Portal', '✓');
     } else {
       setAuthError('Invalid credentials. Check your email and password.');
     }
@@ -123,7 +138,7 @@ export const AdminPanel = ({ isOpen, onClose, onShowToast, onProductCatalogUpdat
     if (!file) return;
 
     if (!file.type.startsWith('image/')) {
-      onShowToast('Please select a valid image file (PNG, JPG, WEBP)', '⚠️');
+      onShowToast('Please select a valid image file (PNG, JPG, WEBP)', '!');
       return;
     }
 
@@ -131,7 +146,7 @@ export const AdminPanel = ({ isOpen, onClose, onShowToast, onProductCatalogUpdat
     reader.onload = (event) => {
       const dataUrl = event.target.result;
       setProductForm(prev => ({ ...prev, image: dataUrl }));
-      onShowToast('Photo uploaded and preview ready! 📸', '✨');
+      onShowToast('Photo uploaded and preview ready', '✓');
     };
     reader.readAsDataURL(file);
   };
@@ -141,24 +156,24 @@ export const AdminPanel = ({ isOpen, onClose, onShowToast, onProductCatalogUpdat
     e.preventDefault();
     try {
       if (!productForm.name || !productForm.price) {
-        onShowToast('Please provide product title and price', '⚠️');
+        onShowToast('Please provide product title and price', '!');
         return;
       }
 
       if (productForm._id || productForm.id) {
         const idToUpdate = productForm._id || productForm.id;
         await api.updateProduct(idToUpdate, productForm);
-        onShowToast(`"${productForm.name}" updated successfully!`, '✅');
+        onShowToast(`"${productForm.name}" updated successfully`, '✓');
       } else {
         await api.createProduct(productForm);
-        onShowToast(`"${productForm.name}" added to catalog!`, '🎉');
+        onShowToast(`"${productForm.name}" added to catalog`, '✓');
       }
 
       setIsEditingProduct(false);
       fetchProducts();
       if (onProductCatalogUpdated) onProductCatalogUpdated();
     } catch (err) {
-      onShowToast(err.message || 'Error saving product', '⚠️');
+      onShowToast(err.message || 'Error saving product', '!');
     }
   };
 
@@ -169,11 +184,11 @@ export const AdminPanel = ({ isOpen, onClose, onShowToast, onProductCatalogUpdat
     }
     try {
       await api.deleteProduct(productId);
-      onShowToast(`"${productName}" removed from catalog.`, '🗑️');
+      onShowToast(`"${productName}" removed from catalog`, '✓');
       fetchProducts();
       if (onProductCatalogUpdated) onProductCatalogUpdated();
     } catch (err) {
-      onShowToast(err.message || 'Error deleting product', '⚠️');
+      onShowToast(err.message || 'Error deleting product', '!');
     }
   };
 
@@ -184,10 +199,10 @@ export const AdminPanel = ({ isOpen, onClose, onShowToast, onProductCatalogUpdat
       const id = product._id || product.id;
       await api.updateProduct(id, { inStock: updatedStock });
       setProducts(prev => prev.map(p => (p._id === id || p.id === id) ? { ...p, inStock: updatedStock } : p));
-      onShowToast(`${product.name}: ${updatedStock ? 'In Stock' : 'Out of Stock'}`, '📦');
+      onShowToast(`${product.name}: ${updatedStock ? 'In Stock' : 'Out of Stock'}`, '✓');
       if (onProductCatalogUpdated) onProductCatalogUpdated();
     } catch (err) {
-      onShowToast('Failed to update stock: ' + err.message, '⚠️');
+      onShowToast('Failed to update stock: ' + err.message, '!');
     }
   };
 
@@ -195,10 +210,10 @@ export const AdminPanel = ({ isOpen, onClose, onShowToast, onProductCatalogUpdat
   const handleAdvanceStage = async (orderId) => {
     try {
       await api.advanceOrderStage(orderId);
-      onShowToast(`Order #${orderId} moved to next fulfillment step`, '🚚');
+      onShowToast(`Order #${orderId} moved to next fulfillment step`, '✓');
       fetchOrders();
     } catch (err) {
-      onShowToast('Failed to advance order: ' + err.message, '⚠️');
+      onShowToast('Failed to advance order: ' + err.message, '!');
     }
   };
 
@@ -206,10 +221,10 @@ export const AdminPanel = ({ isOpen, onClose, onShowToast, onProductCatalogUpdat
   const handleUpdateOrderStatus = async (orderId, newStatus) => {
     try {
       await api.updateOrderStatus(orderId, { statusCode: newStatus });
-      onShowToast(`Order #${orderId} status updated to ${newStatus.toUpperCase()}`, '📝');
+      onShowToast(`Order #${orderId} status updated to ${newStatus.toUpperCase()}`, '✓');
       fetchOrders();
     } catch (err) {
-      onShowToast('Failed to update status: ' + err.message, '⚠️');
+      onShowToast('Failed to update status: ' + err.message, '!');
     }
   };
 
@@ -217,7 +232,7 @@ export const AdminPanel = ({ isOpen, onClose, onShowToast, onProductCatalogUpdat
   const handleTestPincode = async (e) => {
     e.preventDefault();
     if (!testPincode || testPincode.length !== 6) {
-      onShowToast('Please enter a 6-digit Indian PIN code', '⚠️');
+      onShowToast('Please enter a 6-digit Indian PIN code', '!');
       return;
     }
     try {
@@ -225,7 +240,7 @@ export const AdminPanel = ({ isOpen, onClose, onShowToast, onProductCatalogUpdat
       const res = await api.checkPincodeServiceability(testPincode);
       setPincodeResult(res.data);
       setTestingPin(false);
-      onShowToast(`PIN Code ${testPincode} is serviceable!`, '⚡');
+      onShowToast(`PIN Code ${testPincode} is serviceable`, '✓');
     } catch (err) {
       setTestingPin(false);
       setPincodeResult({
@@ -315,12 +330,11 @@ export const AdminPanel = ({ isOpen, onClose, onShowToast, onProductCatalogUpdat
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  fontSize: '1.8rem',
                   margin: '0 auto 1rem auto',
                   color: '#FFFFFF'
                 }}
               >
-                🧶
+                <IconStudio size={28} />
               </div>
               <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#0F172A', margin: '0 0 0.35rem 0' }}>
                 Studio Management Portal
@@ -380,7 +394,7 @@ export const AdminPanel = ({ isOpen, onClose, onShowToast, onProductCatalogUpdat
                   marginTop: '0.5rem'
                 }}
               >
-                Sign In to Studio Portal 🔒
+                Sign In to Studio Portal
               </button>
             </form>
 
@@ -413,8 +427,10 @@ export const AdminPanel = ({ isOpen, onClose, onShowToast, onProductCatalogUpdat
           >
             {/* Studio Brand Header */}
             <div style={{ padding: '1.5rem 1.25rem', borderBottom: '1px solid #1E293B' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
-                <span style={{ fontSize: '1.6rem' }}>🧶</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'rgba(255, 123, 156, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#FF7B9C' }}>
+                  <IconStudio size={18} />
+                </div>
                 <div>
                   <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 800, color: '#FFFFFF', letterSpacing: '-0.2px' }}>
                     BabyyGurll Studio
@@ -429,11 +445,11 @@ export const AdminPanel = ({ isOpen, onClose, onShowToast, onProductCatalogUpdat
             {/* Sidebar Navigation Links */}
             <nav style={{ flex: 1, padding: '1rem 0.75rem', display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
               {[
-                { id: 'dashboard', icon: '📊', label: 'Executive Dashboard' },
-                { id: 'products', icon: '🧶', label: 'Catalog & Inventory', badge: products.length },
-                { id: 'orders', icon: '📦', label: 'Orders & Fulfillment', badge: orders.length },
-                { id: 'discounts', icon: '🏷️', label: 'Promotions & Coupons' },
-                { id: 'settings', icon: '⚙️', label: 'Store & Shipping Setup' }
+                { id: 'dashboard', icon: <IconChart size={17} />, label: 'Executive Dashboard' },
+                { id: 'products', icon: <IconStudio size={17} />, label: 'Catalog & Inventory', badge: products.length },
+                { id: 'orders', icon: <IconPackage size={17} />, label: 'Orders & Fulfillment', badge: orders.length },
+                { id: 'discounts', icon: <IconTag size={17} />, label: 'Promotions & Coupons' },
+                { id: 'settings', icon: <IconSettings size={17} />, label: 'Store & Shipping Setup' }
               ].map(item => {
                 const isActive = activeNav === item.id;
                 return (
@@ -459,7 +475,7 @@ export const AdminPanel = ({ isOpen, onClose, onShowToast, onProductCatalogUpdat
                     }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                      <span style={{ fontSize: '1.1rem' }}>{item.icon}</span>
+                      <span style={{ display: 'flex', alignItems: 'center', color: isActive ? '#38BDF8' : '#94A3B8' }}>{item.icon}</span>
                       <span>{item.label}</span>
                     </div>
                     {item.badge !== undefined && (
@@ -501,8 +517,8 @@ export const AdminPanel = ({ isOpen, onClose, onShowToast, onProductCatalogUpdat
                   cursor: 'pointer'
                 }}
               >
-                <span>🛒 View Storefront</span>
-                <span>↗️</span>
+                <span>View Storefront</span>
+                <IconArrowRight size={14} />
               </button>
 
               <button
@@ -547,25 +563,26 @@ export const AdminPanel = ({ isOpen, onClose, onShowToast, onProductCatalogUpdat
 
               {/* System Badges */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.78rem', color: '#166534', background: '#DCFCE7', padding: '0.25rem 0.65rem', borderRadius: '6px', fontWeight: 600 }}>
-                  <span>🟢</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', fontSize: '0.78rem', color: '#166534', background: '#DCFCE7', padding: '0.25rem 0.65rem', borderRadius: '6px', fontWeight: 600 }}>
+                  <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#16A34A', display: 'inline-block' }}></span>
                   <span>Store Live</span>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.78rem', color: '#0369A1', background: '#E0F2FE', padding: '0.25rem 0.65rem', borderRadius: '6px', fontWeight: 600 }}>
-                  <span>⚡</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', fontSize: '0.78rem', color: '#0369A1', background: '#E0F2FE', padding: '0.25rem 0.65rem', borderRadius: '6px', fontWeight: 600 }}>
+                  <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#0284C7', display: 'inline-block' }}></span>
                   <span>Payments Active</span>
                 </div>
                 <button
                   type="button"
                   className="btn btn-secondary"
-                  style={{ fontSize: '0.78rem', padding: '0.4rem 0.75rem' }}
+                  style={{ fontSize: '0.78rem', padding: '0.4rem 0.75rem', display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}
                   onClick={() => {
                     fetchProducts();
                     fetchOrders();
-                    onShowToast('Storefront data refreshed', '🔄');
+                    onShowToast('Storefront data refreshed', '✓');
                   }}
                 >
-                  🔄 Refresh
+                  <IconRefresh size={13} />
+                  <span>Refresh</span>
                 </button>
               </div>
             </header>
@@ -645,7 +662,7 @@ export const AdminPanel = ({ isOpen, onClose, onShowToast, onProductCatalogUpdat
                         <button
                           type="button"
                           className="btn btn-primary"
-                          style={{ padding: '0.75rem 1rem', fontSize: '0.86rem', textAlign: 'left' }}
+                          style={{ padding: '0.75rem 1rem', fontSize: '0.86rem', textAlign: 'left', display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}
                           onClick={() => {
                             setProductForm({
                               name: '',
@@ -662,15 +679,17 @@ export const AdminPanel = ({ isOpen, onClose, onShowToast, onProductCatalogUpdat
                             setActiveNav('products');
                           }}
                         >
-                          ➕ Add New Creation to Catalog
+                          <IconPlus size={15} />
+                          <span>Add New Creation to Catalog</span>
                         </button>
                         <button
                           type="button"
                           className="btn btn-secondary"
-                          style={{ padding: '0.75rem 1rem', fontSize: '0.86rem', textAlign: 'left' }}
+                          style={{ padding: '0.75rem 1rem', fontSize: '0.86rem', textAlign: 'left', display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}
                           onClick={() => setActiveNav('orders')}
                         >
-                          📦 Review & Process Order Fulfillments
+                          <IconPackage size={15} />
+                          <span>Review & Process Order Fulfillments</span>
                         </button>
                       </div>
                     </div>
@@ -764,7 +783,7 @@ export const AdminPanel = ({ isOpen, onClose, onShowToast, onProductCatalogUpdat
                     <button 
                       type="button" 
                       className="btn btn-primary"
-                      style={{ fontSize: '0.85rem', padding: '0.65rem 1.25rem' }}
+                      style={{ fontSize: '0.85rem', padding: '0.65rem 1.25rem', display: 'inline-flex', alignItems: 'center', gap: '0.45rem' }}
                       onClick={() => {
                         setProductForm({
                           _id: '',
@@ -782,7 +801,8 @@ export const AdminPanel = ({ isOpen, onClose, onShowToast, onProductCatalogUpdat
                         setIsEditingProduct(true);
                       }}
                     >
-                      ➕ Add New Creation
+                      <IconPlus size={15} />
+                      <span>Add New Creation</span>
                     </button>
                   </div>
 
@@ -1080,9 +1100,10 @@ export const AdminPanel = ({ isOpen, onClose, onShowToast, onProductCatalogUpdat
                                   type="button" 
                                   className="btn btn-secondary" 
                                   onClick={() => fileInputRef.current?.click()}
-                                  style={{ fontSize: '0.85rem' }}
+                                  style={{ fontSize: '0.85rem', display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}
                                 >
-                                  📁 Choose Photo from Device
+                                  <IconUpload size={15} />
+                                  <span>Choose Photo from Device</span>
                                 </button>
                                 <p style={{ fontSize: '0.75rem', color: '#64748B', marginTop: '0.5rem', marginBottom: 0 }}>
                                   Supports PNG, JPG, or WEBP up to 5MB. Previews immediately.
@@ -1176,7 +1197,7 @@ export const AdminPanel = ({ isOpen, onClose, onShowToast, onProductCatalogUpdat
 
                   {filteredOrders.length === 0 ? (
                     <div style={{ background: '#FFFFFF', padding: '3.5rem', borderRadius: '12px', textAlign: 'center', color: '#64748B', border: '1px solid #E2E8F0' }}>
-                      📦 No orders found matching filter "{orderFilterStatus}".
+                      No orders found matching filter "{orderFilterStatus}".
                     </div>
                   ) : (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
@@ -1208,7 +1229,7 @@ export const AdminPanel = ({ isOpen, onClose, onShowToast, onProductCatalogUpdat
                           {/* Destination Card */}
                           <div style={{ background: '#F8FAFC', borderRadius: '8px', padding: '0.85rem 1.1rem', marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem', fontSize: '0.84rem' }}>
                             <div>
-                              <strong style={{ color: '#0F172A' }}>📍 Ship To: </strong>
+                              <strong style={{ color: '#0F172A' }}>Ship To: </strong>
                               {order.shippingAddress?.street}, {order.shippingAddress?.city}, {order.shippingAddress?.state} - {order.shippingAddress?.zip}, India
                             </div>
                             <div style={{ color: '#0284C7', fontWeight: 600 }}>
@@ -1252,10 +1273,11 @@ export const AdminPanel = ({ isOpen, onClose, onShowToast, onProductCatalogUpdat
                               <button 
                                 type="button"
                                 className="btn btn-primary"
-                                style={{ fontSize: '0.82rem', padding: '0.5rem 1rem' }}
+                                style={{ fontSize: '0.82rem', padding: '0.5rem 1rem', display: 'inline-flex', alignItems: 'center', gap: '0.45rem' }}
                                 onClick={() => handleAdvanceStage(order.orderId)}
                               >
-                                Advance Stage ➡️
+                                <span>Advance Stage</span>
+                                <IconArrowRight size={13} />
                               </button>
                             )}
                           </div>
@@ -1328,8 +1350,9 @@ export const AdminPanel = ({ isOpen, onClose, onShowToast, onProductCatalogUpdat
 
                     {pincodeResult && (
                       <div style={{ background: '#F0FDF4', border: '1px solid #BBF7D0', padding: '1rem', borderRadius: '8px', fontSize: '0.85rem' }}>
-                        <div style={{ fontWeight: 700, color: '#166534', marginBottom: '0.4rem' }}>
-                          ✅ PIN {pincodeResult.postcode} Serviceable
+                        <div style={{ fontWeight: 700, color: '#166534', marginBottom: '0.4rem', display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
+                          <IconCheck size={16} />
+                          <span>PIN {pincodeResult.postcode} Serviceable</span>
                         </div>
                         <div style={{ color: '#15803D', lineHeight: 1.5 }}>
                           <div>• Region: {pincodeResult.city}, {pincodeResult.state}</div>

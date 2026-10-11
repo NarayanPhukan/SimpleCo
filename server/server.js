@@ -35,7 +35,7 @@ app.use('/api/payment', paymentRoutes);
 app.get('/api/health', (req, res) => {
   res.json({
     status: 'ok',
-    message: '🌸 BabyyGurll Crochet API is running with MongoDB & Express!',
+    message: 'BabyyGurll Crochet API is running with MongoDB & Express',
     timestamp: new Date().toISOString()
   });
 });
@@ -47,7 +47,7 @@ app.get('/', (req, res) => {
   }
   res.json({
     status: 'ok',
-    message: '🌸 BabyyGurll Crochet Express & MongoDB API Server',
+    message: 'BabyyGurll Crochet Express & MongoDB API Server',
     health: '/api/health',
     products: '/api/products',
     orders: '/api/orders'
@@ -65,7 +65,7 @@ if (process.env.NODE_ENV === 'production' && !process.env.VERCEL) {
 // Start Server locally or on persistent hosts (Render / Railway / VPS)
 if (require.main === module) {
   app.listen(PORT, () => {
-    console.log(`✨ BabyyGurll Crochet Express Server running on http://localhost:${PORT}`);
+    console.log(`[Server] BabyyGurll Express Server running on http://localhost:${PORT}`);
   });
 }
 

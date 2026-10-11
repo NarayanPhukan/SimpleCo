@@ -18,7 +18,7 @@ const userSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true, lowercase: true, trim: true },
   phone: { type: String, default: '+1 (555) 234-5678' },
   password: { type: String, required: true },
-  memberTier: { type: String, default: 'VIP Stitcher Club 🧶' },
+  memberTier: { type: String, default: 'VIP Collector Club' },
   memberSince: { type: String, default: 'October 2026' },
   savedAddresses: [addressSchema]
 }, { timestamps: true });

@@ -26,7 +26,7 @@ export const OrderTracker = ({ trackOrderId, onShowToast }) => {
       setLoading(false);
     } catch (err) {
       setLoading(false);
-      onShowToast(err.message, '⚠️');
+      onShowToast(err.message, '!');
     }
   };
 
@@ -36,21 +36,13 @@ export const OrderTracker = ({ trackOrderId, onShowToast }) => {
       const res = await api.advanceOrderStage(order.orderId);
       setOrder(res.data);
       if (res.data.statusStage === 4) {
-        onShowToast(`Order ${res.data.orderId} is DELIVERED to your doorstep! 🏡🎉`, '🌸');
+        onShowToast(`Order ${res.data.orderId} delivered successfully`, '✓');
       } else {
-        onShowToast(`Advanced to: ${res.data.statusLabel}! ⚡`, '✨');
+        onShowToast(`Status updated: ${res.data.statusLabel}`, '✓');
       }
     } catch (err) {
-      onShowToast('Could not advance stage', '⚠️');
+      onShowToast('Could not advance stage', '!');
     }
-  };
-
-  const stageIcons = {
-    received: '📦',
-    crafted: '🪡',
-    packed: '🎀',
-    shipped: '🚚',
-    delivered: '🏡'
   };
 
   const totalSteps = order?.timeline?.length || 5;
@@ -60,10 +52,10 @@ export const OrderTracker = ({ trackOrderId, onShowToast }) => {
     <section className="order-tracking-section" id="orderTracking">
       <div className="container">
         <div className="section-header">
-          <span className="section-tag">Live Order Tracking</span>
-          <h2 className="section-title">Track Your Crochet Package</h2>
+          <span className="section-tag">Order Tracking</span>
+          <h2 className="section-title">Track Your Package</h2>
           <p className="section-subtitle">
-            Enter your Order ID (or select a sample below) to track real-time delivery status across India.
+            Enter your Order ID (or select a sample below) to monitor real-time delivery status across India.
           </p>
         </div>
 
@@ -78,7 +70,7 @@ export const OrderTracker = ({ trackOrderId, onShowToast }) => {
               onKeyDown={(e) => { if (e.key === 'Enter') fetchOrder(orderIdInput); }}
             />
             <button className="btn btn-primary" onClick={() => fetchOrder(orderIdInput)}>
-              {loading ? 'Searching...' : 'Track Package 🔎'}
+              {loading ? 'Searching...' : 'Track Order'}
             </button>
           </div>
 
@@ -116,10 +108,10 @@ export const OrderTracker = ({ trackOrderId, onShowToast }) => {
               {/* Simulation Advance Bar */}
               <div className="simulation-control-bar">
                 <div className="sim-info">
-                  <span>⚡ Live Tracking Simulation: Test parcel status updates</span>
+                  <span>Simulation Mode: Live Order Status Progression</span>
                 </div>
                 <button className="btn-sim-advance" onClick={handleAdvanceStage}>
-                  Advance Next Stage ⏩
+                  Advance Stage
                 </button>
               </div>
 
@@ -132,7 +124,7 @@ export const OrderTracker = ({ trackOrderId, onShowToast }) => {
                   return (
                     <div key={idx} className={`timeline-step ${isDone ? 'completed' : ''} ${isCurrent ? 'current' : ''}`}>
                       <div className="step-icon-bubble">
-                        {isDone && !isCurrent && idx < order.statusStage ? '✓' : (stageIcons[step.stage] || '✨')}
+                        {isDone && !isCurrent ? '✓' : (idx + 1)}
                       </div>
                       <div className="step-content">
                         <h4>{step.title}</h4>

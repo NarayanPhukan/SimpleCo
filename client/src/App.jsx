@@ -17,6 +17,7 @@ import { Reviews } from './components/Reviews';
 import { FAQ } from './components/FAQ';
 import { Footer } from './components/Footer';
 import { AdminPanel } from './components/AdminPanel';
+import { IconSearch, IconPackage } from './components/Icons';
 
 export const App = () => {
   const [products, setProducts] = useState([]);
@@ -38,7 +39,7 @@ export const App = () => {
   const [toasts, setToasts] = useState([]);
   const confettiCanvasRef = useRef(null);
 
-  const showToast = (message, icon = '🌸') => {
+  const showToast = (message, icon = '✓') => {
     const id = Date.now() + Math.random();
     setToasts(prev => [...prev, { id, message, icon }]);
     setTimeout(() => {
@@ -184,37 +185,39 @@ export const App = () => {
                   className={`filter-tab ${activeCategory === 'plushies' ? 'active' : ''}`}
                   onClick={() => setActiveCategory('plushies')}
                 >
-                  Amigurumi Plushies 🐰
+                  Amigurumi Plushies
                 </button>
                 <button 
                   className={`filter-tab ${activeCategory === 'floral' ? 'active' : ''}`}
                   onClick={() => setActiveCategory('floral')}
                 >
-                  Floral & Home 🌸
+                  Floral & Home
                 </button>
                 <button 
                   className={`filter-tab ${activeCategory === 'bags' ? 'active' : ''}`}
                   onClick={() => setActiveCategory('bags')}
                 >
-                  Bags & Totes 👜
+                  Bags & Totes
                 </button>
                 <button 
                   className={`filter-tab ${activeCategory === 'wearables' ? 'active' : ''}`}
                   onClick={() => setActiveCategory('wearables')}
                 >
-                  Wearables ☁️
+                  Wearables
                 </button>
                 <button 
                   className={`filter-tab ${activeCategory === 'accessories' ? 'active' : ''}`}
                   onClick={() => setActiveCategory('accessories')}
                 >
-                  Accessories 🍓
+                  Accessories
                 </button>
               </div>
 
               <div className="toolbar-right">
                 <div className="search-input-wrapper">
-                  <span className="search-icon">🔍</span>
+                  <span className="search-icon" style={{ display: 'inline-flex', alignItems: 'center' }}>
+                    <IconSearch size={16} />
+                  </span>
                   <input 
                     type="text" 
                     placeholder="Search products..." 
@@ -240,15 +243,17 @@ export const App = () => {
             {/* Products Grid */}
             <div className="products-grid">
               {loadingProducts ? (
-                <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '3rem 0' }}>
-                  <div style={{ fontSize: '2.5rem', animation: 'spin 1s infinite' }}>🧶</div>
-                  <p style={{ marginTop: '0.5rem', color: 'var(--text-muted)' }}>Loading handcrafted crochet pieces...</p>
+                <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '3.5rem 0' }}>
+                  <div style={{ width: '36px', height: '36px', border: '3px solid #E2E8F0', borderTopColor: 'var(--primary)', borderRadius: '50%', margin: '0 auto', animation: 'spin 0.8s linear infinite' }}></div>
+                  <p style={{ marginTop: '0.85rem', color: 'var(--text-muted)', fontSize: '0.9rem' }}>Loading catalog...</p>
                 </div>
               ) : products.length === 0 ? (
                 <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '4rem 1rem' }}>
-                  <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🧶</div>
+                  <div style={{ color: '#94A3B8', marginBottom: '1rem', display: 'flex', justifyContent: 'center' }}>
+                    <IconPackage size={48} />
+                  </div>
                   <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: '1.4rem', color: 'var(--text-dark)' }}>
-                    No crochet pieces match your search
+                    No products found
                   </h3>
                   <p style={{ color: 'var(--text-muted)', marginTop: '0.5rem' }}>
                     Try searching for another keyword or view all categories.

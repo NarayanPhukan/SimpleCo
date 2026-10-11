@@ -20,7 +20,7 @@ exports.register = async (req, res) => {
       email: cleanEmail,
       phone: phone || '',
       password: password || '123456',
-      memberTier: 'VIP Stitcher Club 🧶',
+      memberTier: 'VIP Collector Club',
       memberSince: new Date().toLocaleDateString('en-IN', { month: 'long', year: 'numeric' }),
       savedAddresses: []
     });

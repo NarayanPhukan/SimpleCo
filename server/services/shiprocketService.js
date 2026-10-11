@@ -44,17 +44,17 @@ class ShiprocketService {
       const data = await response.json();
 
       if (!response.ok || !data.token) {
-        console.warn('⚠️ Shiprocket Auth Warning:', data.message || 'Login failed');
+        console.warn('[Shiprocket] Auth warning:', data.message || 'Login failed');
         return null;
       }
 
       cachedToken = data.token;
       // Valid for 10 days (240 hours)
       tokenExpiresAt = Date.now() + (240 * 3600 * 1000);
-      console.log('🌸 Shiprocket API authenticated successfully! Token cached for 10 days.');
+      console.log('[Shiprocket] API authenticated successfully. Token cached for 10 days.');
       return cachedToken;
     } catch (err) {
-      console.warn('⚠️ Shiprocket Auth Connection Error:', err.message);
+      console.warn('[Shiprocket] Connection error:', err.message);
       return null;
     }
   }

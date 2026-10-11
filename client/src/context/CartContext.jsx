@@ -13,7 +13,7 @@ export const CartProvider = ({ children }) => {
         quantity: 1,
         price: 1299,
         image: '/assets/images/strawberry-cow.jpg',
-        customNote: 'Extra cute please! 🍓'
+        customNote: 'Gift packaging requested'
       }
     ];
   });

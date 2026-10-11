@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import { api } from '../services/api';
+import { IconPackage, IconUser, IconRefresh, IconArrowRight, IconCheck, IconTruck } from './Icons';
 
 export const AccountModal = ({ isOpen, onClose, onOpenAddressModal, onShowToast }) => {
   const { user, login, register, logout, deleteAddress, setDefaultAddress } = useAuth();
@@ -63,10 +64,10 @@ export const AccountModal = ({ isOpen, onClose, onOpenAddressModal, onShowToast 
     e.preventDefault();
     const res = await login(loginEmail, loginPassword);
     if (res.success) {
-      onShowToast(`Welcome back, ${res.user.name}! 🌸`, '👤');
+      onShowToast(`Welcome back, ${res.user.name}`, '✓');
       setActiveNav('orders');
     } else {
-      onShowToast(res.message, '⚠️');
+      onShowToast(res.message, '!');
     }
   };
 
@@ -79,16 +80,16 @@ export const AccountModal = ({ isOpen, onClose, onOpenAddressModal, onShowToast 
       password: regPassword
     });
     if (res.success) {
-      onShowToast(`Account created! Welcome to BabyyGurll VIP Club 💕`, '🎉');
+      onShowToast('Account created successfully', '✓');
       setActiveNav('orders');
     } else {
-      onShowToast(res.message, '⚠️');
+      onShowToast(res.message, '!');
     }
   };
 
   const handleLogout = () => {
     logout();
-    onShowToast('Signed out safely 👋', '👋');
+    onShowToast('Signed out successfully', '✓');
     setActiveNav('orders');
   };
 
@@ -98,15 +99,15 @@ export const AccountModal = ({ isOpen, onClose, onOpenAddressModal, onShowToast 
       if (res.data) {
         setOrders(prev => prev.map(o => o.orderId === orderId ? res.data : o));
         if (res.data.statusStage === 4) {
-          onShowToast(`Order #${orderId} is now DELIVERED to your doorstep! 🏡🎉`, '🌸');
+          onShowToast(`Order #${orderId} marked as delivered`, '✓');
           // Switch to delivered subtab so user can see it right away
           setOrderSubtab('delivered');
         } else {
-          onShowToast(`Order #${orderId} advanced to: ${res.data.statusLabel}! ⚡`, '✨');
+          onShowToast(`Order #${orderId} updated: ${res.data.statusLabel}`, '✓');
         }
       }
     } catch (err) {
-      onShowToast('Could not advance order stage', '⚠️');
+      onShowToast('Could not advance order stage', '!');
     }
   };
 
@@ -121,20 +122,12 @@ export const AccountModal = ({ isOpen, onClose, onOpenAddressModal, onShowToast 
       const res = await api.requestReturn(orderId, reason.trim());
       if (res.data) {
         setOrders(prev => prev.map(o => o.orderId === orderId ? res.data : o));
-        onShowToast(`Return request submitted for #${orderId}! Courier reverse pickup scheduled 📦`, '🔄');
+        onShowToast(`Return request submitted for #${orderId}`, '✓');
         setOrderSubtab('return');
       }
     } catch (err) {
-      onShowToast(err.message || 'Could not process return request', '⚠️');
+      onShowToast(err.message || 'Could not process return request', '!');
     }
-  };
-
-  const stageIcons = {
-    received: '📦',
-    crafted: '🪡',
-    packed: '🎀',
-    shipped: '🚚',
-    delivered: '🏡'
   };
 
   // Filter orders by sub-category
@@ -158,7 +151,7 @@ export const AccountModal = ({ isOpen, onClose, onOpenAddressModal, onShowToast 
               <div className="profile-info">
                 <h3>{user.name}</h3>
                 <p>{user.email} • Mobile: {user.phone}</p>
-                <span className="tier-badge">{user.memberTier || 'VIP Stitcher Club 🧶'}</span>
+                <span className="tier-badge">{user.memberTier || 'VIP Member'}</span>
               </div>
             </div>
 
@@ -169,23 +162,29 @@ export const AccountModal = ({ isOpen, onClose, onOpenAddressModal, onShowToast 
                 onClick={() => setActiveNav('orders')}
                 role="tab"
                 aria-selected={activeNav === 'orders'}
+                style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '0.45rem' }}
               >
-                📦 Orders
+                <IconPackage size={16} />
+                <span>Orders</span>
               </button>
               <button 
                 className={`account-nav-btn ${activeNav === 'address' ? 'active' : ''}`}
                 onClick={() => setActiveNav('address')}
                 role="tab"
                 aria-selected={activeNav === 'address'}
+                style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '0.45rem' }}
               >
-                📍 Address
+                <IconUser size={16} />
+                <span>Addresses</span>
               </button>
               <button 
                 className="account-nav-btn logout-nav-btn"
                 onClick={handleLogout}
                 title="Log out of your account"
+                style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '0.45rem' }}
               >
-                🚪 Logout
+                <IconArrowRight size={16} />
+                <span>Sign Out</span>
               </button>
             </div>
 
@@ -221,8 +220,8 @@ export const AccountModal = ({ isOpen, onClose, onOpenAddressModal, onShowToast 
 
                 {loadingOrders && (
                   <div style={{ textAlign: 'center', padding: '2rem 0', color: 'var(--text-muted)' }}>
-                    <span style={{ fontSize: '1.8rem', display: 'inline-block', animation: 'spin 1s infinite' }}>🧶</span>
-                    <p style={{ marginTop: '0.4rem', fontSize: '0.88rem' }}>Loading your orders...</p>
+                    <div style={{ width: '28px', height: '28px', border: '2px solid #E2E8F0', borderTopColor: 'var(--primary)', borderRadius: '50%', margin: '0 auto', animation: 'spin 0.8s linear infinite' }}></div>
+                    <p style={{ marginTop: '0.75rem', fontSize: '0.88rem' }}>Loading your orders...</p>
                   </div>
                 )}
 
@@ -231,7 +230,9 @@ export const AccountModal = ({ isOpen, onClose, onOpenAddressModal, onShowToast 
                   <div className="orders-list-container">
                     {inProgressOrders.length === 0 ? (
                       <div className="empty-subtab-box">
-                        <div className="empty-icon">🧶</div>
+                        <div className="empty-icon" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <IconPackage size={36} />
+                        </div>
                         <h4>No In-Progress Orders</h4>
                         <p>You don't have any orders currently being crafted or in transit.</p>
                       </div>
@@ -269,7 +270,7 @@ export const AccountModal = ({ isOpen, onClose, onOpenAddressModal, onShowToast 
 
                             <div className="order-meta-footer">
                               <div className="est-delivery-text">
-                                🚚 Est. Delivery: <strong>{ord.estimatedDelivery}</strong>
+                                Est. Delivery: <strong>{ord.estimatedDelivery}</strong>
                               </div>
                               <div className="order-grand-total">
                                 Total: <strong>{formatPrice(ord.total)}</strong>
@@ -284,9 +285,10 @@ export const AccountModal = ({ isOpen, onClose, onOpenAddressModal, onShowToast 
                                 className={`btn-track-in-progress ${isExpanded ? 'active' : ''}`}
                                 onClick={() => setExpandedTrackId(isExpanded ? null : ord.orderId)}
                                 aria-expanded={isExpanded}
+                                style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '0.45rem' }}
                               >
-                                <span className="track-btn-icon">{isExpanded ? '▲' : '📍'}</span>
-                                <span>{isExpanded ? 'Collapse Live Tracking' : 'Track Order Live 🚚'}</span>
+                                <IconTruck size={15} />
+                                <span>{isExpanded ? 'Collapse Tracking' : 'Track Order'}</span>
                               </button>
                             </div>
 
@@ -304,7 +306,7 @@ export const AccountModal = ({ isOpen, onClose, onOpenAddressModal, onShowToast 
                                     onClick={() => handleAdvanceStage(ord.orderId)}
                                     title="Simulate next tracking stage"
                                   >
-                                    Advance Next Stage ⏩
+                                    Advance Stage
                                   </button>
                                 </div>
 
@@ -325,7 +327,7 @@ export const AccountModal = ({ isOpen, onClose, onOpenAddressModal, onShowToast 
                                         className={`inline-step-node ${isDone ? 'completed' : ''} ${isCurrent ? 'current' : ''}`}
                                       >
                                         <div className="step-node-bubble">
-                                          {isDone && !isCurrent && idx < ord.statusStage ? '✓' : (stageIcons[step.stage] || '✨')}
+                                          {isDone && !isCurrent && idx < ord.statusStage ? '✓' : (idx + 1)}
                                         </div>
                                         <div className="step-node-label">{step.title}</div>
                                         <div className="step-node-time">{step.time}</div>
@@ -335,7 +337,7 @@ export const AccountModal = ({ isOpen, onClose, onOpenAddressModal, onShowToast 
                                 </div>
 
                                 <div className="tracking-destination-strip">
-                                  <span>🏡 <strong>Delivery Destination:</strong> {ord.shippingAddress?.recipientName}, {ord.shippingAddress?.street}, {ord.shippingAddress?.city}, {ord.shippingAddress?.state} {ord.shippingAddress?.zip}</span>
+                                  <span><strong>Delivery Destination:</strong> {ord.shippingAddress?.recipientName}, {ord.shippingAddress?.street}, {ord.shippingAddress?.city}, {ord.shippingAddress?.state} {ord.shippingAddress?.zip}</span>
                                 </div>
                               </div>
                             )}
@@ -351,7 +353,9 @@ export const AccountModal = ({ isOpen, onClose, onOpenAddressModal, onShowToast 
                   <div className="orders-list-container">
                     {returnOrders.length === 0 ? (
                       <div className="empty-subtab-box">
-                        <div className="empty-icon">🌸</div>
+                        <div className="empty-icon" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <IconRefresh size={36} />
+                        </div>
                         <h4>No Return or Exchange Requests</h4>
                         <p>All your crochet treasures are happily loved! If you ever need to exchange an item, you can initiate a return from the Delivered tab.</p>
                       </div>
@@ -406,7 +410,9 @@ export const AccountModal = ({ isOpen, onClose, onOpenAddressModal, onShowToast 
                   <div className="orders-list-container">
                     {deliveredOrders.length === 0 ? (
                       <div className="empty-subtab-box">
-                        <div className="empty-icon">🏡</div>
+                        <div className="empty-icon" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <IconPackage size={36} />
+                        </div>
                         <h4>No Delivered Orders Yet</h4>
                         <p>When in-progress packages arrive at your doorstep, they will appear here with invoice receipts and return options.</p>
                       </div>
@@ -419,7 +425,7 @@ export const AccountModal = ({ isOpen, onClose, onOpenAddressModal, onShowToast 
                               <span className="order-placed-date">{ord.estimatedDelivery || `Delivered ${ord.dateFormatted}`}</span>
                             </div>
                             <span className="delivered-status-badge">
-                              Delivered to Doorstep 🏡
+                              Delivered to Doorstep
                             </span>
                           </div>
 
@@ -443,15 +449,15 @@ export const AccountModal = ({ isOpen, onClose, onOpenAddressModal, onShowToast 
                             <div className="delivered-btns">
                               <button 
                                 className="btn-delivered-action invoice"
-                                onClick={() => onShowToast(`Tax Invoice for Order #${ord.orderId} downloaded & emailed! 📄`, '🧾')}
+                                onClick={() => onShowToast(`Tax Invoice for Order #${ord.orderId} sent to email`, '✓')}
                               >
-                                Invoice 📄
+                                Download Invoice
                               </button>
                               <button 
                                 className="btn-delivered-action return"
                                 onClick={() => handleInitiateReturn(ord.orderId)}
                               >
-                                Request Return 🔄
+                                Request Return
                               </button>
                             </div>
                           </div>
@@ -469,7 +475,7 @@ export const AccountModal = ({ isOpen, onClose, onOpenAddressModal, onShowToast 
             {activeNav === 'address' && (
               <div className="account-address-section">
                 <div className="addresses-header">
-                  <h4>📍 Saved Delivery Addresses</h4>
+                  <h4>Saved Delivery Addresses</h4>
                   <button className="btn-add-address" onClick={() => onOpenAddressModal(null)}>
                     + Add New Address
                   </button>
@@ -495,7 +501,7 @@ export const AccountModal = ({ isOpen, onClose, onOpenAddressModal, onShowToast 
                               {addr.street}<br />
                               {addr.city}, {addr.state} {addr.zip}, {addr.country}
                             </div>
-                            <div className="addr-phone">📞 {addr.phone}</div>
+                            <div className="addr-phone">Phone: {addr.phone}</div>
                           </div>
                           <div className="addr-actions">
                             {!addr.isDefault && (
@@ -503,7 +509,7 @@ export const AccountModal = ({ isOpen, onClose, onOpenAddressModal, onShowToast 
                                 className="addr-action-btn" 
                                 onClick={async () => {
                                   await setDefaultAddress(id);
-                                  onShowToast('Default address updated! 📍', '📍');
+                                  onShowToast('Default address updated', '✓');
                                 }}
                               >
                                 Make Default
@@ -517,7 +523,7 @@ export const AccountModal = ({ isOpen, onClose, onOpenAddressModal, onShowToast 
                               onClick={async () => {
                                 if (window.confirm('Are you sure you want to delete this address?')) {
                                   await deleteAddress(id);
-                                  onShowToast('Address deleted', '🗑️');
+                                  onShowToast('Address deleted', '✓');
                                 }
                               }}
                             >
@@ -536,9 +542,11 @@ export const AccountModal = ({ isOpen, onClose, onOpenAddressModal, onShowToast 
           /* Authentication Screen (if not logged in) */
           <div>
             <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
-              <div style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>🧶</div>
+              <div style={{ width: '48px', height: '48px', margin: '0 auto 1rem', background: '#F1F5F9', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary)' }}>
+                <IconUser size={24} />
+              </div>
               <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: '1.4rem', color: 'var(--text-dark)' }}>
-                Welcome to BabyyGurll
+                Account Sign In
               </h3>
               <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem' }}>
                 Sign in to manage your orders, track packages, and view saved addresses.

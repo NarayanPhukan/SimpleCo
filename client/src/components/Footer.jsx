@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { IconInstagram, IconPinterest } from './Icons';
 
 export const Footer = ({ onOpenAccount, onScrollToTrack, onSelectCategory, onOpenAdmin, onShowToast }) => {
   const [newsletterEmail, setNewsletterEmail] = useState('');
@@ -6,7 +7,7 @@ export const Footer = ({ onOpenAccount, onScrollToTrack, onSelectCategory, onOpe
   const handleSubscribe = (e) => {
     e.preventDefault();
     if (newsletterEmail) {
-      onShowToast('Subscribed with love! Welcome to Stitch Club 🌸', '💌');
+      onShowToast('Subscribed successfully! Welcome to Stitch Club', '✓');
       setNewsletterEmail('');
     }
   };
@@ -23,14 +24,17 @@ export const Footer = ({ onOpenAccount, onScrollToTrack, onSelectCategory, onOpe
       <div className="container">
         <div className="footer-grid">
           <div className="footer-brand">
-            <h3>BabyyGurll Crochet 🧶</h3>
+            <h3>BabyyGurll Crochet</h3>
             <p>
-              Hand-stitched cuteness and heirloom yarn crafts made with gentle intention, premium milk cotton, and aesthetic heart.
+              Hand-stitched bespoke crafts made with gentle intention, premium milk cotton, and heirloom quality.
             </p>
             <div className="social-links">
-              <a href="#" className="social-icon" aria-label="Instagram">📸</a>
-              <a href="#" className="social-icon" aria-label="TikTok">🎵</a>
-              <a href="#" className="social-icon" aria-label="Pinterest">📌</a>
+              <a href="#" className="social-icon" aria-label="Instagram" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+                <IconInstagram size={18} />
+              </a>
+              <a href="#" className="social-icon" aria-label="Pinterest" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+                <IconPinterest size={18} />
+              </a>
             </div>
           </div>
 
@@ -87,7 +91,7 @@ export const Footer = ({ onOpenAccount, onScrollToTrack, onSelectCategory, onOpe
               onClick={(e) => { e.preventDefault(); if (onOpenAdmin) onOpenAdmin(); }} 
               style={{ marginLeft: '0.5rem', color: 'var(--text-muted)', textDecoration: 'none', fontSize: '0.75rem' }}
             >
-              Studio Staff Portal 🔒
+              Staff Portal
             </a>
           </p>
         </div>

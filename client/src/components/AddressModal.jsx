@@ -56,10 +56,10 @@ export const AddressModal = ({ isOpen, editAddress, onClose, onShowToast }) => {
     e.preventDefault();
     if (editAddress) {
       await updateAddress(editAddress._id || editAddress.id, formData);
-      onShowToast('Address updated successfully! 💾', '📍');
+      onShowToast('Address updated successfully', '✓');
     } else {
       await addAddress(formData);
-      onShowToast('New delivery address saved! 🏡', '📍');
+      onShowToast('New delivery address saved', '✓');
     }
     onClose();
   };
@@ -177,7 +177,7 @@ export const AddressModal = ({ isOpen, editAddress, onClose, onShowToast }) => {
             <input 
               type="text" 
               className="form-input" 
-              value="🇮🇳 India" 
+              value="India" 
               disabled 
               style={{ background: '#E5F4FF', color: 'var(--text-dark)', fontWeight: 600 }}
             />
@@ -196,7 +196,7 @@ export const AddressModal = ({ isOpen, editAddress, onClose, onShowToast }) => {
             </label>
           </div>
 
-          <button type="submit" className="btn btn-primary">Save Delivery Address 💾</button>
+          <button type="submit" className="btn btn-primary">Save Delivery Address</button>
         </form>
       </div>
     </div>

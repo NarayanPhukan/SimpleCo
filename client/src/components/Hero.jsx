@@ -1,4 +1,5 @@
 import React from 'react';
+import { IconArrowRight, IconAward, IconTruck, IconShield } from './Icons';
 
 export const Hero = ({ onExplore }) => {
   return (
@@ -17,26 +18,27 @@ export const Hero = ({ onExplore }) => {
           </p>
 
           <div className="hero-cta-group">
-            <button className="btn btn-primary" onClick={onExplore}>
-              Explore Collection 🍓
+            <button className="btn btn-primary" onClick={onExplore} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
+              <span>Explore Collection</span>
+              <IconArrowRight size={16} />
             </button>
             <a href="#catalog" className="btn btn-secondary">
-              View Bestsellers ✨
+              View Bestsellers
             </a>
           </div>
 
           <div className="hero-trust-badges">
             <div className="trust-item">
-              <span className="icon">🧶</span>
+              <span className="icon" style={{ display: 'inline-flex', alignItems: 'center' }}><IconAward size={16} /></span>
               <span>100% Hand-Crocheted</span>
             </div>
             <div className="trust-item">
-              <span className="icon">🚚</span>
+              <span className="icon" style={{ display: 'inline-flex', alignItems: 'center' }}><IconTruck size={16} /></span>
               <span>Pan-India Delivery</span>
             </div>
             <div className="trust-item">
-              <span className="icon">⭐</span>
-              <span>4.9/5 (2,400+ Reviews)</span>
+              <span className="icon" style={{ display: 'inline-flex', alignItems: 'center' }}><IconShield size={16} /></span>
+              <span>4.9/5 Rating (2,400+ Orders)</span>
             </div>
           </div>
         </div>
@@ -45,10 +47,12 @@ export const Hero = ({ onExplore }) => {
         <div className="hero-visual">
           <div className="hero-card-stack">
             <div className="floating-glass-card card-top-right">
-              <div className="floating-icon">🍓</div>
+              <div className="floating-icon" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+                <IconAward size={18} />
+              </div>
               <div className="floating-meta">
                 <h4>Strawberry Cow</h4>
-                <p>#1 Bestseller • 184 Loved</p>
+                <p>#1 Bestseller • Verified Craft</p>
               </div>
             </div>
 
@@ -63,9 +67,11 @@ export const Hero = ({ onExplore }) => {
             </div>
 
             <div className="floating-glass-card card-bottom-left">
-              <div className="floating-icon">✨</div>
+              <div className="floating-icon" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+                <IconShield size={18} />
+              </div>
               <div className="floating-meta">
-                <h4>Made with Love</h4>
+                <h4>Artisanal Quality</h4>
                 <p>Loop-by-loop craftsmanship</p>
               </div>
             </div>

@@ -1,5 +1,6 @@
 import React from 'react';
 import { useCart } from '../context/CartContext';
+import { IconHeart, IconEye, IconPlus } from './Icons';
 
 export const ProductCard = ({ product, onQuickView, onShowToast }) => {
   const { formatPrice, addToCart, isInWishlist, toggleWishlist } = useCart();
@@ -8,12 +9,12 @@ export const ProductCard = ({ product, onQuickView, onShowToast }) => {
   const handleQuickAdd = () => {
     const defaultColor = product.colors && product.colors.length > 0 ? product.colors[0].name : 'Default';
     addToCart(product, defaultColor, 1);
-    onShowToast(`Added ${product.name} (${defaultColor}) to bag! 🛍️`, '🍓');
+    onShowToast(`Added ${product.name} (${defaultColor}) to bag`, '✓');
   };
 
   const handleWishlist = () => {
     const added = toggleWishlist(product.id);
-    onShowToast(added ? `Saved ${product.name} to Wishlist! 💕` : `Removed from Wishlist`, added ? '💖' : '🤍');
+    onShowToast(added ? `Saved ${product.name} to Wishlist` : `Removed from Wishlist`, '✓');
   };
 
   return (
@@ -24,15 +25,18 @@ export const ProductCard = ({ product, onQuickView, onShowToast }) => {
           className={`wishlist-btn ${wishlisted ? 'active' : ''}`}
           onClick={handleWishlist}
           aria-label="Save to Wishlist"
+          style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
         >
-          {wishlisted ? '❤️' : '🤍'}
+          <IconHeart size={18} fill={wishlisted ? '#E11D48' : 'none'} stroke={wishlisted ? '#E11D48' : '#475569'} />
         </button>
         <img src={product.image} alt={product.name} loading="lazy" width="400" height="400" />
         <button 
           className="quick-view-overlay-btn"
           onClick={() => onQuickView(product)}
+          style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem' }}
         >
-          Quick View 👁️
+          <IconEye size={14} />
+          <span>Quick View</span>
         </button>
       </div>
 

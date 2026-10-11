@@ -8,7 +8,7 @@ router.get('/status', async (req, res) => {
   const token = await shiprocketService.getToken();
   res.json({
     connected: !!token,
-    message: token ? '🌸 Shiprocket API Connected & Active' : 'Shiprocket offline fallback active (Awaiting API user email)',
+    message: token ? 'Shiprocket API Connected & Active' : 'Shiprocket offline fallback active (Awaiting API user email)',
     emailConfigured: !!process.env.SHIPROCKET_EMAIL,
     passwordConfigured: !!process.env.SHIPROCKET_PASSWORD
   });

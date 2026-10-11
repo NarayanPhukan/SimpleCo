@@ -20,19 +20,19 @@ const connectDB = async () => {
       console.log(`Connecting to MongoDB Atlas at: ${mongoUri.replace(/:[^:@]+@/, ':****@')}...`);
       await mongoose.connect(mongoUri, { serverSelectionTimeoutMS: 5000 });
       isConnected = true;
-      console.log('🌸 MongoDB Atlas Connected successfully!');
+      console.log('[Database] MongoDB Atlas connected successfully.');
 
       // Seed Atlas collections if empty or update catalog
       await seedAtlasDatabase();
       return;
     } catch (err) {
-      console.warn('⚠️ Could not connect to MONGODB_URI:', err.message);
+      console.warn('[Database] Could not connect to MONGODB_URI:', err.message);
     }
   } else {
     try {
       await mongoose.connect('mongodb://127.0.0.1:27017/babyygurll', { serverSelectionTimeoutMS: 1500 });
       isConnected = true;
-      console.log('🌸 Connected to local MongoDB on port 27017!');
+      console.log('[Database] Connected to local MongoDB on port 27017.');
       await seedAtlasDatabase();
       return;
     } catch (localErr) {
@@ -41,11 +41,11 @@ const connectDB = async () => {
   }
 
   // Fallback to embedded in-memory MongoDB store
-  console.log('🌸 Operating in embedded in-memory MongoDB mode (Zero-config out of the box)!');
+  console.log('[Database] Operating in embedded in-memory MongoDB mode.');
   memoryDB.products = new MemoryCollection(seedProducts);
   memoryDB.users = new MemoryCollection([]);
   memoryDB.orders = new MemoryCollection([]);
-  console.log(`🌱 Initialized ${seedProducts.length} crochet products in MongoDB memory store.`);
+  console.log(`[Database] Initialized ${seedProducts.length} crochet products in MongoDB memory store.`);
 };
 
 const seedAtlasDatabase = async () => {
@@ -54,9 +54,9 @@ const seedAtlasDatabase = async () => {
 
     const productCount = await Product.countDocuments();
     if (productCount === 0) {
-      console.log('🌱 Seeding initial products to MongoDB Atlas...');
+      console.log('[Database] Seeding initial products to MongoDB Atlas...');
       await Product.insertMany(seedProducts);
-      console.log(`✅ Seeded ${seedProducts.length} crochet products in Atlas.`);
+      console.log(`[Database] Seeded ${seedProducts.length} crochet products in Atlas.`);
     }
   } catch (err) {
     console.error('Error during Atlas database seeding:', err.message);
