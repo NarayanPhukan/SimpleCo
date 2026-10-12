@@ -84,6 +84,19 @@ export const api = {
     return res.json();
   },
 
+  async forgotPassword(email, newPassword) {
+    const res = await fetch(`${API_BASE}/auth/forgot-password`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, newPassword })
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || 'Password reset failed');
+    }
+    return res.json();
+  },
+
   async getMe(email) {
     const res = await fetch(`${API_BASE}/auth/me?email=${encodeURIComponent(email)}`);
     if (!res.ok) throw new Error('Failed to fetch user profile');
@@ -194,6 +207,19 @@ export const api = {
     if (!res.ok) {
       const err = await res.json();
       throw new Error(err.message || 'Failed to submit return request');
+    }
+    return res.json();
+  },
+
+  async cancelOrder(orderId, reason) {
+    const res = await fetch(`${API_BASE}/orders/${encodeURIComponent(orderId)}/cancel`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ reason })
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || 'Failed to cancel order');
     }
     return res.json();
   },

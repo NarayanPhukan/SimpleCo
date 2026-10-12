@@ -8,7 +8,7 @@ export const Hero = ({ onExplore }) => {
         <div className="hero-content">
           <div className="hero-pill">
             <span className="pulse-dot"></span>
-            <span>Handmade in small batches right here in India 🧶</span>
+            <span>Handmade in small batches • Artisanal studio in India</span>
           </div>
           <h1 className="hero-title">
             Handmade with love for <span className="italic-sparkle">cozy days</span> & gentle hearts.
@@ -38,7 +38,7 @@ export const Hero = ({ onExplore }) => {
             </div>
             <div className="trust-item">
               <span className="icon" style={{ display: 'inline-flex', alignItems: 'center' }}><IconShield size={16} /></span>
-              <span>Over 2,000+ happy homes 💕</span>
+              <span>Over 2,000+ happy homes</span>
             </div>
           </div>
         </div>
@@ -52,7 +52,7 @@ export const Hero = ({ onExplore }) => {
               </div>
               <div className="floating-meta">
                 <h4>Strawberry Cow</h4>
-                <p>Everyone's favorite little buddy 🍓</p>
+                <p>Artisanal Studio Signature</p>
               </div>
             </div>
 
@@ -72,7 +72,7 @@ export const Hero = ({ onExplore }) => {
               </div>
               <div className="floating-meta">
                 <h4>Stitch by Stitch</h4>
-                <p>Pure soft milk-cotton yarn 🌸</p>
+                <p>100% Soft Milk-Cotton Yarn</p>
               </div>
             </div>
           </div>

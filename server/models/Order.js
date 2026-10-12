@@ -52,7 +52,9 @@ const orderSchema = new mongoose.Schema({
   timeline: [timelineStepSchema],
   returnReason: { type: String, default: '' },
   returnDate: { type: String, default: '' },
-  returnStatus: { type: String, default: '' }
+  returnStatus: { type: String, default: '' },
+  cancelReason: { type: String, default: '' },
+  cancelledAt: { type: String, default: '' }
 }, { timestamps: true });
 
 const MongooseOrder = mongoose.model('Order', orderSchema);

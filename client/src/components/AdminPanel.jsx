@@ -273,6 +273,7 @@ export const AdminPanel = ({ isOpen, onClose, onShowToast, onProductCatalogUpdat
     if (orderFilterStatus === 'shipped') return o.statusCode === 'shipped' || o.statusCode === 'packed';
     if (orderFilterStatus === 'delivered') return o.statusCode === 'delivered';
     if (orderFilterStatus === 'returned') return o.statusCode === 'returned';
+    if (orderFilterStatus === 'cancelled') return o.statusCode === 'cancelled';
     return true;
   });
 
@@ -1176,7 +1177,8 @@ export const AdminPanel = ({ isOpen, onClose, onShowToast, onProductCatalogUpdat
                         { id: 'crafted', label: 'Crafting' },
                         { id: 'shipped', label: 'In Transit' },
                         { id: 'delivered', label: 'Delivered' },
-                        { id: 'returned', label: 'Returns' }
+                        { id: 'returned', label: 'Returns' },
+                        { id: 'cancelled', label: 'Cancelled' }
                       ].map(f => (
                         <button
                           key={f.id}
@@ -1266,10 +1268,11 @@ export const AdminPanel = ({ isOpen, onClose, onShowToast, onProductCatalogUpdat
                                 <option value="shipped">4. Dispatched with Courier</option>
                                 <option value="delivered">5. Delivered to Doorstep</option>
                                 <option value="returned">6. Return Scheduled</option>
+                                <option value="cancelled">7. Order Cancelled</option>
                               </select>
                             </div>
 
-                            {order.statusStage < 4 && order.statusCode !== 'delivered' && order.statusCode !== 'returned' && (
+                            {order.statusStage < 4 && order.statusCode !== 'delivered' && order.statusCode !== 'returned' && order.statusCode !== 'cancelled' && (
                               <button 
                                 type="button"
                                 className="btn btn-primary"

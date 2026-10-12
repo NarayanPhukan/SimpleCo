@@ -194,3 +194,35 @@ exports.setDefaultAddress = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
+// @desc    Forgot / Reset password
+// @route   POST /api/auth/forgot-password
+exports.forgotPassword = async (req, res) => {
+  try {
+    const { email, newPassword } = req.body;
+    if (!email) {
+      return res.status(400).json({ success: false, message: 'Email address is required' });
+    }
+
+    const cleanEmail = email.trim().toLowerCase();
+    const user = await User.findOne({ email: cleanEmail });
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'No registered account found with this email' });
+    }
+
+    if (!newPassword || newPassword.length < 6) {
+      return res.status(400).json({ success: false, message: 'New password must be at least 6 characters' });
+    }
+
+    user.password = newPassword;
+    await user.save();
+
+    res.json({
+      success: true,
+      message: 'Password reset successfully. Please sign in with your new password.',
+      data: user
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};

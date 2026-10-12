@@ -68,11 +68,16 @@ export const App = () => {
     loadProducts();
   }, [activeCategory, searchQuery, sortOrder]);
 
-  // Listen for #admin or #studio hash in URL
+  // Listen for #admin, #studio, #account, #orders, #checkout hash in URL
   useEffect(() => {
     const handleHash = () => {
-      if (window.location.hash === '#admin' || window.location.hash === '#studio') {
+      const hash = window.location.hash;
+      if (hash === '#admin' || hash === '#studio') {
         setIsAdminOpen(true);
+      } else if (hash === '#account' || hash === '#orders') {
+        setIsAccountOpen(true);
+      } else if (hash === '#checkout') {
+        setIsCheckoutOpen(true);
       }
     };
     handleHash();
@@ -90,6 +95,7 @@ export const App = () => {
     canvas.height = window.innerHeight;
 
     const colors = ['#E8739A', '#F7A8B8', '#FFAAA6', '#FFD3B6', '#E29578', '#C86284'];
+    const pieces = [];
     for (let i = 0; i < 90; i++) {
       pieces.push({
         x: canvas.width / 2,
@@ -147,9 +153,15 @@ export const App = () => {
       <AnnouncementBar />
 
       <Navbar 
-        onOpenAccount={() => setIsAccountOpen(true)}
+        onOpenAccount={() => {
+          setIsAccountOpen(true);
+          window.history.pushState(null, '', '#account');
+        }}
         onOpenCart={() => setIsCartOpen(true)}
-        onOpenAdmin={() => setIsAdminOpen(true)}
+        onOpenAdmin={() => {
+          setIsAdminOpen(true);
+          window.history.pushState(null, '', '#admin');
+        }}
         onSelectCategory={(cat) => setActiveCategory(cat)}
       />
 
@@ -164,7 +176,7 @@ export const App = () => {
         <section className="catalog-section" id="catalog">
           <div className="container">
             <div className="section-header">
-              <span className="section-tag">The Studio Collection 🧶</span>
+              <span className="section-tag">The Studio Collection</span>
               <h2 className="section-title">Things We’ve Made for You</h2>
               <p className="section-subtitle">
                 From cuddly little desk companions to everlasting flowers and everyday totes — each one hand-hooked with love.
@@ -278,10 +290,19 @@ export const App = () => {
       </main>
 
       <Footer 
-        onOpenAccount={() => setIsAccountOpen(true)}
-        onScrollToTrack={() => setIsAccountOpen(true)}
+        onOpenAccount={() => {
+          setIsAccountOpen(true);
+          window.history.pushState(null, '', '#account');
+        }}
+        onScrollToTrack={() => {
+          setIsAccountOpen(true);
+          window.history.pushState(null, '', '#orders');
+        }}
         onSelectCategory={(cat) => setActiveCategory(cat)}
-        onOpenAdmin={() => setIsAdminOpen(true)}
+        onOpenAdmin={() => {
+          setIsAdminOpen(true);
+          window.history.pushState(null, '', '#admin');
+        }}
         onShowToast={showToast}
       />
 
@@ -292,6 +313,7 @@ export const App = () => {
         onProceedCheckout={() => {
           setIsCartOpen(false);
           setIsCheckoutOpen(true);
+          window.history.pushState(null, '', '#checkout');
         }}
         onShowToast={showToast}
         onExplore={handleExplore}
@@ -306,7 +328,12 @@ export const App = () => {
 
       <AccountModal 
         isOpen={isAccountOpen}
-        onClose={() => setIsAccountOpen(false)}
+        onClose={() => {
+          setIsAccountOpen(false);
+          if (window.location.hash === '#account' || window.location.hash === '#orders') {
+            window.history.pushState(null, '', window.location.pathname);
+          }
+        }}
         onOpenAddressModal={(addr) => {
           setEditingAddress(addr);
           setIsAddressModalOpen(true);
@@ -326,7 +353,12 @@ export const App = () => {
 
       <CheckoutModal 
         isOpen={isCheckoutOpen}
-        onClose={() => setIsCheckoutOpen(false)}
+        onClose={() => {
+          setIsCheckoutOpen(false);
+          if (window.location.hash === '#checkout') {
+            window.history.pushState(null, '', window.location.pathname);
+          }
+        }}
         onOpenAddressModal={(addr) => {
           setEditingAddress(addr);
           setIsAddressModalOpen(true);
@@ -334,6 +366,7 @@ export const App = () => {
         onOpenAccountModal={() => {
           setIsCheckoutOpen(false);
           setIsAccountOpen(true);
+          window.history.pushState(null, '', '#account');
         }}
         onOrderPlacedSuccess={() => {
           triggerConfetti();

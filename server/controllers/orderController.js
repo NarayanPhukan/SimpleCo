@@ -248,3 +248,67 @@ exports.requestOrderReturn = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
+// @desc    Cancel an order (if in-progress or placed)
+// @route   POST /api/orders/:orderId/cancel
+exports.cancelOrder = async (req, res) => {
+  try {
+    const cleanId = req.params.orderId.trim().toUpperCase();
+    const order = await Order.findOne({ orderId: cleanId });
+    if (!order) {
+      return res.status(404).json({ success: false, message: 'Order not found' });
+    }
+
+    if (order.statusCode === 'delivered') {
+      return res.status(400).json({
+        success: false,
+        message: 'Delivered orders cannot be cancelled. You can request a return or exchange instead.'
+      });
+    }
+
+    if (order.statusCode === 'cancelled') {
+      return res.status(400).json({
+        success: false,
+        message: 'Order is already cancelled.'
+      });
+    }
+
+    const { reason } = req.body;
+    const cancelReason = (reason && reason.trim()) ? reason.trim() : 'Customer requested order cancellation';
+    const now = new Date();
+    const cancelDateFormatted = now.toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' });
+    const isPrepaid = order.paymentStatus === 'paid';
+
+    order.statusCode = 'cancelled';
+    order.statusLabel = 'Order Cancelled • Refund Initiated';
+    order.cancelReason = cancelReason;
+    order.cancelledAt = cancelDateFormatted;
+    order.paymentStatus = isPrepaid ? 'refund_pending' : 'cancelled';
+
+    // Mark current timeline steps as completed/cancelled
+    order.timeline.forEach(step => {
+      step.current = false;
+    });
+
+    order.timeline.push({
+      stage: 'cancelled',
+      title: 'Order Cancelled & Refund Initiated',
+      time: cancelDateFormatted + ' (' + now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) + ')',
+      completed: true,
+      current: true,
+      desc: isPrepaid
+        ? `Cancellation confirmed: ${cancelReason}. Full refund of ₹${order.total} has been initiated back to your source account / UPI (settlement in 2-3 business days).`
+        : `Cancellation confirmed: ${cancelReason}. As this was a Cash on Delivery order, no amount was charged.`
+    });
+
+    await order.save();
+
+    res.json({
+      success: true,
+      message: `Order #${cleanId} has been successfully cancelled`,
+      data: order
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};

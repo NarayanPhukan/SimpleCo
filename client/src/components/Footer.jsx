@@ -83,7 +83,7 @@ export const Footer = ({ onOpenAccount, onScrollToTrack, onSelectCategory, onOpe
         </div>
 
         <div className="footer-bottom">
-          <p>&copy; 2026 BabyyGurll Crochet. Handcrafted with love in India. 🌸</p>
+          <p>&copy; 2026 BabyyGurll Crochet. Handcrafted with love in India.</p>
           <p>
             Carefully packed & shipped across India • 
             <a 

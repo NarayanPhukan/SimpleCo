@@ -67,6 +67,18 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('bgc_auth_user_inr_v1');
   };
 
+  const forgotPassword = async (email, newPassword) => {
+    setLoading(true);
+    try {
+      const res = await api.forgotPassword(email, newPassword);
+      setLoading(false);
+      return { success: true, message: res.message || 'Password reset successfully' };
+    } catch (err) {
+      setLoading(false);
+      return { success: false, message: err.message || 'Password reset failed' };
+    }
+  };
+
   // Addresses CRUD (supports both logged-in users and guests)
   const addAddress = async (addressData) => {
     const formatted = { ...addressData, country: 'India' };
@@ -199,6 +211,7 @@ export const AuthProvider = ({ children }) => {
       login,
       register,
       logout,
+      forgotPassword,
       addAddress,
       updateAddress,
       deleteAddress,

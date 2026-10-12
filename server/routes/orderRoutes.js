@@ -6,7 +6,8 @@ const {
   getOrderById,
   advanceOrderStage,
   updateOrderStatus,
-  requestOrderReturn
+  requestOrderReturn,
+  cancelOrder
 } = require('../controllers/orderController');
 
 router.post('/', createOrder);
@@ -15,5 +16,6 @@ router.get('/:orderId', getOrderById);
 router.patch('/:orderId/advance', advanceOrderStage);
 router.patch('/:orderId/status', updateOrderStatus);
 router.post('/:orderId/return', requestOrderReturn);
+router.post('/:orderId/cancel', cancelOrder);
 
 module.exports = router;

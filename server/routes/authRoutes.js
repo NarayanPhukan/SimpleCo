@@ -7,11 +7,13 @@ const {
   addAddress,
   updateAddress,
   deleteAddress,
-  setDefaultAddress
+  setDefaultAddress,
+  forgotPassword
 } = require('../controllers/authController');
 
 router.post('/register', register);
 router.post('/login', login);
+router.post('/forgot-password', forgotPassword);
 router.get('/me', getMe);
 
 // Saved Addresses Endpoints

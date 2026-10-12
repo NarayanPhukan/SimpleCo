@@ -5,7 +5,7 @@ export const Reviews = () => {
     <section className="testimonials-section">
       <div className="container">
         <div className="section-header">
-          <span className="section-tag">From Happy Homes 💌</span>
+          <span className="section-tag">Verified Collector Reviews</span>
           <h2 className="section-title">Real notes from people who took us home</h2>
           <p className="section-subtitle">Honest words from people cuddling our plushies and carrying our bags across India.</p>
         </div>

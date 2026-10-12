@@ -30,7 +30,7 @@ export const FAQ = () => {
     <section className="faq-section">
       <div className="container">
         <div className="section-header">
-          <span className="section-tag">Common Questions 💬</span>
+          <span className="section-tag">Frequently Asked Questions</span>
           <h2 className="section-title">Things people ask us often</h2>
         </div>
 
