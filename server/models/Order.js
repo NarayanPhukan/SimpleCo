@@ -54,7 +54,10 @@ const orderSchema = new mongoose.Schema({
   returnDate: { type: String, default: '' },
   returnStatus: { type: String, default: '' },
   cancelReason: { type: String, default: '' },
-  cancelledAt: { type: String, default: '' }
+  cancelledAt: { type: String, default: '' },
+  shiprocketOrderId: { type: String, default: '' },
+  shiprocketShipmentId: { type: String, default: '' },
+  shiprocketStatus: { type: String, default: '' }
 }, { timestamps: true });
 
 const MongooseOrder = mongoose.model('Order', orderSchema);

@@ -224,6 +224,118 @@ export const api = {
     return res.json();
   },
 
+  async deleteOrder(orderId) {
+    const res = await fetch(`${API_BASE}/orders/${encodeURIComponent(orderId)}`, {
+      method: 'DELETE'
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || 'Failed to delete order');
+    }
+    return res.json();
+  },
+
+  async syncShiprocket(orderId) {
+    const res = await fetch(`${API_BASE}/orders/${encodeURIComponent(orderId)}/sync-shiprocket`, {
+      method: 'POST'
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      throw new Error(data.message || 'Failed to sync with Shiprocket');
+    }
+    return data;
+  },
+
+  // Dynamic Coupons Management
+  async getCoupons() {
+    const res = await fetch(`${API_BASE}/coupons`);
+    if (!res.ok) throw new Error('Failed to fetch coupons');
+    return res.json();
+  },
+
+  async validateCoupon(code, cartSubtotal = 0) {
+    const res = await fetch(`${API_BASE}/coupons/validate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code, cartSubtotal })
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || 'Invalid coupon');
+    }
+    return res.json();
+  },
+
+  async createCoupon(couponData) {
+    const res = await fetch(`${API_BASE}/coupons`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(couponData)
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || 'Failed to create coupon');
+    }
+    return res.json();
+  },
+
+  async updateCoupon(id, couponData) {
+    const res = await fetch(`${API_BASE}/coupons/${encodeURIComponent(id)}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(couponData)
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || 'Failed to update coupon');
+    }
+    return res.json();
+  },
+
+  async deleteCoupon(id) {
+    const res = await fetch(`${API_BASE}/coupons/${encodeURIComponent(id)}`, {
+      method: 'DELETE'
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || 'Failed to delete coupon');
+    }
+    return res.json();
+  },
+
+  // Store Settings & Admin Auth
+  async getSettings() {
+    const res = await fetch(`${API_BASE}/settings`);
+    if (!res.ok) throw new Error('Failed to fetch store settings');
+    return res.json();
+  },
+
+  async updateSettings(settingsData) {
+    const res = await fetch(`${API_BASE}/settings`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(settingsData)
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || 'Failed to update store settings');
+    }
+    return res.json();
+  },
+
+  async verifyAdminPassword(password) {
+    const res = await fetch(`${API_BASE}/settings/verify-admin`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password })
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || 'Invalid administrator password');
+    }
+    return res.json();
+  },
+
   // Shiprocket Shipping Client API
   async getShippingStatus() {
     const res = await fetch(`${API_BASE}/shipping/status`);

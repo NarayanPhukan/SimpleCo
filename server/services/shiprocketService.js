@@ -134,32 +134,83 @@ class ShiprocketService {
 
   // Check courier serviceability for Indian PIN codes
   async checkServiceability(pickupPostcode = '400050', deliveryPostcode = '560038', weightKg = 0.5, cod = 0) {
+    const targetPin = deliveryPostcode || '400050';
     const token = await this.getToken();
     if (!token) {
       return {
+        success: true,
         isAvailable: true,
         isSimulated: true,
-        estimatedDays: 3,
+        postcode: targetPin,
+        city: 'All-India Coverage',
+        state: 'Express Transit',
+        estimatedDays: '3-4 Business Days',
+        etd: '3-4 Days',
+        codAvailable: true,
+        prepaidAvailable: true,
+        courier: 'Express Surface & Air Network',
+        rate: 79,
         couriers: [
-          { name: 'Priority Express Delivery', rate: 0, etd: '2-3 Days', rating: 4.8 },
-          { name: 'Standard Surface Delivery', rate: 0, etd: '3-4 Days', rating: 4.6 }
+          { name: 'Priority Air Express', rate: 149, etd: '2-3 Days', days: '2-3', cod: true, rating: 4.9 },
+          { name: 'Standard Surface Delivery', rate: 79, etd: '3-5 Days', days: '3-5', cod: true, rating: 4.7 }
         ]
       };
     }
 
     try {
-      const res = await requestShiprocket(`/courier/serviceability?pickup_postcode=${pickupPostcode}&delivery_postcode=${deliveryPostcode}&weight=${weightKg}&cod=${cod}`, {
+      const res = await requestShiprocket(`/courier/serviceability?pickup_postcode=${pickupPostcode}&delivery_postcode=${targetPin}&weight=${weightKg}&cod=${cod}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         }
       });
+
+      const rawData = res.data?.data || res.data;
+      const courierList = rawData?.available_courier_companies || [];
+
+      if (res.status === 200 && courierList.length > 0) {
+        const topCourier = courierList[0];
+        const hasCod = courierList.some(c => c.cod === 1);
+        
+        return {
+          success: true,
+          isAvailable: true,
+          isLive: true,
+          postcode: targetPin,
+          city: topCourier.city || 'Hub Location',
+          state: topCourier.state || 'India',
+          estimatedDays: `${topCourier.estimated_delivery_days || 3} Days`,
+          etd: topCourier.etd || '3-4 Days',
+          codAvailable: hasCod,
+          prepaidAvailable: true,
+          courier: topCourier.courier_name,
+          rate: topCourier.rate,
+          totalCouriersCount: courierList.length,
+          couriers: courierList.slice(0, 8).map(c => ({
+            name: c.courier_name,
+            mode: c.courier_name.toLowerCase().includes('air') ? 'Air Express' : 'Surface Ground',
+            rate: Math.round(c.rate),
+            etd: c.etd,
+            days: c.estimated_delivery_days,
+            cod: c.cod === 1,
+            rating: c.rating || 4.5
+          }))
+        };
+      }
+
       return {
-        isAvailable: res.status === 200,
-        data: res.data?.data || res.data
+        success: false,
+        isAvailable: false,
+        postcode: targetPin,
+        message: rawData?.message || 'Delivery currently unavailable for this PIN code.'
       };
     } catch (err) {
-      return { isAvailable: false, error: err.message };
+      return { 
+        success: false, 
+        isAvailable: false, 
+        postcode: targetPin, 
+        error: err.message 
+      };
     }
   }
 
@@ -206,6 +257,22 @@ class ShiprocketService {
     }
   }
 
+  // Get active pickup location nickname from Shiprocket account
+  async getPrimaryPickupLocation() {
+    const token = await this.getToken();
+    if (!token) return 'Primary';
+    try {
+      const res = await requestShiprocket('/settings/company/pickup', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const addrs = res.data?.data?.shipping_address || [];
+      const primary = addrs.find(a => a.is_primary_location === 1) || addrs[0];
+      return primary ? primary.pickup_location : 'Primary';
+    } catch (e) {
+      return 'Primary';
+    }
+  }
+
   // Create an order in Shiprocket
   async createShipmentOrder(orderDoc) {
     const token = await this.getToken();
@@ -214,37 +281,53 @@ class ShiprocketService {
     }
 
     try {
+      const pickupLocation = await this.getPrimaryPickupLocation();
+      const rawName = orderDoc.shippingAddress?.recipientName || 'Customer';
+      const nameParts = rawName.trim().split(/\s+/);
+      const firstName = nameParts[0] || 'Customer';
+      const lastName = nameParts.slice(1).join(' ') || '.';
+      const rawPhone = String(orderDoc.shippingAddress?.phone || '').replace(/[^0-9]/g, '');
+      const cleanPhone = rawPhone.length >= 10 ? rawPhone.slice(-10) : '9876543210';
+      const now = new Date();
+      const orderDateFormatted = now.toISOString().replace('T', ' ').slice(0, 16);
+
+      const itemsList = (orderDoc.items && orderDoc.items.length > 0)
+        ? orderDoc.items
+        : [{ name: 'Handcrafted Crochet Piece', price: orderDoc.total || 499, quantity: 1 }];
+
+      const isCod = String(orderDoc.paymentMethod || '').toLowerCase().includes('cod');
+
       const payload = {
-        order_id: orderDoc.orderId,
-        order_date: new Date().toISOString().split('T')[0],
-        pickup_location: 'Primary Studio',
+        order_id: String(orderDoc.orderId),
+        order_date: orderDateFormatted,
+        pickup_location: pickupLocation,
         channel_id: '',
-        comment: 'BabyyGurll Handcrafted Crochet',
-        billing_customer_name: orderDoc.shippingAddress.recipientName.split(' ')[0],
-        billing_last_name: orderDoc.shippingAddress.recipientName.split(' ').slice(1).join(' ') || 'Customer',
-        billing_address: orderDoc.shippingAddress.street,
-        billing_city: orderDoc.shippingAddress.city,
-        billing_pincode: orderDoc.shippingAddress.zip,
-        billing_state: orderDoc.shippingAddress.state,
+        comment: 'BabyyGurll Artisanal Handcrafted Crochet',
+        billing_customer_name: firstName,
+        billing_last_name: lastName,
+        billing_address: (orderDoc.shippingAddress?.street || 'Delivery Address').trim(),
+        billing_city: (orderDoc.shippingAddress?.city || 'Sibsagar').trim(),
+        billing_pincode: String(orderDoc.shippingAddress?.zip || '785670').trim(),
+        billing_state: (orderDoc.shippingAddress?.state || 'Assam').trim(),
         billing_country: 'India',
-        billing_email: orderDoc.userEmail,
-        billing_phone: orderDoc.shippingAddress.phone.replace(/[^0-9]/g, '').slice(-10),
+        billing_email: orderDoc.userEmail || 'hello@babyygurll.in',
+        billing_phone: cleanPhone,
         shipping_is_billing: true,
-        order_items: orderDoc.items.map(it => ({
-          name: it.name,
-          sku: it.id,
-          units: it.quantity,
-          selling_price: it.price,
+        order_items: itemsList.map((it, idx) => ({
+          name: (it.name || 'Crochet Item').substring(0, 50),
+          sku: String(it.id || it._id || `BG-SKU-${idx + 1}`).replace(/[^a-zA-Z0-9_-]/g, '') || `BG-SKU-${idx + 1}`,
+          units: Number(it.quantity || 1),
+          selling_price: Math.max(1, Number(it.price || 1)),
           discount: 0,
           tax: 0,
           hsn: 65050090
         })),
-        payment_method: orderDoc.paymentMethod.toLowerCase().includes('cod') ? 'COD' : 'Prepaid',
-        shipping_charges: 0,
+        payment_method: isCod ? 'COD' : 'Prepaid',
+        shipping_charges: Number(orderDoc.shippingCost || 0),
         giftwrap_charges: 0,
         transaction_charges: 0,
-        total_discount: orderDoc.discount || 0,
-        sub_total: orderDoc.total,
+        total_discount: Number(orderDoc.discount || 0),
+        sub_total: Math.max(1, Number(orderDoc.total || 1)),
         length: 15,
         breadth: 15,
         height: 10,
@@ -260,6 +343,7 @@ class ShiprocketService {
         body: JSON.stringify(payload)
       });
 
+      console.log(`[Shiprocket] Auto-created adhoc order #${orderDoc.orderId}: status ${res.status}`, res.data?.order_id ? `SUCCESS (SR #${res.data.order_id}, Shipment #${res.data.shipment_id})` : (res.data?.message || JSON.stringify(res.data)));
       return res.data;
     } catch (err) {
       console.warn('Shiprocket order creation error:', err.message);

@@ -30,8 +30,22 @@ export const CheckoutModal = ({
   onOrderPlacedSuccess,
   onShowToast
 }) => {
-  const { user, addAddress } = useAuth();
+  const { user, login, register, logout, forgotPassword, addAddress } = useAuth();
   const { cart, getTotals, formatPrice, clearCart, removeCoupon, coupon } = useCart();
+
+  const isUserLoggedIn = Boolean(user && user.isLoggedIn && user.email);
+
+  // Authentication gate state
+  const [authTab, setAuthTab] = useState('login'); // 'login', 'register', 'forgot'
+  const [authEmail, setAuthEmail] = useState('');
+  const [authPassword, setAuthPassword] = useState('');
+  const [authName, setAuthName] = useState('');
+  const [authPhone, setAuthPhone] = useState('');
+  const [authForgotEmail, setAuthForgotEmail] = useState('');
+  const [authNewPassword, setAuthNewPassword] = useState('');
+  const [authError, setAuthError] = useState('');
+  const [authSuccess, setAuthSuccess] = useState('');
+  const [authLoading, setAuthLoading] = useState(false);
 
   const [step, setStep] = useState(1);
   const addresses = user?.savedAddresses || [];
@@ -59,6 +73,90 @@ export const CheckoutModal = ({
   const [placedOrderId, setPlacedOrderId] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
+  // Handle Checkout Login
+  const handleCheckoutLogin = async (e) => {
+    e.preventDefault();
+    setAuthError('');
+    setAuthSuccess('');
+    if (!authEmail.trim() || !authPassword) {
+      setAuthError('Please enter your email and password');
+      return;
+    }
+    setAuthLoading(true);
+    const res = await login(authEmail.trim(), authPassword);
+    setAuthLoading(false);
+    if (res.success) {
+      onShowToast(`Welcome back, ${res.user?.name || 'Friend'}!`, '✓');
+      setStep(1);
+    } else {
+      setAuthError(res.message || 'Invalid email or password');
+    }
+  };
+
+  // Handle Checkout Registration
+  const handleCheckoutRegister = async (e) => {
+    e.preventDefault();
+    setAuthError('');
+    setAuthSuccess('');
+    if (!authName.trim()) {
+      setAuthError('Please enter your full name');
+      return;
+    }
+    if (!authEmail.trim()) {
+      setAuthError('Please enter your email address');
+      return;
+    }
+    const cleanDigits = authPhone.replace(/[^0-9]/g, '');
+    if (cleanDigits.length < 10) {
+      setAuthError('Please enter a valid 10-digit mobile number');
+      return;
+    }
+    if (authPassword.length < 6) {
+      setAuthError('Password must be at least 6 characters');
+      return;
+    }
+    setAuthLoading(true);
+    const res = await register({
+      name: authName.trim(),
+      email: authEmail.trim(),
+      phone: `+91 ${cleanDigits.slice(-10)}`,
+      password: authPassword
+    });
+    setAuthLoading(false);
+    if (res.success) {
+      onShowToast(`Account created! Welcome, ${res.user?.name}!`, '✓');
+      setStep(1);
+    } else {
+      setAuthError(res.message || 'Registration failed');
+    }
+  };
+
+  // Handle Checkout Forgot Password
+  const handleCheckoutForgot = async (e) => {
+    e.preventDefault();
+    setAuthError('');
+    setAuthSuccess('');
+    if (!authForgotEmail.trim()) {
+      setAuthError('Please enter your registered email');
+      return;
+    }
+    if (authNewPassword.length < 6) {
+      setAuthError('New password must be at least 6 characters');
+      return;
+    }
+    setAuthLoading(true);
+    const res = await forgotPassword(authForgotEmail.trim(), authNewPassword);
+    setAuthLoading(false);
+    if (res.success) {
+      setAuthSuccess('Password updated successfully! Please sign in with your new password.');
+      setAuthEmail(authForgotEmail.trim());
+      setAuthPassword(authNewPassword);
+      setAuthTab('login');
+    } else {
+      setAuthError(res.message || 'Password reset failed');
+    }
+  };
+
   // Sync address selection when addresses list changes
   useEffect(() => {
     if (addresses.length > 0) {
@@ -77,7 +175,7 @@ export const CheckoutModal = ({
         ...prev,
         recipientName: prev.recipientName || user.name || '',
         phone: prev.phone || user.phone || '',
-        email: prev.email || user.email || ''
+        email: user.email || prev.email || ''
       }));
     }
   }, [user]);
@@ -317,28 +415,49 @@ export const CheckoutModal = ({
         {/* Topbar Step Indicator (Desktop) */}
         {step !== 4 && (
           <nav className="checkout-topbar-steps" aria-label="Checkout Progress">
-            <button 
-              type="button"
-              className={`checkout-topbar-step ${step === 1 ? 'active' : ''} ${step > 1 ? 'completed clickable' : ''}`}
-              onClick={() => step > 1 && setStep(1)}
-            >
-              <span className="checkout-topbar-step-num">{step > 1 ? '✓' : '1'}</span>
-              <span>Address</span>
-            </button>
-            <span style={{ color: 'var(--border-subtle)', fontSize: '0.8rem' }}>›</span>
-            <button 
-              type="button"
-              className={`checkout-topbar-step ${step === 2 ? 'active' : ''} ${step > 2 ? 'completed clickable' : ''}`}
-              onClick={() => step > 2 && setStep(2)}
-            >
-              <span className="checkout-topbar-step-num">{step > 2 ? '✓' : '2'}</span>
-              <span>Shipping</span>
-            </button>
-            <span style={{ color: 'var(--border-subtle)', fontSize: '0.8rem' }}>›</span>
-            <div className={`checkout-topbar-step ${step === 3 ? 'active' : ''}`}>
-              <span className="checkout-topbar-step-num">3</span>
-              <span>Payment</span>
-            </div>
+            {!isUserLoggedIn ? (
+              <>
+                <div className="checkout-topbar-step active">
+                  <span className="checkout-topbar-step-num">1</span>
+                  <span>Account Login</span>
+                </div>
+                <span style={{ color: 'var(--border-subtle)', fontSize: '0.8rem' }}>›</span>
+                <div className="checkout-topbar-step">
+                  <span className="checkout-topbar-step-num">2</span>
+                  <span>Address</span>
+                </div>
+                <span style={{ color: 'var(--border-subtle)', fontSize: '0.8rem' }}>›</span>
+                <div className="checkout-topbar-step">
+                  <span className="checkout-topbar-step-num">3</span>
+                  <span>Payment</span>
+                </div>
+              </>
+            ) : (
+              <>
+                <button 
+                  type="button"
+                  className={`checkout-topbar-step ${step === 1 ? 'active' : ''} ${step > 1 ? 'completed clickable' : ''}`}
+                  onClick={() => step > 1 && setStep(1)}
+                >
+                  <span className="checkout-topbar-step-num">{step > 1 ? '✓' : '1'}</span>
+                  <span>Address</span>
+                </button>
+                <span style={{ color: 'var(--border-subtle)', fontSize: '0.8rem' }}>›</span>
+                <button 
+                  type="button"
+                  className={`checkout-topbar-step ${step === 2 ? 'active' : ''} ${step > 2 ? 'completed clickable' : ''}`}
+                  onClick={() => step > 2 && setStep(2)}
+                >
+                  <span className="checkout-topbar-step-num">{step > 2 ? '✓' : '2'}</span>
+                  <span>Shipping</span>
+                </button>
+                <span style={{ color: 'var(--border-subtle)', fontSize: '0.8rem' }}>›</span>
+                <div className={`checkout-topbar-step ${step === 3 ? 'active' : ''}`}>
+                  <span className="checkout-topbar-step-num">3</span>
+                  <span>Payment</span>
+                </div>
+              </>
+            )}
           </nav>
         )}
 
@@ -460,7 +579,329 @@ export const CheckoutModal = ({
             {/* Left: Active Step Card */}
             <div className="checkout-main-content">
               <div className="checkout-step-card">
-                {/* Visual Step Stepper on mobile / top of card */}
+                {!isUserLoggedIn ? (
+                  /* STEP 0: MANDATORY ACCOUNT LOGIN / SIGNUP SCREEN */
+                  <div style={{ padding: '0.5rem 0' }}>
+                    <div style={{ textAlign: 'center', marginBottom: '1.75rem' }}>
+                      <div 
+                        style={{
+                          width: '56px',
+                          height: '56px',
+                          borderRadius: '50%',
+                          background: 'var(--primary-light)',
+                          color: 'var(--primary)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          margin: '0 auto 1rem',
+                          boxShadow: '0 4px 14px rgba(255, 123, 156, 0.25)'
+                        }}
+                      >
+                        <IconShield size={28} />
+                      </div>
+                      <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: '1.65rem', margin: '0 0 0.45rem', color: 'var(--text-dark)' }}>
+                        Sign In or Create Account to Checkout
+                      </h3>
+                      <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', margin: '0 auto', maxWidth: '460px', lineHeight: 1.5 }}>
+                        To place your order, receive live delivery tracking updates, and view invoices, please sign in or register your customer account.
+                      </p>
+                    </div>
+
+                    {/* Navigation Tabs: Sign In vs Create Account */}
+                    <div style={{ display: 'flex', background: '#F1F5F9', padding: '4px', borderRadius: '12px', marginBottom: '1.75rem', maxWidth: '420px', margin: '0 auto 1.75rem auto' }}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setAuthTab('login');
+                          setAuthError('');
+                          setAuthSuccess('');
+                        }}
+                        style={{
+                          flex: 1,
+                          padding: '0.65rem 0.5rem',
+                          border: 'none',
+                          borderRadius: '9px',
+                          fontSize: '0.88rem',
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                          background: authTab === 'login' ? '#FFFFFF' : 'transparent',
+                          color: authTab === 'login' ? 'var(--primary)' : '#64748B',
+                          boxShadow: authTab === 'login' ? '0 2px 6px rgba(0,0,0,0.06)' : 'none',
+                          transition: 'all 0.2s ease'
+                        }}
+                      >
+                        Sign In
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setAuthTab('register');
+                          setAuthError('');
+                          setAuthSuccess('');
+                        }}
+                        style={{
+                          flex: 1,
+                          padding: '0.65rem 0.5rem',
+                          border: 'none',
+                          borderRadius: '9px',
+                          fontSize: '0.88rem',
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                          background: authTab === 'register' ? '#FFFFFF' : 'transparent',
+                          color: authTab === 'register' ? 'var(--primary)' : '#64748B',
+                          boxShadow: authTab === 'register' ? '0 2px 6px rgba(0,0,0,0.06)' : 'none',
+                          transition: 'all 0.2s ease'
+                        }}
+                      >
+                        Create Account
+                      </button>
+                    </div>
+
+                    {/* Alert Messages */}
+                    {authError && (
+                      <div style={{ maxWidth: '460px', margin: '0 auto 1.25rem auto', background: '#FEF2F2', border: '1px solid #FECDD3', color: '#BE123C', padding: '0.75rem 1rem', borderRadius: '8px', fontSize: '0.86rem' }}>
+                        ⚠️ {authError}
+                      </div>
+                    )}
+                    {authSuccess && (
+                      <div style={{ maxWidth: '460px', margin: '0 auto 1.25rem auto', background: '#F0FDF4', border: '1px solid #BBF7D0', color: '#15803D', padding: '0.75rem 1rem', borderRadius: '8px', fontSize: '0.86rem' }}>
+                        ✓ {authSuccess}
+                      </div>
+                    )}
+
+                    {/* TAB 1: SIGN IN FORM */}
+                    {authTab === 'login' && (
+                      <form onSubmit={handleCheckoutLogin} style={{ maxWidth: '460px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '1.1rem' }}>
+                        <div>
+                          <label className="form-label" style={{ fontWeight: 600 }}>Email Address</label>
+                          <input 
+                            type="email" 
+                            className="form-input" 
+                            required 
+                            placeholder="e.g. narayanphukn30@gmail.com"
+                            value={authEmail}
+                            onChange={e => setAuthEmail(e.target.value)}
+                          />
+                        </div>
+
+                        <div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
+                            <label className="form-label" style={{ fontWeight: 600, margin: 0 }}>Password</label>
+                            <button 
+                              type="button" 
+                              onClick={() => {
+                                setAuthTab('forgot');
+                                setAuthError('');
+                                setAuthSuccess('');
+                                setAuthForgotEmail(authEmail);
+                              }}
+                              style={{ background: 'none', border: 'none', color: 'var(--primary)', fontSize: '0.8rem', cursor: 'pointer', fontWeight: 600 }}
+                            >
+                              Forgot password?
+                            </button>
+                          </div>
+                          <input 
+                            type="password" 
+                            className="form-input" 
+                            required 
+                            placeholder="Enter your account password"
+                            value={authPassword}
+                            onChange={e => setAuthPassword(e.target.value)}
+                          />
+                        </div>
+
+                        <button 
+                          type="submit" 
+                          className="btn btn-primary" 
+                          disabled={authLoading}
+                          style={{ padding: '0.9rem', fontSize: '0.95rem', fontWeight: 700, marginTop: '0.5rem', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
+                        >
+                          <span>{authLoading ? 'Signing In...' : 'Sign In & Continue to Address'}</span>
+                          <IconArrowRight size={16} />
+                        </button>
+
+                        <div style={{ textAlign: 'center', fontSize: '0.85rem', color: '#64748B', marginTop: '0.5rem' }}>
+                          New customer?{' '}
+                          <button 
+                            type="button" 
+                            onClick={() => setAuthTab('register')}
+                            style={{ background: 'none', border: 'none', color: 'var(--primary)', fontWeight: 700, cursor: 'pointer', padding: 0 }}
+                          >
+                            Create an account here
+                          </button>
+                        </div>
+                      </form>
+                    )}
+
+                    {/* TAB 2: CREATE ACCOUNT FORM */}
+                    {authTab === 'register' && (
+                      <form onSubmit={handleCheckoutRegister} style={{ maxWidth: '460px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '1.1rem' }}>
+                        <div>
+                          <label className="form-label" style={{ fontWeight: 600 }}>Full Name *</label>
+                          <input 
+                            type="text" 
+                            className="form-input" 
+                            required 
+                            placeholder="e.g. Narayan Phukan"
+                            value={authName}
+                            onChange={e => setAuthName(e.target.value)}
+                          />
+                        </div>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.85rem' }}>
+                          <div>
+                            <label className="form-label" style={{ fontWeight: 600 }}>Mobile Number (10 Digits) *</label>
+                            <input 
+                              type="tel" 
+                              className="form-input" 
+                              required 
+                              maxLength={10}
+                              placeholder="e.g. 9876543210"
+                              value={authPhone}
+                              onChange={e => setAuthPhone(e.target.value.replace(/[^0-9]/g, ''))}
+                            />
+                          </div>
+                          <div>
+                            <label className="form-label" style={{ fontWeight: 600 }}>Email Address *</label>
+                            <input 
+                              type="email" 
+                              className="form-input" 
+                              required 
+                              placeholder="name@example.com"
+                              value={authEmail}
+                              onChange={e => setAuthEmail(e.target.value)}
+                            />
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="form-label" style={{ fontWeight: 600 }}>Create Password (Min 6 Characters) *</label>
+                          <input 
+                            type="password" 
+                            className="form-input" 
+                            required 
+                            placeholder="Choose a secure password"
+                            value={authPassword}
+                            onChange={e => setAuthPassword(e.target.value)}
+                          />
+                        </div>
+
+                        <button 
+                          type="submit" 
+                          className="btn btn-primary" 
+                          disabled={authLoading}
+                          style={{ padding: '0.9rem', fontSize: '0.95rem', fontWeight: 700, marginTop: '0.5rem', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
+                        >
+                          <span>{authLoading ? 'Creating Account...' : 'Create Account & Continue'}</span>
+                          <IconArrowRight size={16} />
+                        </button>
+
+                        <div style={{ textAlign: 'center', fontSize: '0.85rem', color: '#64748B', marginTop: '0.5rem' }}>
+                          Already have an account?{' '}
+                          <button 
+                            type="button" 
+                            onClick={() => setAuthTab('login')}
+                            style={{ background: 'none', border: 'none', color: 'var(--primary)', fontWeight: 700, cursor: 'pointer', padding: 0 }}
+                          >
+                            Sign in here
+                          </button>
+                        </div>
+                      </form>
+                    )}
+
+                    {/* TAB 3: FORGOT PASSWORD FORM */}
+                    {authTab === 'forgot' && (
+                      <form onSubmit={handleCheckoutForgot} style={{ maxWidth: '460px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '1.1rem' }}>
+                        <div style={{ textAlign: 'center', marginBottom: '0.5rem' }}>
+                          <h4 style={{ margin: '0 0 0.35rem 0', fontSize: '1.1rem', color: '#0F172A' }}>Reset Your Account Password</h4>
+                          <p style={{ margin: 0, fontSize: '0.82rem', color: '#64748B' }}>Enter your registered email and set a new password.</p>
+                        </div>
+
+                        <div>
+                          <label className="form-label" style={{ fontWeight: 600 }}>Registered Email</label>
+                          <input 
+                            type="email" 
+                            className="form-input" 
+                            required 
+                            placeholder="name@example.com"
+                            value={authForgotEmail}
+                            onChange={e => setAuthForgotEmail(e.target.value)}
+                          />
+                        </div>
+
+                        <div>
+                          <label className="form-label" style={{ fontWeight: 600 }}>New Password (Min 6 Characters)</label>
+                          <input 
+                            type="password" 
+                            className="form-input" 
+                            required 
+                            placeholder="Enter new password"
+                            value={authNewPassword}
+                            onChange={e => setAuthNewPassword(e.target.value)}
+                          />
+                        </div>
+
+                        <button 
+                          type="submit" 
+                          className="btn btn-primary" 
+                          disabled={authLoading}
+                          style={{ padding: '0.9rem', fontSize: '0.95rem', fontWeight: 700, marginTop: '0.5rem' }}
+                        >
+                          {authLoading ? 'Resetting...' : 'Update Password & Sign In'}
+                        </button>
+
+                        <div style={{ textAlign: 'center', marginTop: '0.5rem' }}>
+                          <button 
+                            type="button" 
+                            onClick={() => setAuthTab('login')}
+                            style={{ background: 'none', border: 'none', color: '#64748B', fontSize: '0.85rem', cursor: 'pointer', fontWeight: 600 }}
+                          >
+                            ← Back to Sign In
+                          </button>
+                        </div>
+                      </form>
+                    )}
+                  </div>
+                ) : (
+                  <>
+                    {/* Logged-In User Banner */}
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      background: '#F8FAFC',
+                      border: '1px solid #E2E8F0',
+                      borderRadius: '10px',
+                      padding: '0.75rem 1rem',
+                      marginBottom: '1.5rem',
+                      fontSize: '0.85rem'
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                        <span style={{ color: '#16A34A', fontWeight: 800 }}>✓ Logged In:</span>
+                        <strong style={{ color: '#0F172A' }}>{user.name || user.email}</strong>
+                        <span style={{ color: '#64748B' }}>({user.email})</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          logout();
+                          onShowToast('Signed out of account', 'i');
+                        }}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          color: '#BE123C',
+                          fontSize: '0.78rem',
+                          fontWeight: 600,
+                          cursor: 'pointer',
+                          textDecoration: 'underline'
+                        }}
+                      >
+                        Sign Out / Switch
+                      </button>
+                    </div>
+
+                    {/* Visual Step Stepper on mobile / top of card */}
                 <div className="checkout-steps-bar">
                   <div className={`checkout-step-pill ${step >= 1 ? 'active' : ''}`}>
                     <div className="step-num-circle">1</div>
@@ -878,8 +1319,10 @@ export const CheckoutModal = ({
                     </div>
                   </div>
                 )}
-              </div>
-            </div>
+              </>
+            )}
+          </div>
+        </div>
 
             {/* Right: Sticky Order Summary Card */}
             <aside className="checkout-sidebar">

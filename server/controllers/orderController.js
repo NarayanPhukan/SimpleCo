@@ -89,9 +89,26 @@ exports.createOrder = async (req, res) => {
       timeline
     });
 
-    // Sync order dispatch with Shiprocket API
-    shiprocketService.createShipmentOrder(order).catch(err => {
-      console.warn('Shiprocket order sync note:', err.message);
+    // Sync order dispatch automatically with Shiprocket API
+    shiprocketService.createShipmentOrder(order).then(async (srResult) => {
+      try {
+        if (srResult && (srResult.order_id || srResult.shipment_id)) {
+          order.shiprocketOrderId = String(srResult.order_id || '');
+          order.shiprocketShipmentId = String(srResult.shipment_id || '');
+          order.shiprocketStatus = srResult.status || 'NEW';
+          if (srResult.awb_code) {
+            order.trackingNumber = srResult.awb_code;
+          }
+          await order.save();
+          console.log(`[Shiprocket] Order #${order.orderId} successfully synced: SR Order ID ${order.shiprocketOrderId}, Shipment ID ${order.shiprocketShipmentId}`);
+        } else if (srResult && srResult.message) {
+          console.warn(`[Shiprocket] Notice for #${order.orderId}:`, srResult.message);
+        }
+      } catch (saveErr) {
+        console.warn(`[Shiprocket] Failed to update order #${order.orderId} with Shiprocket info:`, saveErr.message);
+      }
+    }).catch(err => {
+      console.warn('Shiprocket auto-creation note:', err.message);
     });
 
     res.status(201).json({ success: true, data: order });
@@ -123,10 +140,13 @@ exports.updateOrderStatus = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Order not found' });
     }
 
-    const { statusCode, statusLabel, paymentStatus } = req.body;
+    const { statusCode, statusLabel, paymentStatus, carrier, trackingNumber, estimatedDelivery } = req.body;
     if (statusCode) order.statusCode = statusCode;
     if (statusLabel) order.statusLabel = statusLabel;
     if (paymentStatus) order.paymentStatus = paymentStatus;
+    if (carrier) order.carrier = carrier;
+    if (trackingNumber) order.trackingNumber = trackingNumber;
+    if (estimatedDelivery) order.estimatedDelivery = estimatedDelivery;
 
     const stages = ['received', 'crafted', 'packed', 'shipped', 'delivered'];
     const stageIdx = stages.indexOf(statusCode);
@@ -159,6 +179,21 @@ exports.updateOrderStatus = async (req, res) => {
 
     await order.save();
     res.json({ success: true, data: order });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// @desc    Delete an order (Admin)
+// @route   DELETE /api/orders/:orderId
+exports.deleteOrder = async (req, res) => {
+  try {
+    const cleanId = req.params.orderId.trim().toUpperCase();
+    const order = await Order.findOneAndDelete({ orderId: cleanId });
+    if (!order) {
+      return res.status(404).json({ success: false, message: 'Order not found' });
+    }
+    res.json({ success: true, message: `Order #${cleanId} deleted successfully` });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -307,6 +342,43 @@ exports.cancelOrder = async (req, res) => {
       success: true,
       message: `Order #${cleanId} has been successfully cancelled`,
       data: order
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// @desc    Manually push / sync order to Shiprocket
+// @route   POST /api/orders/:orderId/sync-shiprocket
+exports.syncShiprocket = async (req, res) => {
+  try {
+    const cleanId = req.params.orderId.trim().toUpperCase();
+    const order = await Order.findOne({ orderId: cleanId });
+    if (!order) {
+      return res.status(404).json({ success: false, message: 'Order not found' });
+    }
+
+    const srResult = await shiprocketService.createShipmentOrder(order);
+    if (srResult && (srResult.order_id || srResult.shipment_id)) {
+      order.shiprocketOrderId = String(srResult.order_id || '');
+      order.shiprocketShipmentId = String(srResult.shipment_id || '');
+      order.shiprocketStatus = srResult.status || 'NEW';
+      if (srResult.awb_code) {
+        order.trackingNumber = srResult.awb_code;
+      }
+      await order.save();
+      return res.json({
+        success: true,
+        message: `Order #${cleanId} synced to Shiprocket successfully!`,
+        data: order,
+        shiprocket: srResult
+      });
+    }
+
+    return res.status(400).json({
+      success: false,
+      message: srResult?.message || srResult?.error || 'Shiprocket sync returned without order confirmation',
+      details: srResult
     });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });

@@ -13,9 +13,9 @@ export const CartDrawer = ({ isOpen, onClose, onProceedCheckout, onShowToast, on
   const subtotal = totals.subtotal;
   const pct = Math.min(100, Math.round((subtotal / threshold) * 100));
 
-  const handleApplyCoupon = () => {
+  const handleApplyCoupon = async () => {
     if (!couponCode.trim()) return;
-    const res = applyCoupon(couponCode);
+    const res = await applyCoupon(couponCode);
     if (res.success) {
       onShowToast(`Promo "${res.coupon.code}" applied`, '✓');
       setCouponCode('');

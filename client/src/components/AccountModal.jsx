@@ -244,7 +244,6 @@ export const AccountModal = ({ isOpen, onClose, onOpenAddressModal, onShowToast 
             </span>
             <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)', fontWeight: 500 }}>Customer Account & Orders</span>
           </div>
-          <span className="account-page-badge">Member Portal</span>
         </div>
 
         <button 

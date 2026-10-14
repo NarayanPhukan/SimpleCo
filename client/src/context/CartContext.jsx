@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { api } from '../services/api';
 
 const CartContext = createContext();
 
@@ -111,23 +112,45 @@ export const CartProvider = ({ children }) => {
 
   const isInWishlist = (productId) => wishlist.includes(productId);
 
-  // Coupon
-  const applyCoupon = (code) => {
-    const upper = code.trim().toUpperCase();
-    if (upper === 'BABYYGURLL') {
-      const c = { code: upper, discountPercent: 15, label: '15% Off Special Welcome' };
-      setCoupon(c);
-      return { success: true, coupon: c };
-    } else if (upper === 'CUTIE100' || upper === 'CUTIE10') {
-      const c = { code: upper, discountFlat: 100, label: '₹100 Off Order' };
-      setCoupon(c);
-      return { success: true, coupon: c };
-    } else if (upper === 'FREESHIP') {
-      const c = { code: upper, freeShipping: true, label: 'Free Delivery Across India' };
-      setCoupon(c);
-      return { success: true, coupon: c };
+  // Coupon validation
+  const applyCoupon = async (code) => {
+    if (!code || !code.trim()) {
+      return { success: false, message: 'Please enter a coupon code' };
     }
-    return { success: false, message: 'Invalid coupon! Try BABYYGURLL or CUTIE100' };
+    const upper = code.trim().toUpperCase();
+    const currentSubtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+
+    try {
+      const res = await api.validateCoupon(upper, currentSubtotal);
+      if (res.success && res.data) {
+        const c = {
+          code: res.data.code,
+          discountPercent: res.data.discountType === 'percentage' ? res.data.discountValue : null,
+          discountFlat: res.data.discountType === 'flat' ? res.data.discountValue : null,
+          freeShipping: res.data.freeShipping || res.data.discountType === 'free_shipping',
+          label: res.data.description || `${res.data.code} Applied`
+        };
+        setCoupon(c);
+        return { success: true, coupon: c };
+      }
+    } catch (err) {
+      // Local fallback for default codes if offline
+      if (upper === 'BABYYGURLL') {
+        const c = { code: upper, discountPercent: 15, label: '15% Off Special Welcome' };
+        setCoupon(c);
+        return { success: true, coupon: c };
+      } else if (upper === 'CUTIE100' || upper === 'CUTIE10') {
+        const c = { code: upper, discountFlat: 100, label: '₹100 Off Order' };
+        setCoupon(c);
+        return { success: true, coupon: c };
+      } else if (upper === 'FREESHIP') {
+        const c = { code: upper, freeShipping: true, label: 'Free Delivery Across India' };
+        setCoupon(c);
+        return { success: true, coupon: c };
+      }
+      return { success: false, message: err.message || 'Invalid coupon! Try BABYYGURLL or CUTIE100' };
+    }
+    return { success: false, message: 'Invalid coupon code' };
   };
 
   const removeCoupon = () => {
