@@ -330,34 +330,55 @@ export const AccountModal = ({ isOpen, onClose, onOpenAddressModal, onShowToast 
             {activeNav === 'orders' && (
               <div className="account-orders-section">
                 {/* Order Sub-tabs */}
-                <div className="order-subtabs-bar">
-                  <button 
-                    className={`order-subtab-pill ${orderSubtab === 'in-progress' ? 'active' : ''}`}
-                    onClick={() => setOrderSubtab('in-progress')}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem', marginBottom: '1.25rem' }}>
+                  <div className="order-subtabs-bar" style={{ marginBottom: 0 }}>
+                    <button 
+                      className={`order-subtab-pill ${orderSubtab === 'all' ? 'active' : ''}`}
+                      onClick={() => setOrderSubtab('all')}
+                    >
+                      <span>All</span>
+                      <span className="subtab-count-badge">{orders.length}</span>
+                    </button>
+                    <button 
+                      className={`order-subtab-pill ${orderSubtab === 'in-progress' ? 'active' : ''}`}
+                      onClick={() => setOrderSubtab('in-progress')}
+                    >
+                      <span>In-Progress</span>
+                      <span className="subtab-count-badge">{inProgressOrders.length}</span>
+                    </button>
+                    <button 
+                      className={`order-subtab-pill ${orderSubtab === 'delivered' ? 'active' : ''}`}
+                      onClick={() => setOrderSubtab('delivered')}
+                    >
+                      <span>Delivered</span>
+                      <span className="subtab-count-badge">{deliveredOrders.length}</span>
+                    </button>
+                    <button 
+                      className={`order-subtab-pill ${orderSubtab === 'return' ? 'active' : ''}`}
+                      onClick={() => setOrderSubtab('return')}
+                    >
+                      <span>Return</span>
+                      <span className="subtab-count-badge">{returnOrders.length}</span>
+                    </button>
+                    <button 
+                      className={`order-subtab-pill ${orderSubtab === 'cancelled' ? 'active' : ''}`}
+                      onClick={() => setOrderSubtab('cancelled')}
+                    >
+                      <span>Cancelled</span>
+                      <span className="subtab-count-badge">{cancelledOrders.length}</span>
+                    </button>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      fetchUserOrders();
+                      onShowToast('Orders list refreshed', '✓');
+                    }}
+                    style={{ background: '#F8FAFC', border: '1px solid #CBD5E1', borderRadius: '20px', padding: '0.4rem 0.85rem', fontSize: '0.78rem', color: '#475569', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '0.35rem', fontWeight: 600 }}
                   >
-                    <span>In-Progress</span>
-                    <span className="subtab-count-badge">{inProgressOrders.length}</span>
-                  </button>
-                  <button 
-                    className={`order-subtab-pill ${orderSubtab === 'delivered' ? 'active' : ''}`}
-                    onClick={() => setOrderSubtab('delivered')}
-                  >
-                    <span>Delivered</span>
-                    <span className="subtab-count-badge">{deliveredOrders.length}</span>
-                  </button>
-                  <button 
-                    className={`order-subtab-pill ${orderSubtab === 'return' ? 'active' : ''}`}
-                    onClick={() => setOrderSubtab('return')}
-                  >
-                    <span>Return</span>
-                    <span className="subtab-count-badge">{returnOrders.length}</span>
-                  </button>
-                  <button 
-                    className={`order-subtab-pill ${orderSubtab === 'cancelled' ? 'active' : ''}`}
-                    onClick={() => setOrderSubtab('cancelled')}
-                  >
-                    <span>Cancelled</span>
-                    <span className="subtab-count-badge">{cancelledOrders.length}</span>
+                    <IconRefresh size={13} />
+                    <span>Refresh</span>
                   </button>
                 </div>
 
@@ -368,19 +389,19 @@ export const AccountModal = ({ isOpen, onClose, onOpenAddressModal, onShowToast 
                   </div>
                 )}
 
-                {/* Subtab Content: IN-PROGRESS */}
-                {orderSubtab === 'in-progress' && (
+                {/* Subtab Content: ALL / IN-PROGRESS */}
+                {(orderSubtab === 'all' || orderSubtab === 'in-progress') && (
                   <div className="orders-list-container">
-                    {inProgressOrders.length === 0 ? (
+                    {(orderSubtab === 'all' ? orders : inProgressOrders).length === 0 ? (
                       <div className="empty-subtab-box">
                         <div className="empty-icon" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
                           <IconPackage size={36} />
                         </div>
-                        <h4>No In-Progress Orders</h4>
-                        <p>You don't have any orders currently being crafted or in transit.</p>
+                        <h4>{orderSubtab === 'all' ? 'No Orders Found' : 'No In-Progress Orders'}</h4>
+                        <p>{orderSubtab === 'all' ? 'You have not placed any orders yet. Discover our handmade crochet collection!' : "You don't have any orders currently being crafted or in transit."}</p>
                       </div>
                     ) : (
-                      inProgressOrders.map((ord) => {
+                      (orderSubtab === 'all' ? orders : inProgressOrders).map((ord) => {
                         const isExpanded = expandedTrackId === ord.orderId;
                         const totalSteps = ord.timeline?.length || 5;
                         const progressWidth = Math.min(84, (ord.statusStage / (totalSteps - 1)) * 84);

@@ -1741,6 +1741,17 @@ export const AdminPanel = ({ isOpen, onClose, onShowToast, onProductCatalogUpdat
                         type="button" 
                         className="btn btn-secondary" 
                         style={{ fontSize: '0.82rem', padding: '0.55rem 0.95rem' }}
+                        onClick={() => {
+                          fetchOrders();
+                          onShowToast('Orders list refreshed', '✓');
+                        }}
+                      >
+                        🔄 Refresh
+                      </button>
+                      <button 
+                        type="button" 
+                        className="btn btn-secondary" 
+                        style={{ fontSize: '0.82rem', padding: '0.55rem 0.95rem' }}
                         onClick={exportOrdersCSV}
                       >
                         Export Orders (.CSV)

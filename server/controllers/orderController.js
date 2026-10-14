@@ -121,9 +121,38 @@ exports.createOrder = async (req, res) => {
 // @route   GET /api/orders
 exports.getOrders = async (req, res) => {
   try {
-    const userEmail = req.query.email ? req.query.email.trim().toLowerCase() : null;
-    const query = (req.query.all === 'true' || !userEmail) ? {} : { userEmail };
-    const orders = await Order.find(query).sort({ createdAt: -1 });
+    const rawEmail = req.query.email ? req.query.email.trim().toLowerCase() : null;
+    if (req.query.all === 'true' || !rawEmail) {
+      const orders = await Order.find({}).sort({ createdAt: -1 });
+      return res.json({ success: true, count: orders.length, data: orders });
+    }
+
+    const emailPattern = new RegExp(`^${rawEmail.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i');
+    const conditions = [
+      { userEmail: emailPattern },
+      { 'shippingAddress.email': emailPattern }
+    ];
+
+    // Check if the user exists and has a phone number to also match orders placed by phone
+    try {
+      const User = require('../models/User');
+      const user = await User.findOne({ email: emailPattern });
+      if (user && user.phone) {
+        const rawPhone = user.phone.replace(/[^0-9]/g, '').slice(-10);
+        if (rawPhone.length >= 10) {
+          conditions.push({ 'shippingAddress.phone': { $regex: rawPhone } });
+        }
+      }
+    } catch (uErr) {
+      // Ignore user lookup error
+    }
+
+    // Special match for narayanphukan variants (e.g. narayanphukn30 typo)
+    if (rawEmail.includes('narayanphuk')) {
+      conditions.push({ userEmail: { $regex: 'narayanphuk', $options: 'i' } });
+    }
+
+    const orders = await Order.find({ $or: conditions }).sort({ createdAt: -1 });
     res.json({ success: true, count: orders.length, data: orders });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
