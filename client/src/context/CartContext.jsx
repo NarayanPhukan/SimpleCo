@@ -29,6 +29,33 @@ export const CartProvider = ({ children }) => {
     return saved ? JSON.parse(saved) : null;
   });
 
+  const [giftPackaging, setGiftPackaging] = useState(() => {
+    const saved = localStorage.getItem('bgc_gift_pack_v1');
+    return saved ? JSON.parse(saved) : {
+      enabled: false,
+      recipientName: '',
+      message: '',
+      hideInvoice: true,
+      ribbonColor: 'Rose Gold',
+      price: 99
+    };
+  });
+
+  const [yarnPoints, setYarnPoints] = useState(() => {
+    const saved = localStorage.getItem('bgc_yarn_points_v1');
+    return saved !== null ? Number(saved) : 280;
+  });
+
+  const [recentlyViewed, setRecentlyViewed] = useState(() => {
+    const saved = localStorage.getItem('bgc_recent_views_v1');
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  const [theme, setTheme] = useState(() => {
+    const saved = localStorage.getItem('bgc_theme_v1');
+    return saved || 'light';
+  });
+
   useEffect(() => {
     localStorage.setItem('bgc_cart_inr_v1', JSON.stringify(cart));
   }, [cart]);
@@ -44,6 +71,71 @@ export const CartProvider = ({ children }) => {
       localStorage.removeItem('bgc_coupon_inr_v1');
     }
   }, [coupon]);
+
+  useEffect(() => {
+    localStorage.setItem('bgc_gift_pack_v1', JSON.stringify(giftPackaging));
+  }, [giftPackaging]);
+
+  useEffect(() => {
+    localStorage.setItem('bgc_yarn_points_v1', String(yarnPoints));
+  }, [yarnPoints]);
+
+  useEffect(() => {
+    localStorage.setItem('bgc_recent_views_v1', JSON.stringify(recentlyViewed));
+  }, [recentlyViewed]);
+
+  useEffect(() => {
+    localStorage.setItem('bgc_theme_v1', theme);
+    if (theme === 'candlelight') {
+      document.documentElement.setAttribute('data-theme', 'candlelight');
+    } else {
+      document.documentElement.removeAttribute('data-theme');
+    }
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme(prev => prev === 'candlelight' ? 'light' : 'candlelight');
+  };
+
+  const updateGiftPackaging = (updates) => {
+    setGiftPackaging(prev => ({ ...prev, ...updates }));
+  };
+
+  const addYarnPoints = (amount) => {
+    setYarnPoints(prev => Math.max(0, prev + amount));
+  };
+
+  const redeemYarnPoints = (cost, rewardCoupon) => {
+    if (yarnPoints < cost) return false;
+    setYarnPoints(prev => prev - cost);
+    if (rewardCoupon) {
+      setCoupon(rewardCoupon);
+    }
+    return true;
+  };
+
+  const addRecentlyViewed = (product) => {
+    if (!product || !product.id) return;
+    setRecentlyViewed(prev => {
+      const filtered = prev.filter(p => p.id !== product.id);
+      return [
+        {
+          id: product.id,
+          name: product.name,
+          price: product.price,
+          originalPrice: product.originalPrice,
+          image: product.image,
+          badge: product.badge,
+          categoryName: product.categoryName
+        },
+        ...filtered
+      ].slice(0, 8);
+    });
+  };
+
+  const clearRecentlyViewed = () => {
+    setRecentlyViewed([]);
+  };
 
   // India INR Formatter
   const formatPrice = (amount) => {
@@ -108,6 +200,21 @@ export const CartProvider = ({ children }) => {
       return [...prev, productId];
     });
     return added;
+  };
+
+  const removeFromWishlist = (productId) => {
+    setWishlist(prev => prev.filter(id => id !== productId));
+  };
+
+  const clearWishlist = () => {
+    setWishlist([]);
+  };
+
+  const moveToCart = (product, color) => {
+    if (!product) return;
+    const chosenColor = color || (product.colors && product.colors[0]?.name) || 'Default';
+    addToCart(product, chosenColor, 1);
+    removeFromWishlist(product.id || product._id);
   };
 
   const isInWishlist = (productId) => wishlist.includes(productId);
@@ -175,15 +282,17 @@ export const CartProvider = ({ children }) => {
       }
     }
 
+    const giftPackagingCost = (cart.length > 0 && giftPackaging.enabled) ? (giftPackaging.price || 99) : 0;
     const discountedSubtotal = Math.max(0, subtotal - discount);
     // GST included or 0 estimated tax for consumer handmade goods
     const tax = 0;
-    const total = discountedSubtotal + shipping + tax;
+    const total = discountedSubtotal + shipping + giftPackagingCost + tax;
 
     return {
       subtotal,
       discount,
       shipping,
+      giftPackagingCost,
       tax,
       total,
       freeShippingThreshold: FREE_SHIPPING_THRESHOLD,
@@ -197,6 +306,16 @@ export const CartProvider = ({ children }) => {
       cart,
       wishlist,
       coupon,
+      giftPackaging,
+      updateGiftPackaging,
+      yarnPoints,
+      addYarnPoints,
+      redeemYarnPoints,
+      recentlyViewed,
+      addRecentlyViewed,
+      clearRecentlyViewed,
+      theme,
+      toggleTheme,
       currency: 'INR',
       formatPrice,
       addToCart,
@@ -204,6 +323,9 @@ export const CartProvider = ({ children }) => {
       removeFromCart,
       clearCart,
       toggleWishlist,
+      removeFromWishlist,
+      clearWishlist,
+      moveToCart,
       isInWishlist,
       applyCoupon,
       removeCoupon,

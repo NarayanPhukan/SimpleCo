@@ -17,7 +17,11 @@ import { Reviews } from './components/Reviews';
 import { FAQ } from './components/FAQ';
 import { Footer } from './components/Footer';
 import { AdminPanel } from './components/AdminPanel';
-import { IconSearch, IconPackage } from './components/Icons';
+import { WishlistDrawer } from './components/WishlistDrawer';
+import { CustomStudioModal } from './components/CustomStudioModal';
+import { WhatsAppConcierge } from './components/WhatsAppConcierge';
+import { RecentlyViewedBar } from './components/RecentlyViewedBar';
+import { IconSearch, IconPackage, IconSparkles } from './components/Icons';
 
 export const App = () => {
   const [products, setProducts] = useState([]);
@@ -28,6 +32,8 @@ export const App = () => {
 
   // Modals state
   const [isCartOpen, setIsCartOpen] = useState(false);
+  const [isWishlistOpen, setIsWishlistOpen] = useState(false);
+  const [isCustomStudioOpen, setIsCustomStudioOpen] = useState(false);
   const [isAccountOpen, setIsAccountOpen] = useState(false);
   const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
   const [editingAddress, setEditingAddress] = useState(null);
@@ -68,12 +74,16 @@ export const App = () => {
     loadProducts();
   }, [activeCategory, searchQuery, sortOrder]);
 
-  // Listen for #admin, #studio, #account, #orders, #checkout hash in URL
+  // Listen for #admin, #studio, #custom, #wishlist, #account, #orders, #checkout hash in URL
   useEffect(() => {
     const handleHash = () => {
       const hash = window.location.hash;
-      if (hash === '#admin' || hash === '#studio') {
+      if (hash === '#admin') {
         setIsAdminOpen(true);
+      } else if (hash === '#studio' || hash === '#custom' || hash === '#builder') {
+        setIsCustomStudioOpen(true);
+      } else if (hash === '#wishlist') {
+        setIsWishlistOpen(true);
       } else if (hash === '#account' || hash === '#orders') {
         setIsAccountOpen(true);
       } else if (hash === '#checkout') {
@@ -158,6 +168,14 @@ export const App = () => {
           window.history.pushState(null, '', '#account');
         }}
         onOpenCart={() => setIsCartOpen(true)}
+        onOpenWishlist={() => {
+          setIsWishlistOpen(true);
+          window.history.pushState(null, '', '#wishlist');
+        }}
+        onOpenCustomStudio={() => {
+          setIsCustomStudioOpen(true);
+          window.history.pushState(null, '', '#studio');
+        }}
         onOpenAdmin={() => {
           setIsAdminOpen(true);
           window.history.pushState(null, '', '#admin');
@@ -171,6 +189,49 @@ export const App = () => {
         />
 
         <Highlights />
+
+        {/* Custom Studio & Bouquet Builder Interactive Banner */}
+        <section className="custom-studio-banner-section">
+          <div className="container">
+            <div className="custom-studio-banner-card">
+              <div className="studio-banner-content">
+                <span className="studio-banner-pill">
+                  <IconSparkles size={13} />
+                  <span>Artisanal Crafting Studio</span>
+                </span>
+                <h3 className="studio-banner-title">
+                  Build Your Dream Bouquet or Commission a Custom Friend 🌸
+                </h3>
+                <p className="studio-banner-text">
+                  Pick your favorite milk-cotton flowers stem-by-stem, choose wrapping paper and silk ribbon, or request a made-to-order personalized plushie!
+                </p>
+                <div className="studio-banner-actions">
+                  <button 
+                    className="btn btn-primary"
+                    onClick={() => {
+                      setIsCustomStudioOpen(true);
+                      window.history.pushState(null, '', '#studio');
+                    }}
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: '0.45rem' }}
+                  >
+                    <IconSparkles size={16} />
+                    <span>Open Custom Studio</span>
+                  </button>
+                  <button 
+                    className="btn btn-secondary"
+                    onClick={() => {
+                      setIsWishlistOpen(true);
+                      window.history.pushState(null, '', '#wishlist');
+                    }}
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: '0.45rem' }}
+                  >
+                    <span>View Wishlist</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
 
         {/* Catalog Section */}
         <section className="catalog-section" id="catalog">
@@ -284,7 +345,13 @@ export const App = () => {
           </div>
         </section>
 
-        <Reviews />
+        {/* Recently Viewed Shelf */}
+        <RecentlyViewedBar 
+          onQuickView={(p) => setQuickViewProduct(p)} 
+          onShowToast={showToast} 
+        />
+
+        <Reviews onShowToast={showToast} />
 
         <FAQ />
       </main>
@@ -378,13 +445,44 @@ export const App = () => {
         isOpen={isAdminOpen}
         onClose={() => {
           setIsAdminOpen(false);
-          if (window.location.hash === '#admin' || window.location.hash === '#studio') {
+          if (window.location.hash === '#admin') {
             window.history.pushState(null, '', window.location.pathname);
           }
         }}
         onShowToast={showToast}
         onProductCatalogUpdated={loadProducts}
       />
+
+      {/* Wishlist Drawer */}
+      <WishlistDrawer 
+        isOpen={isWishlistOpen}
+        onClose={() => {
+          setIsWishlistOpen(false);
+          if (window.location.hash === '#wishlist') {
+            window.history.pushState(null, '', window.location.pathname);
+          }
+        }}
+        products={products}
+        onShowToast={showToast}
+        onOpenCart={() => setIsCartOpen(true)}
+        onExplore={handleExplore}
+      />
+
+      {/* Custom Studio & Bouquet Builder Modal */}
+      <CustomStudioModal 
+        isOpen={isCustomStudioOpen}
+        onClose={() => {
+          setIsCustomStudioOpen(false);
+          if (window.location.hash === '#studio' || window.location.hash === '#custom' || window.location.hash === '#builder') {
+            window.history.pushState(null, '', window.location.pathname);
+          }
+        }}
+        onShowToast={showToast}
+        onOpenCart={() => setIsCartOpen(true)}
+      />
+
+      {/* Live WhatsApp Floating Concierge */}
+      <WhatsAppConcierge />
 
       {/* Toast Notification Container */}
       <div className="toast-container" aria-live="polite">

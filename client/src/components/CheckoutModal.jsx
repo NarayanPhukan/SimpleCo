@@ -214,7 +214,7 @@ export const CheckoutModal = ({
 
   const totals = getTotals();
   const shippingCost = shippingMethod === 'express' ? 149 : totals.shipping;
-  const grandTotal = Math.max(0, totals.subtotal - totals.discount + shippingCost + totals.tax);
+  const grandTotal = Math.max(0, totals.subtotal - totals.discount + (totals.giftPackagingCost || 0) + shippingCost + totals.tax);
 
   const chosenAddr = addresses.find(a => (a._id === selectedAddressId || a.id === selectedAddressId)) 
     || (addresses.length > 0 ? addresses[0] : addrForm);
@@ -1396,6 +1396,13 @@ export const CheckoutModal = ({
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.88rem', color: '#16A34A' }}>
                       <span>Discount</span>
                       <span style={{ fontWeight: 600 }}>-{formatPrice(totals.discount)}</span>
+                    </div>
+                  )}
+
+                  {totals.giftPackagingCost > 0 && (
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.88rem', color: 'var(--primary)' }}>
+                      <span>Luxury Gift Packaging</span>
+                      <span style={{ fontWeight: 600 }}>+{formatPrice(totals.giftPackagingCost)}</span>
                     </div>
                   )}
 

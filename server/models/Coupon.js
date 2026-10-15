@@ -25,6 +25,14 @@ const couponSchema = new mongoose.Schema({
     type: Number,
     default: 0
   },
+  expiryDate: {
+    type: Date,
+    default: null
+  },
+  isPublic: {
+    type: Boolean,
+    default: true
+  },
   isActive: {
     type: Boolean,
     default: true

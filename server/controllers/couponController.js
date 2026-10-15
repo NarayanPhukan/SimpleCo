@@ -8,15 +8,19 @@ const DEFAULT_COUPONS = [
     discountType: 'percentage',
     discountValue: 15,
     minOrderValue: 0,
+    expiryDate: new Date('2026-12-31T23:59:59.000Z'),
+    isPublic: true,
     isActive: true,
     usageCount: 18
   },
   {
     code: 'CUTIE100',
-    description: 'Instant flat ₹100 deduction on checkout',
+    description: 'Instant flat ₹100 deduction on orders above ₹500',
     discountType: 'flat',
     discountValue: 100,
     minOrderValue: 500,
+    expiryDate: new Date('2026-11-30T23:59:59.000Z'),
+    isPublic: true,
     isActive: true,
     usageCount: 42
   },
@@ -26,6 +30,8 @@ const DEFAULT_COUPONS = [
     discountType: 'free_shipping',
     discountValue: 0,
     minOrderValue: 0,
+    expiryDate: new Date('2026-12-31T23:59:59.000Z'),
+    isPublic: true,
     isActive: true,
     usageCount: 79
   }
@@ -43,7 +49,7 @@ const ensureDefaultCoupons = async () => {
   }
 };
 
-// @desc    Get all coupons (Admin)
+// @desc    Get all coupons (Admin and Storefront Offers)
 // @route   GET /api/coupons
 exports.getCoupons = async (req, res) => {
   try {
@@ -69,13 +75,28 @@ exports.validateCoupon = async (req, res) => {
     const coupon = await Coupon.findOne({ code: cleanCode, isActive: true });
 
     if (!coupon) {
-      return res.status(404).json({ success: false, message: `Coupon "${cleanCode}" is invalid or expired` });
+      return res.status(404).json({ success: false, message: `Coupon "${cleanCode}" is invalid or inactive.` });
     }
 
-    if (coupon.minOrderValue > 0 && cartSubtotal < coupon.minOrderValue) {
+    // 1. Expiry Date Check
+    if (coupon.expiryDate && new Date() > new Date(coupon.expiryDate)) {
+      const expDateStr = new Date(coupon.expiryDate).toLocaleDateString('en-IN', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric'
+      });
       return res.status(400).json({
         success: false,
-        message: `Code "${cleanCode}" requires a minimum cart value of ₹${coupon.minOrderValue}`
+        message: `Promo code "${cleanCode}" expired on ${expDateStr}.`
+      });
+    }
+
+    // 2. Shopping Limit / Minimum Cart Value Check
+    if (coupon.minOrderValue > 0 && cartSubtotal < coupon.minOrderValue) {
+      const diff = Math.round(coupon.minOrderValue - cartSubtotal);
+      return res.status(400).json({
+        success: false,
+        message: `Code "${cleanCode}" requires a minimum cart spend of ₹${coupon.minOrderValue}. Add ₹${diff} more to apply!`
       });
     }
 
@@ -96,7 +117,8 @@ exports.validateCoupon = async (req, res) => {
         discountValue: coupon.discountValue,
         calculatedDiscount,
         freeShipping: coupon.discountType === 'free_shipping',
-        minOrderValue: coupon.minOrderValue
+        minOrderValue: coupon.minOrderValue,
+        expiryDate: coupon.expiryDate
       }
     });
   } catch (error) {
@@ -108,7 +130,7 @@ exports.validateCoupon = async (req, res) => {
 // @route   POST /api/coupons
 exports.createCoupon = async (req, res) => {
   try {
-    const { code, description, discountType, discountValue, minOrderValue, isActive } = req.body;
+    const { code, description, discountType, discountValue, minOrderValue, expiryDate, isPublic, isActive } = req.body;
     if (!code) {
       return res.status(400).json({ success: false, message: 'Coupon code is required' });
     }
@@ -125,6 +147,8 @@ exports.createCoupon = async (req, res) => {
       discountType: discountType || 'percentage',
       discountValue: Number(discountValue) || 0,
       minOrderValue: Number(minOrderValue) || 0,
+      expiryDate: expiryDate ? new Date(expiryDate) : null,
+      isPublic: isPublic !== false,
       isActive: isActive !== false,
       usageCount: 0
     });

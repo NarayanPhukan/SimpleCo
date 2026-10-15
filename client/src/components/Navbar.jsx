@@ -1,10 +1,18 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
+import { IconHeart, IconMoon, IconSun, IconSparkles } from './Icons';
 
-export const Navbar = ({ onOpenAccount, onOpenCart, onOpenAdmin, onSelectCategory }) => {
+export const Navbar = ({ 
+  onOpenAccount, 
+  onOpenCart, 
+  onOpenAdmin, 
+  onSelectCategory,
+  onOpenWishlist,
+  onOpenCustomStudio 
+}) => {
   const { user } = useAuth();
-  const { getTotals } = useCart();
+  const { getTotals, wishlist, theme, toggleTheme } = useCart();
   const { itemCount } = getTotals();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -15,7 +23,6 @@ export const Navbar = ({ onOpenAccount, onOpenCart, onOpenAdmin, onSelectCategor
     const catElem = document.getElementById('catalog');
     if (catElem) catElem.scrollIntoView({ behavior: 'smooth' });
   };
-
 
   return (
     <header className="site-header" id="siteHeader">
@@ -34,7 +41,7 @@ export const Navbar = ({ onOpenAccount, onOpenCart, onOpenAdmin, onSelectCategor
           </div>
         </a>
 
-        {/* Desktop Navigation Links (Clean & Spacious) */}
+        {/* Desktop Navigation Links */}
         <nav className="desktop-nav" aria-label="Main Navigation">
           <ul className="nav-links">
             <li>
@@ -62,11 +69,47 @@ export const Navbar = ({ onOpenAccount, onOpenCart, onOpenAdmin, onSelectCategor
                 Wearables
               </a>
             </li>
+            <li>
+              <button 
+                type="button"
+                className="nav-link nav-studio-pill-btn"
+                onClick={() => onOpenCustomStudio && onOpenCustomStudio()}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}
+              >
+                <IconSparkles size={14} />
+                <span>Custom Studio</span>
+              </button>
+            </li>
           </ul>
         </nav>
 
-        {/* Right Action Controls (Account & Cart Logo Buttons) */}
+        {/* Right Action Controls (Theme Toggle, Wishlist, Account & Cart) */}
         <div className="nav-actions">
+          {/* Candlelight / Cozy Dark Theme Toggle */}
+          <button 
+            className="nav-icon-btn nav-theme-btn" 
+            onClick={toggleTheme}
+            aria-label={theme === 'candlelight' ? 'Switch to daylight palette' : 'Switch to cozy candlelight mode'}
+            title={theme === 'candlelight' ? 'Daylight Palette' : 'Cozy Candlelight Mode'}
+          >
+            {theme === 'candlelight' ? <IconSun size={19} /> : <IconMoon size={19} />}
+          </button>
+
+          {/* Wishlist Button */}
+          <button 
+            className="nav-icon-btn nav-wishlist-btn" 
+            onClick={onOpenWishlist}
+            aria-label={`My Wishlist with ${wishlist.length} saved items`}
+            title={`Wishlist (${wishlist.length} saved)`}
+          >
+            <span className="wishlist-icon-svg" aria-hidden="true" style={{ display: 'inline-flex' }}>
+              <IconHeart size={20} fill={wishlist.length > 0 ? 'var(--primary)' : 'none'} stroke="currentColor" />
+            </span>
+            {wishlist.length > 0 && (
+              <span className="nav-cart-badge nav-wishlist-badge">{wishlist.length}</span>
+            )}
+          </button>
+
           {/* Account Logo Button */}
           <button 
             className="nav-icon-btn nav-account-btn" 
@@ -141,6 +184,34 @@ export const Navbar = ({ onOpenAccount, onOpenCart, onOpenAdmin, onSelectCategor
             <li>
               <a href="#catalog" onClick={(e) => handleNavCategory(e, 'wearables')}>
                 Wearables & Cardigans
+              </a>
+            </li>
+            <li>
+              <a 
+                href="#studio" 
+                onClick={(e) => {
+                  e.preventDefault();
+                  setMobileMenuOpen(false);
+                  if (onOpenCustomStudio) onOpenCustomStudio();
+                }}
+                style={{ color: 'var(--primary)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.4rem' }}
+              >
+                <IconSparkles size={16} />
+                <span>Custom Studio & Bouquet Builder</span>
+              </a>
+            </li>
+            <li>
+              <a 
+                href="#wishlist" 
+                onClick={(e) => {
+                  e.preventDefault();
+                  setMobileMenuOpen(false);
+                  if (onOpenWishlist) onOpenWishlist();
+                }}
+                style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}
+              >
+                <IconHeart size={16} />
+                <span>My Wishlist ({wishlist.length})</span>
               </a>
             </li>
           </ul>

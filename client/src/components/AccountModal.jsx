@@ -2,13 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import { api } from '../services/api';
-import { IconPackage, IconUser, IconRefresh, IconArrowRight, IconCheck, IconTruck } from './Icons';
+import { IconPackage, IconUser, IconRefresh, IconArrowRight, IconCheck, IconTruck, IconSparkles, IconPrinter, IconGift } from './Icons';
+import { PrintReceiptModal } from './PrintReceiptModal';
 
 export const AccountModal = ({ isOpen, onClose, onOpenAddressModal, onShowToast }) => {
   const { user, login, register, logout, forgotPassword, deleteAddress, setDefaultAddress } = useAuth();
-  const { formatPrice } = useCart();
+  const { formatPrice, yarnPoints, redeemYarnPoints } = useCart();
 
-  // Top-level account contents: 'orders', 'address', 'logout'
+  // Top-level account contents: 'orders', 'address', 'rewards', 'logout'
   const [activeNav, setActiveNav] = useState('orders');
 
   // Sub-categories inside orders: 'in-progress', 'delivered', 'return', 'cancelled'
@@ -16,6 +17,9 @@ export const AccountModal = ({ isOpen, onClose, onOpenAddressModal, onShowToast 
 
   // ID of the in-progress order currently displaying expanded live tracking
   const [expandedTrackId, setExpandedTrackId] = useState(null);
+
+  // Active order to print receipt
+  const [printingOrder, setPrintingOrder] = useState(null);
 
   // Auth mode if user is not logged in: 'login', 'register', or 'forgot'
   const [authMode, setAuthMode] = useState('login');
@@ -314,6 +318,16 @@ export const AccountModal = ({ isOpen, onClose, onOpenAddressModal, onShowToast 
                 <span>Addresses</span>
               </button>
               <button 
+                className={`account-nav-btn ${activeNav === 'rewards' ? 'active' : ''}`}
+                onClick={() => setActiveNav('rewards')}
+                role="tab"
+                aria-selected={activeNav === 'rewards'}
+                style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '0.45rem' }}
+              >
+                <IconSparkles size={16} />
+                <span>Yarn Points ({yarnPoints})</span>
+              </button>
+              <button 
                 className="account-nav-btn logout-nav-btn"
                 onClick={handleLogout}
                 title="Log out of your account"
@@ -453,6 +467,15 @@ export const AccountModal = ({ isOpen, onClose, onOpenAddressModal, onShowToast 
                               >
                                 <IconTruck size={15} />
                                 <span>{isExpanded ? 'Collapse Tracking' : 'Track Order'}</span>
+                              </button>
+                              <button 
+                                type="button"
+                                className="btn-delivered-action invoice"
+                                onClick={() => setPrintingOrder(ord)}
+                                style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}
+                              >
+                                <IconPrinter size={13} />
+                                <span>Receipt & Care Guide</span>
                               </button>
                               <button 
                                 type="button"
@@ -621,9 +644,11 @@ export const AccountModal = ({ isOpen, onClose, onOpenAddressModal, onShowToast 
                             <div className="delivered-btns">
                               <button 
                                 className="btn-delivered-action invoice"
-                                onClick={() => onShowToast(`Tax Invoice for Order #${ord.orderId} sent to email`, '✓')}
+                                onClick={() => setPrintingOrder(ord)}
+                                style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}
                               >
-                                Download Invoice
+                                <IconPrinter size={13} />
+                                <span>Receipt & Care Guide</span>
                               </button>
                               <button 
                                 className="btn-delivered-action return"
@@ -763,6 +788,170 @@ export const AccountModal = ({ isOpen, onClose, onOpenAddressModal, onShowToast 
                       );
                     })
                   )}
+                </div>
+              </div>
+            )}
+
+            {/* ========================================================
+                TAB 3: YARN POINTS & REWARDS (Stitch Club Loyalty Engine)
+               ======================================================== */}
+            {activeNav === 'rewards' && (
+              <div className="account-rewards-section">
+                {/* Rewards Balance Banner */}
+                <div className="rewards-balance-card">
+                  <div className="rewards-balance-left">
+                    <span className="rewards-badge-pill">
+                      <IconSparkles size={13} />
+                      <span>Stitch Club Member</span>
+                    </span>
+                    <div className="rewards-points-row">
+                      <span className="rewards-number">{yarnPoints}</span>
+                      <span className="rewards-unit">Yarn Points</span>
+                    </div>
+                    <p className="rewards-sub">
+                      Earn 10 points for every ₹100 spent • Redeem anytime for discounts
+                    </p>
+                  </div>
+
+                  <div className="rewards-tier-badge-box">
+                    <span className="tier-tag">Current Tier</span>
+                    <h4 className="tier-name">
+                      {yarnPoints >= 1000 ? 'Crochet Queen 👑' : yarnPoints >= 500 ? 'Needle Crafter 🪡' : 'Babyy Stitcher 🌸'}
+                    </h4>
+                    <div className="tier-progress-wrap">
+                      <div className="tier-progress-bar">
+                        <div 
+                          className="tier-progress-fill" 
+                          style={{ 
+                            width: `${yarnPoints >= 1000 ? 100 : yarnPoints >= 500 ? ((yarnPoints - 500) / 500) * 100 : (yarnPoints / 500) * 100}%` 
+                          }}
+                        />
+                      </div>
+                      <span className="tier-progress-text">
+                        {yarnPoints >= 1000 ? 'Max tier unlocked!' : yarnPoints >= 500 ? `${1000 - yarnPoints} pts to Crochet Queen` : `${500 - yarnPoints} pts to Needle Crafter`}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Redeemable Perks Grid */}
+                <h4 style={{ fontFamily: 'var(--font-serif)', fontSize: '1.25rem', margin: '1.5rem 0 1rem 0', color: 'var(--text-dark)' }}>
+                  Redeem Your Yarn Points
+                </h4>
+                <div className="rewards-vouchers-grid">
+                  {/* Voucher 1: ₹100 off */}
+                  <div className="reward-voucher-card">
+                    <div className="voucher-icon-box">🎟️</div>
+                    <div className="voucher-details">
+                      <h5>₹100 Off Cart Coupon</h5>
+                      <p>Instant flat discount applied to your current or next order.</p>
+                      <span className="voucher-cost">100 Points</span>
+                    </div>
+                    <button 
+                      className="btn btn-primary btn-sm"
+                      disabled={yarnPoints < 100}
+                      onClick={() => {
+                        const success = redeemYarnPoints(100, {
+                          code: 'STITCH100',
+                          discountFlat: 100,
+                          label: '₹100 Off Stitch Club Voucher'
+                        });
+                        if (success) {
+                          onShowToast('Redeemed! ₹100 voucher applied to your cart 🎟️', '✓');
+                        } else {
+                          onShowToast('Not enough yarn points!', '!');
+                        }
+                      }}
+                    >
+                      {yarnPoints >= 100 ? 'Redeem Voucher' : 'Need 100 Pts'}
+                    </button>
+                  </div>
+
+                  {/* Voucher 2: Free Shipping */}
+                  <div className="reward-voucher-card">
+                    <div className="voucher-icon-box">🚚</div>
+                    <div className="voucher-details">
+                      <h5>Free Pan-India Express Delivery</h5>
+                      <p>Waive standard or priority express shipping across India.</p>
+                      <span className="voucher-cost">150 Points</span>
+                    </div>
+                    <button 
+                      className="btn btn-primary btn-sm"
+                      disabled={yarnPoints < 150}
+                      onClick={() => {
+                        const success = redeemYarnPoints(150, {
+                          code: 'FREESHIP',
+                          freeShipping: true,
+                          label: 'Free Express Air Delivery'
+                        });
+                        if (success) {
+                          onShowToast('Redeemed! Free shipping voucher applied to bag 🚚', '✓');
+                        } else {
+                          onShowToast('Not enough yarn points!', '!');
+                        }
+                      }}
+                    >
+                      {yarnPoints >= 150 ? 'Redeem Free Ship' : 'Need 150 Pts'}
+                    </button>
+                  </div>
+
+                  {/* Voucher 3: 15% off */}
+                  <div className="reward-voucher-card">
+                    <div className="voucher-icon-box">🎀</div>
+                    <div className="voucher-details">
+                      <h5>15% Off Handcrafted Pieces</h5>
+                      <p>Exclusive Stitch Club percentage discount on catalog items.</p>
+                      <span className="voucher-cost">200 Points</span>
+                    </div>
+                    <button 
+                      className="btn btn-primary btn-sm"
+                      disabled={yarnPoints < 200}
+                      onClick={() => {
+                        const success = redeemYarnPoints(200, {
+                          code: 'BABYYGURLL',
+                          discountPercent: 15,
+                          label: '15% Off VIP Collector Perk'
+                        });
+                        if (success) {
+                          onShowToast('Redeemed! 15% off coupon applied to bag 🎀', '✓');
+                        } else {
+                          onShowToast('Not enough yarn points!', '!');
+                        }
+                      }}
+                    >
+                      {yarnPoints >= 200 ? 'Redeem 15% Off' : 'Need 200 Pts'}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Ways to Earn Points */}
+                <div className="ways-to-earn-box">
+                  <h5 style={{ fontFamily: 'var(--font-serif)', marginBottom: '0.75rem', color: 'var(--text-dark)' }}>
+                    Ways to Earn More Points
+                  </h5>
+                  <div className="earn-ways-grid">
+                    <div className="earn-way-item">
+                      <span className="earn-ico">🛒</span>
+                      <div>
+                        <strong>Adopt Creations</strong>
+                        <p>10 points for every ₹100 spent on any handmade piece</p>
+                      </div>
+                    </div>
+                    <div className="earn-way-item">
+                      <span className="earn-ico">⭐</span>
+                      <div>
+                        <strong>Write a Photo Review</strong>
+                        <p>50 points when you post a review with a snapshot</p>
+                      </div>
+                    </div>
+                    <div className="earn-way-item">
+                      <span className="earn-ico">🎂</span>
+                      <div>
+                        <strong>Birthday Celebration</strong>
+                        <p>100 bonus points deposited automatically every year</p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
@@ -968,6 +1157,13 @@ export const AccountModal = ({ isOpen, onClose, onOpenAddressModal, onShowToast 
           </div>
         )}
       </main>
+
+      {/* Printable Receipt & Care Guide Modal */}
+      <PrintReceiptModal 
+        order={printingOrder}
+        isOpen={Boolean(printingOrder)}
+        onClose={() => setPrintingOrder(null)}
+      />
     </div>
   );
 };

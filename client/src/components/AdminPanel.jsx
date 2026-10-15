@@ -99,6 +99,8 @@ export const AdminPanel = ({ isOpen, onClose, onShowToast, onProductCatalogUpdat
     discountType: 'percentage',
     discountValue: 15,
     minOrderValue: 0,
+    expiryDate: '',
+    isPublic: true,
     isActive: true
   });
 
@@ -406,6 +408,8 @@ export const AdminPanel = ({ isOpen, onClose, onShowToast, onProductCatalogUpdat
         discountType: 'percentage',
         discountValue: 15,
         minOrderValue: 0,
+        expiryDate: '',
+        isPublic: true,
         isActive: true
       });
       fetchCoupons();
@@ -2375,6 +2379,10 @@ export const AdminPanel = ({ isOpen, onClose, onShowToast, onProductCatalogUpdat
                       const isFlat = c.discountType === 'flat';
                       const tagColor = isFreeShip ? '#16A34A' : (isFlat ? '#0284C7' : '#E11D48');
                       const tagBg = isFreeShip ? '#F0FDF4' : (isFlat ? '#F0F9FF' : '#FFF5F8');
+                      const isExpired = c.expiryDate && new Date() > new Date(c.expiryDate);
+                      const expiryFormatted = c.expiryDate 
+                        ? new Date(c.expiryDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+                        : 'No expiry date';
 
                       return (
                         <div 
@@ -2382,16 +2390,16 @@ export const AdminPanel = ({ isOpen, onClose, onShowToast, onProductCatalogUpdat
                           style={{
                             background: '#FFFFFF',
                             borderRadius: '14px',
-                            border: `1.5px ${c.isActive ? 'dashed' : 'solid'} ${c.isActive ? tagColor : '#CBD5E1'}`,
+                            border: `1.5px ${c.isActive && !isExpired ? 'dashed' : 'solid'} ${isExpired ? '#FCA5A5' : (c.isActive ? tagColor : '#CBD5E1')}`,
                             padding: '1.5rem',
                             position: 'relative',
-                            opacity: c.isActive ? 1 : 0.65
+                            opacity: (c.isActive && !isExpired) ? 1 : 0.7
                           }}
                         >
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.75rem' }}>
                             <div>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                <span style={{ fontWeight: 800, fontSize: '1.25rem', color: tagColor, letterSpacing: '0.04em' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                                <span style={{ fontWeight: 800, fontSize: '1.25rem', color: isExpired ? '#94A3B8' : tagColor, letterSpacing: '0.04em' }}>
                                   {c.code}
                                 </span>
                                 <button
@@ -2402,6 +2410,18 @@ export const AdminPanel = ({ isOpen, onClose, onShowToast, onProductCatalogUpdat
                                 >
                                   📋
                                 </button>
+                                <span 
+                                  style={{
+                                    background: c.isPublic !== false ? '#E0F2FE' : '#F3E8FF',
+                                    color: c.isPublic !== false ? '#0369A1' : '#7E22CE',
+                                    fontSize: '0.68rem',
+                                    fontWeight: 700,
+                                    padding: '0.15rem 0.45rem',
+                                    borderRadius: '4px'
+                                  }}
+                                >
+                                  {c.isPublic !== false ? '🌐 Public Offer' : '🔒 VIP / Private'}
+                                </span>
                               </div>
                               <div style={{ fontSize: '0.9rem', fontWeight: 700, color: '#0F172A', marginTop: '0.25rem' }}>
                                 {isFreeShip ? 'Free Nationwide Delivery' : (isFlat ? `₹${c.discountValue} Flat Discount` : `${c.discountValue}% Off Total Order`)}
@@ -2410,43 +2430,51 @@ export const AdminPanel = ({ isOpen, onClose, onShowToast, onProductCatalogUpdat
 
                             <span 
                               style={{
-                                background: c.isActive ? '#DCFCE7' : '#F1F5F9',
-                                color: c.isActive ? '#166534' : '#64748B',
+                                background: isExpired ? '#FEE2E2' : (c.isActive ? '#DCFCE7' : '#F1F5F9'),
+                                color: isExpired ? '#991B1B' : (c.isActive ? '#166534' : '#64748B'),
                                 fontSize: '0.7rem',
                                 fontWeight: 700,
                                 padding: '0.2rem 0.55rem',
                                 borderRadius: '4px'
                               }}
                             >
-                              {c.isActive ? 'ACTIVE' : 'INACTIVE'}
+                              {isExpired ? 'EXPIRED' : (c.isActive ? 'ACTIVE' : 'INACTIVE')}
                             </span>
                           </div>
 
-                          <p style={{ fontSize: '0.82rem', color: '#64748B', minHeight: '36px', margin: '0 0 1rem 0' }}>
+                          <p style={{ fontSize: '0.82rem', color: '#64748B', minHeight: '34px', margin: '0 0 0.85rem 0' }}>
                             {c.description || 'Promotional coupon code for customer cart.'}
                           </p>
 
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.78rem', color: '#64748B', borderTop: '1px solid #F1F5F9', paddingTop: '0.85rem' }}>
-                            <div>
-                              {c.minOrderValue > 0 ? `Min. Cart: ₹${c.minOrderValue}` : 'No minimum order'}
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', background: '#F8FAFC', padding: '0.65rem 0.85rem', borderRadius: '8px', fontSize: '0.78rem', color: '#475569', marginBottom: '0.85rem' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                              <span>Shopping Limit:</span>
+                              <strong>{c.minOrderValue > 0 ? `Min. Cart ₹${c.minOrderValue}` : 'No minimum spend'}</strong>
                             </div>
-                            <div style={{ display: 'flex', gap: '0.4rem' }}>
-                              <button
-                                type="button"
-                                className="btn btn-secondary"
-                                style={{ padding: '0.3rem 0.65rem', fontSize: '0.75rem' }}
-                                onClick={() => handleToggleCouponActive(c)}
-                              >
-                                {c.isActive ? 'Deactivate' : 'Activate'}
-                              </button>
-                              <button
-                                type="button"
-                                style={{ background: '#FFF1F2', color: '#BE123C', border: '1px solid #FECDD3', padding: '0.3rem 0.65rem', borderRadius: '6px', fontSize: '0.75rem', cursor: 'pointer' }}
-                                onClick={() => handleDeleteCoupon(c)}
-                              >
-                                Delete
-                              </button>
+                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                              <span>Validity:</span>
+                              <strong style={{ color: isExpired ? '#DC2626' : '#334155' }}>
+                                {isExpired ? `Expired (${expiryFormatted})` : (c.expiryDate ? `Until ${expiryFormatted}` : 'No expiry date')}
+                              </strong>
                             </div>
+                          </div>
+
+                          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.4rem', borderTop: '1px solid #F1F5F9', paddingTop: '0.75rem' }}>
+                            <button
+                              type="button"
+                              className="btn btn-secondary"
+                              style={{ padding: '0.3rem 0.65rem', fontSize: '0.75rem' }}
+                              onClick={() => handleToggleCouponActive(c)}
+                            >
+                              {c.isActive ? 'Deactivate' : 'Activate'}
+                            </button>
+                            <button
+                              type="button"
+                              style={{ background: '#FFF1F2', color: '#BE123C', border: '1px solid #FECDD3', padding: '0.3rem 0.65rem', borderRadius: '6px', fontSize: '0.75rem', cursor: 'pointer' }}
+                              onClick={() => handleDeleteCoupon(c)}
+                            >
+                              Delete
+                            </button>
                           </div>
                         </div>
                       );
@@ -2505,15 +2533,27 @@ export const AdminPanel = ({ isOpen, onClose, onShowToast, onProductCatalogUpdat
                             </div>
                           </div>
 
-                          <div className="form-group">
-                            <label className="form-label">Minimum Cart Order Value (₹ INR, 0 for none)</label>
-                            <input 
-                              type="number" 
-                              className="form-input" 
-                              placeholder="e.g. 500"
-                              value={couponForm.minOrderValue}
-                              onChange={e => setCouponForm({ ...couponForm, minOrderValue: e.target.value })}
-                            />
+                          <div className="form-row">
+                            <div className="form-group">
+                              <label className="form-label">Shopping Limit (Min Cart Spend ₹)</label>
+                              <input 
+                                type="number" 
+                                className="form-input" 
+                                placeholder="e.g. 500 (0 for none)"
+                                value={couponForm.minOrderValue}
+                                onChange={e => setCouponForm({ ...couponForm, minOrderValue: e.target.value })}
+                              />
+                            </div>
+                            <div className="form-group">
+                              <label className="form-label">Expiry Date (Optional)</label>
+                              <input 
+                                type="date" 
+                                className="form-input" 
+                                value={couponForm.expiryDate}
+                                onChange={e => setCouponForm({ ...couponForm, expiryDate: e.target.value })}
+                                min={new Date().toISOString().split('T')[0]}
+                              />
+                            </div>
                           </div>
 
                           <div className="form-group">
@@ -2527,17 +2567,32 @@ export const AdminPanel = ({ isOpen, onClose, onShowToast, onProductCatalogUpdat
                             />
                           </div>
 
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
-                            <input 
-                              type="checkbox"
-                              id="activeCouponToggle"
-                              checked={couponForm.isActive}
-                              onChange={e => setCouponForm({ ...couponForm, isActive: e.target.checked })}
-                              style={{ width: '18px', height: '18px', accentColor: '#0284C7', cursor: 'pointer' }}
-                            />
-                            <label htmlFor="activeCouponToggle" style={{ fontSize: '0.88rem', fontWeight: 600, color: '#334155', cursor: 'pointer' }}>
-                              Active immediately for customer checkout
-                            </label>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+                              <input 
+                                type="checkbox"
+                                id="activeCouponToggle"
+                                checked={couponForm.isActive}
+                                onChange={e => setCouponForm({ ...couponForm, isActive: e.target.checked })}
+                                style={{ width: '18px', height: '18px', accentColor: '#0284C7', cursor: 'pointer' }}
+                              />
+                              <label htmlFor="activeCouponToggle" style={{ fontSize: '0.88rem', fontWeight: 600, color: '#334155', cursor: 'pointer' }}>
+                                Active immediately for customer checkout
+                              </label>
+                            </div>
+
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+                              <input 
+                                type="checkbox"
+                                id="publicCouponToggle"
+                                checked={couponForm.isPublic}
+                                onChange={e => setCouponForm({ ...couponForm, isPublic: e.target.checked })}
+                                style={{ width: '18px', height: '18px', accentColor: '#0284C7', cursor: 'pointer' }}
+                              />
+                              <label htmlFor="publicCouponToggle" style={{ fontSize: '0.88rem', fontWeight: 600, color: '#334155', cursor: 'pointer' }}>
+                                Show in customer "Available Offers & Coupons" drawer (Public)
+                              </label>
+                            </div>
                           </div>
 
                           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1rem' }}>
