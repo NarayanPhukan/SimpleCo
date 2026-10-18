@@ -6,7 +6,8 @@ let isConnected = false;
 let memoryDB = {
   products: new MemoryCollection(seedProducts),
   users: new MemoryCollection([]),
-  orders: new MemoryCollection([])
+  orders: new MemoryCollection([]),
+  coupons: new MemoryCollection([])
 };
 
 const connectDB = async () => {
@@ -45,6 +46,7 @@ const connectDB = async () => {
   memoryDB.products = new MemoryCollection(seedProducts);
   memoryDB.users = new MemoryCollection([]);
   memoryDB.orders = new MemoryCollection([]);
+  memoryDB.coupons = new MemoryCollection([]);
   console.log(`[Database] Initialized ${seedProducts.length} crochet products in MongoDB memory store.`);
 };
 

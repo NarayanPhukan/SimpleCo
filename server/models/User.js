@@ -50,6 +50,26 @@ const User = {
     const { isConnected, memoryDB } = getDBState();
     if (isConnected) return MongooseUser.countDocuments(query);
     return memoryDB.users.countDocuments(query);
+  },
+  findByIdAndUpdate: (id, update, options) => {
+    const { isConnected, memoryDB } = getDBState();
+    if (isConnected) return MongooseUser.findByIdAndUpdate(id, update, options);
+    return memoryDB.users.findByIdAndUpdate(id, update, options);
+  },
+  findByIdAndDelete: (id) => {
+    const { isConnected, memoryDB } = getDBState();
+    if (isConnected) return MongooseUser.findByIdAndDelete(id);
+    return memoryDB.users.findByIdAndDelete(id);
+  },
+  findOneAndUpdate: (query, update, options) => {
+    const { isConnected, memoryDB } = getDBState();
+    if (isConnected) return MongooseUser.findOneAndUpdate(query, update, options);
+    return memoryDB.users.findOneAndUpdate(query, update, options);
+  },
+  findOneAndDelete: (query) => {
+    const { isConnected, memoryDB } = getDBState();
+    if (isConnected) return MongooseUser.findOneAndDelete(query);
+    return memoryDB.users.findOneAndDelete(query);
   }
 };
 

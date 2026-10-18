@@ -430,13 +430,34 @@ export const AdminPanel = ({ isOpen, onClose, onShowToast, onProductCatalogUpdat
   };
 
   const handleDeleteCoupon = async (c) => {
-    if (!window.confirm(`Are you sure you want to delete coupon code "${c.code}"?`)) return;
+    if (!window.confirm(`Are you sure you want to permanently delete coupon code "${c.code}"?`)) return;
+    const targetId = c._id || c.id || c.code;
+    // Optimistically remove from state so it immediately disappears from UI
+    setCoupons(prev => prev.filter(item => {
+      if (item._id && c._id) return item._id !== c._id;
+      return item.code !== c.code;
+    }));
     try {
-      await api.deleteCoupon(c._id);
-      onShowToast(`Coupon "${c.code}" deleted`, '✓');
+      await api.deleteCoupon(targetId);
+      onShowToast(`Coupon "${c.code}" deleted permanently`, '✓');
       fetchCoupons();
     } catch (err) {
       onShowToast('Failed to delete coupon: ' + err.message, '!');
+      fetchCoupons();
+    }
+  };
+
+  const handleResetDefaultCoupons = async () => {
+    if (!window.confirm('Restore standard store starter coupons (BABYYGURLL, CUTIE100, FREESHIP)?')) return;
+    try {
+      setLoadingCoupons(true);
+      const res = await api.resetDefaultCoupons();
+      setCoupons(res.data || []);
+      setLoadingCoupons(false);
+      onShowToast('Default store coupons restored', '✓');
+    } catch (err) {
+      setLoadingCoupons(false);
+      onShowToast('Failed to restore coupons: ' + err.message, '!');
     }
   };
 
@@ -2361,19 +2382,59 @@ export const AdminPanel = ({ isOpen, onClose, onShowToast, onProductCatalogUpdat
                       </p>
                     </div>
 
-                    <button
-                      type="button"
-                      className="btn btn-primary"
-                      style={{ fontSize: '0.85rem', padding: '0.65rem 1.25rem', display: 'inline-flex', alignItems: 'center', gap: '0.45rem' }}
-                      onClick={() => setIsCreatingCoupon(true)}
-                    >
-                      <IconPlus size={15} />
-                      <span>Create New Coupon</span>
-                    </button>
+                    <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                      <button
+                        type="button"
+                        className="btn btn-secondary"
+                        style={{ fontSize: '0.85rem', padding: '0.65rem 1rem', display: 'inline-flex', alignItems: 'center', gap: '0.45rem' }}
+                        onClick={handleResetDefaultCoupons}
+                        title="Restore initial starter coupons if deleted"
+                      >
+                        <span>Restore Defaults</span>
+                      </button>
+                      <button
+                        type="button"
+                        className="btn btn-primary"
+                        style={{ fontSize: '0.85rem', padding: '0.65rem 1.25rem', display: 'inline-flex', alignItems: 'center', gap: '0.45rem' }}
+                        onClick={() => setIsCreatingCoupon(true)}
+                      >
+                        <IconPlus size={15} />
+                        <span>Create New Coupon</span>
+                      </button>
+                    </div>
                   </div>
 
-                  {/* Coupons Grid */}
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.25rem' }}>
+                  {/* Empty State vs Coupons Grid */}
+                  {coupons.length === 0 ? (
+                    <div style={{ textAlign: 'center', padding: '3.5rem 1.5rem', background: '#F8FAFC', borderRadius: '16px', border: '1.5px dashed #CBD5E1', margin: '1rem 0' }}>
+                      <div style={{ fontSize: '2.5rem', marginBottom: '0.75rem' }}>🏷️</div>
+                      <h4 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#1E293B', margin: '0 0 0.5rem 0' }}>
+                        No Promotional Coupons Active
+                      </h4>
+                      <p style={{ fontSize: '0.875rem', color: '#64748B', maxWidth: '440px', margin: '0 auto 1.5rem auto', lineHeight: 1.5 }}>
+                        All promotional codes have been removed. Deleted coupons will never come back automatically. You can create a new custom discount code or restore starter codes anytime.
+                      </p>
+                      <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+                        <button
+                          type="button"
+                          className="btn btn-primary"
+                          onClick={() => setIsCreatingCoupon(true)}
+                          style={{ fontSize: '0.85rem', padding: '0.65rem 1.25rem' }}
+                        >
+                          <IconPlus size={15} style={{ marginRight: '0.35rem' }} /> Create New Coupon
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-secondary"
+                          onClick={handleResetDefaultCoupons}
+                          style={{ fontSize: '0.85rem', padding: '0.65rem 1.25rem' }}
+                        >
+                          Restore Starter Codes
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.25rem' }}>
                     {coupons.map(c => {
                       const isFreeShip = c.discountType === 'free_shipping';
                       const isFlat = c.discountType === 'flat';
@@ -2480,6 +2541,7 @@ export const AdminPanel = ({ isOpen, onClose, onShowToast, onProductCatalogUpdat
                       );
                     })}
                   </div>
+                  )}
 
                   {/* CREATE COUPON MODAL */}
                   {isCreatingCoupon && (

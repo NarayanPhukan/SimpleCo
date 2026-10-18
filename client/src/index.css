@@ -739,6 +739,38 @@ img {
   transform: scale(1.03);
 }
 
+.hero-maker-seal {
+  position: absolute;
+  bottom: 1.15rem;
+  right: 1.15rem;
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  border-radius: var(--radius-sm);
+  padding: 0.5rem 0.85rem;
+  box-shadow: 0 4px 16px rgba(30, 23, 25, 0.12);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.hero-maker-seal span {
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: var(--text-dark);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.hero-maker-seal small {
+  font-size: 0.65rem;
+  color: var(--primary);
+  font-weight: 700;
+}
+
 /* Floating Badges on Hero */
 .floating-glass-card {
   position: absolute;
@@ -1034,48 +1066,69 @@ img {
   transform: scale(1.05);
 }
 
-.card-badge {
+.card-badge-group {
   position: absolute;
   top: 0.85rem;
   left: 0.85rem;
-  background: rgba(255, 255, 255, 0.92);
-  backdrop-filter: blur(8px);
-  color: var(--text-dark);
-  font-size: 0.72rem;
-  font-weight: 700;
-  padding: 0.28rem 0.7rem;
-  border-radius: var(--radius-full);
-  box-shadow: var(--shadow-xs);
-  border: 1px solid rgba(255, 255, 255, 0.8);
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  align-items: flex-start;
   z-index: 2;
+}
+
+.card-badge {
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  color: var(--text-dark);
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 0.24rem 0.65rem;
+  border-radius: var(--radius-full);
+  box-shadow: 0 2px 6px rgba(30, 23, 25, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.card-badge.discount-badge {
+  background: #E11D48;
+  color: #FFFFFF;
+  border-color: #BE123C;
+  box-shadow: 0 2px 8px rgba(225, 29, 72, 0.25);
 }
 
 .wishlist-btn {
   position: absolute;
   top: 0.85rem;
   right: 0.85rem;
-  width: 34px;
-  height: 34px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.92);
-  backdrop-filter: blur(8px);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: var(--shadow-xs);
-  border: 1px solid rgba(255, 255, 255, 0.8);
+  box-shadow: 0 2px 8px rgba(30, 23, 25, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.85);
   z-index: 2;
-  transition: var(--transition);
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), background 0.2s ease, box-shadow 0.2s ease;
+  cursor: pointer;
 }
 
 .wishlist-btn:hover {
   transform: scale(1.12);
   background: #FFFFFF;
-  box-shadow: var(--shadow-sm);
+  box-shadow: 0 4px 14px rgba(225, 29, 72, 0.2);
 }
 
 .wishlist-btn.active {
   color: var(--primary);
+  background: #FFFFFF;
 }
 
 .quick-view-overlay-btn {
@@ -1084,17 +1137,18 @@ img {
   left: 50%;
   transform: translateX(-50%) translateY(14px);
   opacity: 0;
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   color: var(--text-dark);
   font-size: 0.8rem;
   font-weight: 700;
-  padding: 0.45rem 1.1rem;
+  padding: 0.45rem 1.15rem;
   border-radius: var(--radius-full);
   box-shadow: var(--shadow-md);
-  border: 1px solid rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.9);
   white-space: nowrap;
-  transition: var(--transition);
+  transition: all 0.28s cubic-bezier(0.16, 1, 0.3, 1);
   z-index: 3;
 }
 
@@ -1115,17 +1169,34 @@ img {
   font-weight: 700;
   color: var(--secondary);
   text-transform: uppercase;
-  letter-spacing: 0.08em;
-  margin-bottom: 0.35rem;
+  letter-spacing: 0.09em;
+}
+
+.card-artisan-seal {
+  font-size: 0.64rem;
+  font-weight: 700;
+  color: #059669;
+  background: #ECFDF5;
+  border: 1px solid rgba(5, 150, 105, 0.2);
+  padding: 0.12rem 0.45rem;
+  border-radius: 4px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  white-space: nowrap;
 }
 
 .card-title {
   font-family: var(--font-serif);
-  font-size: 1.15rem;
+  font-size: 1.18rem;
   font-weight: 700;
   color: var(--text-dark);
   margin-bottom: 0.45rem;
   line-height: 1.3;
+  transition: color 0.2s ease;
+}
+
+.card-title:hover {
+  color: var(--primary);
 }
 
 .card-rating {
@@ -1137,6 +1208,17 @@ img {
   margin-bottom: 0.75rem;
 }
 
+.star-symbol {
+  font-size: 0.92rem;
+  line-height: 1;
+}
+
+.rating-num {
+  font-weight: 700;
+  color: var(--text-dark);
+  font-size: 0.82rem;
+}
+
 .rating-count {
   color: var(--text-muted);
   font-size: 0.76rem;
@@ -1145,21 +1227,36 @@ img {
 .card-swatches {
   display: flex;
   align-items: center;
-  gap: 0.35rem;
-  margin-bottom: 1rem;
+  gap: 0.45rem;
+  margin-bottom: 1.1rem;
 }
 
 .swatch-circle {
-  width: 14px;
-  height: 14px;
+  width: 16px;
+  height: 16px;
   border-radius: 50%;
-  border: 1px solid rgba(30, 23, 25, 0.12);
+  border: 1.5px solid #FFFFFF;
+  box-shadow: 0 0 0 1px rgba(30, 23, 25, 0.18);
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  padding: 0;
+  background-clip: padding-box;
+}
+
+.swatch-circle:hover {
+  transform: scale(1.18);
+}
+
+.swatch-circle.selected {
+  box-shadow: 0 0 0 2px var(--primary);
+  transform: scale(1.22);
 }
 
 .swatch-more {
-  font-size: 0.72rem;
+  font-size: 0.74rem;
   color: var(--text-muted);
   font-weight: 600;
+  margin-left: 0.2rem;
 }
 
 .card-footer {
@@ -1167,14 +1264,15 @@ img {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding-top: 0.85rem;
+  padding-top: 0.95rem;
   border-top: 1px solid var(--border-subtle);
+  gap: 0.75rem;
 }
 
 .price-wrap {
   display: flex;
   align-items: baseline;
-  gap: 0.5rem;
+  gap: 0.45rem;
 }
 
 .current-price {
@@ -1193,22 +1291,33 @@ img {
 .card-add-btn {
   background: var(--primary-light);
   color: var(--primary);
-  width: 38px;
-  height: 38px;
-  border-radius: 50%;
-  display: flex;
+  padding: 0.48rem 0.95rem;
+  border-radius: var(--radius-full);
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.25rem;
+  gap: 0.38rem;
+  font-size: 0.78rem;
   font-weight: 700;
-  transition: var(--transition);
+  border: 1px solid rgba(212, 93, 133, 0.2);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  cursor: pointer;
+  white-space: nowrap;
 }
 
 .card-add-btn:hover {
   background: var(--primary);
   color: #FFFFFF;
-  transform: scale(1.08);
-  box-shadow: 0 4px 12px var(--primary-glow);
+  border-color: var(--primary);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 14px var(--primary-glow);
+}
+
+.card-add-btn.added {
+  background: #059669;
+  color: #FFFFFF;
+  border-color: #059669;
+  box-shadow: 0 4px 14px rgba(5, 150, 105, 0.25);
 }
 
 /* ==========================================================================
@@ -1694,6 +1803,41 @@ img {
   position: relative;
   overflow: hidden;
   border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.footer-trust-ribbon {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.5rem;
+  padding-bottom: 2.5rem;
+  margin-bottom: 3.25rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.footer-trust-item {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.footer-trust-icon {
+  font-size: 1.6rem;
+  flex-shrink: 0;
+  display: inline-flex;
+}
+
+.footer-trust-item strong {
+  display: block;
+  font-size: 0.9rem;
+  color: #FFFFFF;
+  font-weight: 700;
+  margin-bottom: 0.15rem;
+}
+
+.footer-trust-item small {
+  display: block;
+  font-size: 0.75rem;
+  color: #A39396;
 }
 
 .footer-grid {
@@ -3500,9 +3644,19 @@ img {
     font-size: 1.05rem;
   }
   .card-add-btn {
-    width: 32px;
-    height: 32px;
-    font-size: 1.1rem;
+    padding: 0.38rem 0.7rem;
+    font-size: 0.72rem;
+    gap: 0.25rem;
+  }
+  .footer-trust-ribbon {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.25rem 0.85rem;
+    padding-bottom: 2rem;
+    margin-bottom: 2.5rem;
+  }
+  .footer-grid {
+    grid-template-columns: 1fr;
+    gap: 2.25rem;
   }
 
   /* Forms & Footers */
@@ -3690,6 +3844,50 @@ img {
   color: var(--text-dark);
 }
 
+[data-theme="candlelight"] .card-artisan-seal {
+  background: rgba(5, 150, 105, 0.18);
+  color: #34D399;
+  border-color: rgba(5, 150, 105, 0.35);
+}
+
+[data-theme="candlelight"] .hero-maker-seal {
+  background: rgba(30, 20, 26, 0.92);
+  border-color: rgba(255, 255, 255, 0.12);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+[data-theme="candlelight"] .hero-maker-seal span {
+  color: #FAF7F5;
+}
+
+[data-theme="candlelight"] .card-badge {
+  background: rgba(36, 24, 32, 0.92);
+  color: #FAF7F5;
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+[data-theme="candlelight"] .wishlist-btn {
+  background: rgba(36, 24, 32, 0.92);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+[data-theme="candlelight"] .quick-view-overlay-btn {
+  background: rgba(36, 24, 32, 0.95);
+  color: #FAF7F5;
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+[data-theme="candlelight"] .card-add-btn {
+  background: rgba(212, 93, 133, 0.18);
+  color: #F472B6;
+  border-color: rgba(212, 93, 133, 0.3);
+}
+
+[data-theme="candlelight"] .card-add-btn:hover {
+  background: var(--primary);
+  color: #FFFFFF;
+}
+
 /* ==========================================================================
    Navbar Enhancements: Studio Button & Wishlist
    ========================================================================== */
@@ -3735,55 +3933,84 @@ img {
 }
 
 .custom-studio-banner-card {
-  background: linear-gradient(135deg, rgba(255, 240, 244, 0.85) 0%, rgba(254, 237, 241, 0.7) 50%, rgba(255, 248, 245, 0.9) 100%);
-  border: 1.5px dashed rgba(212, 93, 133, 0.45);
+  background: linear-gradient(135deg, rgba(255, 240, 244, 0.92) 0%, rgba(254, 237, 241, 0.8) 50%, rgba(255, 248, 245, 0.95) 100%);
+  border: 1px solid rgba(212, 93, 133, 0.25);
   border-radius: var(--radius-lg);
-  padding: 2.25rem 2.5rem;
-  box-shadow: var(--shadow-sm);
+  padding: 2.5rem 2.8rem;
+  box-shadow: 0 10px 30px -10px rgba(212, 93, 133, 0.12), var(--shadow-sm);
   position: relative;
   overflow: hidden;
-  backdrop-filter: blur(8px);
+  backdrop-filter: blur(12px);
 }
 
 [data-theme="candlelight"] .custom-studio-banner-card {
-  background: linear-gradient(135deg, rgba(46, 28, 38, 0.85) 0%, rgba(38, 24, 32, 0.7) 100%);
-  border-color: rgba(240, 110, 152, 0.4);
+  background: linear-gradient(135deg, rgba(46, 28, 38, 0.92) 0%, rgba(38, 24, 32, 0.85) 100%);
+  border-color: rgba(240, 110, 152, 0.3);
 }
 
 .studio-banner-pill {
   display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: 0.45rem;
   background: #FFFFFF;
   color: var(--primary);
-  padding: 0.3rem 0.75rem;
+  padding: 0.32rem 0.85rem;
   border-radius: var(--radius-full);
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   font-weight: 700;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   margin-bottom: 0.85rem;
   box-shadow: var(--shadow-xs);
+  border: 1px solid rgba(212, 93, 133, 0.15);
 }
 
 [data-theme="candlelight"] .studio-banner-pill {
   background: var(--bg-surface);
+  border-color: rgba(255, 255, 255, 0.1);
 }
 
 .studio-banner-title {
   font-family: var(--font-serif);
-  font-size: 1.8rem;
+  font-size: 2rem;
   color: var(--text-dark);
-  margin-bottom: 0.6rem;
+  margin-bottom: 0.65rem;
   line-height: 1.25;
+  letter-spacing: -0.015em;
 }
 
 .studio-banner-text {
-  font-size: 0.96rem;
+  font-size: 1rem;
   color: var(--text-muted);
   max-width: 680px;
-  line-height: 1.6;
-  margin-bottom: 1.5rem;
+  line-height: 1.65;
+  margin-bottom: 1.2rem;
+}
+
+.studio-banner-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1.6rem;
+}
+
+.studio-chip {
+  font-size: 0.78rem;
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(212, 93, 133, 0.2);
+  color: var(--text-dark);
+  padding: 0.26rem 0.75rem;
+  border-radius: var(--radius-full);
+  box-shadow: 0 1px 3px rgba(30, 23, 25, 0.04);
+}
+
+[data-theme="candlelight"] .studio-chip {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #FAF7F5;
 }
 
 .studio-banner-actions {

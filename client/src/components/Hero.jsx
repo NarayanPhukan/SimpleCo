@@ -1,5 +1,5 @@
 import React from 'react';
-import { IconArrowRight, IconAward, IconTruck, IconShield } from './Icons';
+import { IconArrowRight, IconAward, IconTruck, IconShield, IconSparkles } from './Icons';
 
 export const Hero = ({ onExplore }) => {
   return (
@@ -8,42 +8,53 @@ export const Hero = ({ onExplore }) => {
         <div className="hero-content">
           <div className="hero-pill">
             <span className="pulse-dot"></span>
-            <span>Handmade in small batches • Artisanal studio in India</span>
+            <span>✨ Small-Batch Artisanal Crochet • 100% Milk Cotton • India</span>
           </div>
+
           <h1 className="hero-title">
-            Handmade with love for <span className="italic-sparkle">cozy days</span> & gentle hearts.
+            Heirloom Handcrafted Crochet for <span className="italic-sparkle">Cozy Spaces</span> & Gentle Hearts.
           </h1>
+
           <p className="hero-description">
-            Hey there! We crochet every single piece by hand using soft, snuggly milk-cotton yarn. No factory machines, no rushing — just cute handmade companions made to make you smile every day.
+            Each creation is patiently hand-hooked stitch-by-stitch using pure, ultra-soft milk cotton yarn. Zero assembly lines or factory shortcuts — just mindful, heirloom-quality pieces crafted to bring lasting warmth to your everyday moments.
           </p>
 
           <div className="hero-cta-group">
             <button className="btn btn-primary" onClick={onExplore} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
-              <span>Browse Collection</span>
+              <span>Browse Studio Catalog</span>
               <IconArrowRight size={16} />
             </button>
-            <a href="#catalog" className="btn btn-secondary">
-              See What's New
+            <a 
+              href="#studio" 
+              className="btn btn-secondary" 
+              onClick={(e) => {
+                e.preventDefault();
+                window.location.hash = '#studio';
+              }}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '0.45rem' }}
+            >
+              <IconSparkles size={15} />
+              <span>Bespoke Bouquet Studio</span>
             </a>
           </div>
 
           <div className="hero-trust-badges">
             <div className="trust-item">
-              <span className="icon" style={{ display: 'inline-flex', alignItems: 'center' }}><IconAward size={16} /></span>
-              <span>Hand-crocheted with care</span>
+              <span className="icon" style={{ display: 'inline-flex', alignItems: 'center' }}><IconAward size={15} /></span>
+              <span>100% Hand-Hooked</span>
             </div>
             <div className="trust-item">
-              <span className="icon" style={{ display: 'inline-flex', alignItems: 'center' }}><IconTruck size={16} /></span>
-              <span>Delivered across India</span>
+              <span className="icon" style={{ display: 'inline-flex', alignItems: 'center' }}><IconTruck size={15} /></span>
+              <span>Delivered Pan-India</span>
             </div>
             <div className="trust-item">
-              <span className="icon" style={{ display: 'inline-flex', alignItems: 'center' }}><IconShield size={16} /></span>
-              <span>Over 2,000+ happy homes</span>
+              <span className="icon" style={{ display: 'inline-flex', alignItems: 'center' }}><IconShield size={15} /></span>
+              <span>Plastic-Free Keepsake Boxes</span>
             </div>
           </div>
         </div>
 
-        {/* Hero Visual Card */}
+        {/* Hero Visual Card Stack */}
         <div className="hero-visual">
           <div className="hero-card-stack">
             <div className="floating-glass-card card-top-right">
@@ -64,6 +75,10 @@ export const Hero = ({ onExplore }) => {
                 height="525" 
                 fetchPriority="high" 
               />
+              <div className="hero-maker-seal">
+                <span>100% Handcrafted</span>
+                <small>Assam Studio • India</small>
+              </div>
             </div>
 
             <div className="floating-glass-card card-bottom-left">
@@ -71,8 +86,8 @@ export const Hero = ({ onExplore }) => {
                 <IconShield size={18} />
               </div>
               <div className="floating-meta">
-                <h4>Stitch by Stitch</h4>
-                <p>100% Soft Milk-Cotton Yarn</p>
+                <h4>Pure Milk-Cotton</h4>
+                <p>Hypoallergenic & Ultra-Soft</p>
               </div>
             </div>
           </div>

@@ -30,14 +30,18 @@ export const Navbar = ({
         {/* Brand Logo */}
         <a href="#hero" className="brand-logo" id="brandLogo">
           <div className="brand-icon-wrapper" aria-hidden="true">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M12 3c-4.97 0-9 4.03-9 9 0 2.12.74 4.07 1.97 5.61L12 21l7.03-3.39A8.97 8.97 0 0 0 21 12c0-4.97-4.03-9-9-9z"></path>
-              <path d="M12 7a5 5 0 0 0-5 5c0 1.93.98 3.63 2.47 4.63"></path>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="11" cy="13" r="8" />
+              <path d="M5.5 8.5C8 10 13 10.5 16.5 14" />
+              <path d="M7 16c2.5-.5 6.5.5 9.5 3" />
+              <path d="M8 6c2.5 1 5 4 6 7.5" />
+              <path d="M15 5l6-3c.5-.2 1 .3.8.8l-3 6" />
+              <circle cx="19" cy="4" r="1" fill="currentColor" />
             </svg>
           </div>
           <div className="brand-text">
             <span className="brand-title">BabyyGurll <span className="brand-accent">Crochet</span></span>
-            <span className="brand-subtitle">Handmade with love • India</span>
+            <span className="brand-subtitle">Artisanal Studio • India</span>
           </div>
         </a>
 

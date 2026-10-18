@@ -1,15 +1,25 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useCart } from '../context/CartContext';
-import { IconHeart, IconEye, IconPlus } from './Icons';
+import { IconHeart, IconEye, IconBag, IconCheck } from './Icons';
 
 export const ProductCard = ({ product, onQuickView, onShowToast }) => {
   const { formatPrice, addToCart, isInWishlist, toggleWishlist } = useCart();
   const wishlisted = isInWishlist(product.id);
+  
+  const [selectedColor, setSelectedColor] = useState(
+    product.colors && product.colors.length > 0 ? product.colors[0].name : 'Default'
+  );
+  const [isAdding, setIsAdding] = useState(false);
+
+  const discountPct = product.originalPrice && product.originalPrice > product.price
+    ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
+    : 0;
 
   const handleQuickAdd = () => {
-    const defaultColor = product.colors && product.colors.length > 0 ? product.colors[0].name : 'Default';
-    addToCart(product, defaultColor, 1);
-    onShowToast(`Added ${product.name} (${defaultColor}) to bag`, '✓');
+    setIsAdding(true);
+    addToCart(product, selectedColor, 1);
+    onShowToast(`Added ${product.name} (${selectedColor}) to bag`, '✓');
+    setTimeout(() => setIsAdding(false), 800);
   };
 
   const handleWishlist = () => {
@@ -20,16 +30,27 @@ export const ProductCard = ({ product, onQuickView, onShowToast }) => {
   return (
     <article className="product-card">
       <div className="card-media">
-        <span className="card-badge">{product.badge}</span>
+        <div className="card-badge-group">
+          {product.badge && (
+            <span className="card-badge">{product.badge}</span>
+          )}
+          {discountPct > 0 && (
+            <span className="card-badge discount-badge">-{discountPct}%</span>
+          )}
+        </div>
+
         <button 
           className={`wishlist-btn ${wishlisted ? 'active' : ''}`}
           onClick={handleWishlist}
-          aria-label="Save to Wishlist"
+          aria-label={wishlisted ? "Remove from Wishlist" : "Save to Wishlist"}
+          title={wishlisted ? "Remove from Wishlist" : "Save to Wishlist"}
           style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
         >
           <IconHeart size={18} fill={wishlisted ? '#E11D48' : 'none'} stroke={wishlisted ? '#E11D48' : '#475569'} />
         </button>
+
         <img src={product.image} alt={product.name} loading="lazy" width="400" height="400" />
+
         <button 
           className="quick-view-overlay-btn"
           onClick={() => onQuickView(product)}
@@ -41,21 +62,43 @@ export const ProductCard = ({ product, onQuickView, onShowToast }) => {
       </div>
 
       <div className="card-body">
-        <span className="card-category">{product.categoryName}</span>
-        <h3 className="card-title">{product.name}</h3>
-        
-        <div className="card-rating">
-          <span>★</span>
-          <span>{Number(product.rating).toFixed(1)}</span>
-          <span className="rating-count">({product.reviewsCount} reviews)</span>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
+          <span className="card-category">{product.categoryName}</span>
+          <span className="card-artisan-seal">100% Hand-Hooked</span>
         </div>
 
-        <div className="card-swatches">
-          {product.colors && product.colors.map((c, i) => (
-            <span key={i} className="swatch-circle" style={{ backgroundColor: c.hex }} title={c.name} />
-          ))}
-          <span className="swatch-more">+{product.colors?.length || 0} colors</span>
+        <h3 className="card-title" onClick={() => onQuickView(product)} style={{ cursor: 'pointer' }}>
+          {product.name}
+        </h3>
+        
+        <div className="card-rating">
+          <span className="star-symbol">★</span>
+          <span className="rating-num">{Number(product.rating || 5).toFixed(1)}</span>
+          <span className="rating-count">({product.reviewsCount || 12} reviews)</span>
         </div>
+
+        {product.colors && product.colors.length > 0 && (
+          <div className="card-swatches">
+            {product.colors.map((c, i) => {
+              const isSelected = selectedColor === c.name;
+              return (
+                <button
+                  type="button"
+                  key={i}
+                  className={`swatch-circle ${isSelected ? 'selected' : ''}`}
+                  style={{ backgroundColor: c.hex }}
+                  title={c.name}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedColor(c.name);
+                  }}
+                  aria-label={`Select color ${c.name}`}
+                />
+              );
+            })}
+            <span className="swatch-more">{selectedColor}</span>
+          </div>
+        )}
 
         <div className="card-footer">
           <div className="price-wrap">
@@ -64,12 +107,23 @@ export const ProductCard = ({ product, onQuickView, onShowToast }) => {
               <span className="original-price">{formatPrice(product.originalPrice)}</span>
             )}
           </div>
+          
           <button 
-            className="card-add-btn" 
+            className={`card-add-btn ${isAdding ? 'added' : ''}`}
             onClick={handleQuickAdd}
             aria-label={`Add ${product.name} to cart`}
           >
-            +
+            {isAdding ? (
+              <>
+                <IconCheck size={14} />
+                <span>Added</span>
+              </>
+            ) : (
+              <>
+                <IconBag size={14} />
+                <span>Add to Bag</span>
+              </>
+            )}
           </button>
         </div>
       </div>

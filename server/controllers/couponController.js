@@ -1,4 +1,6 @@
 const Coupon = require('../models/Coupon');
+const StoreSetting = require('../models/StoreSetting');
+const mongoose = require('mongoose');
 
 // Default initial coupons
 const DEFAULT_COUPONS = [
@@ -37,12 +39,32 @@ const DEFAULT_COUPONS = [
   }
 ];
 
-// Seed default coupons if none exist
+// Seed default coupons ONLY ONCE upon initial store configuration.
+// Once initialized, coupons are never re-seeded so admin deletions persist permanently.
 const ensureDefaultCoupons = async () => {
   try {
-    const count = await Coupon.countDocuments();
-    if (count === 0) {
-      await Coupon.insertMany(DEFAULT_COUPONS);
+    let settings = await StoreSetting.findOne({ key: 'main_store_config' });
+    if (!settings) {
+      settings = await StoreSetting.create({
+        key: 'main_store_config',
+        hasInitializedCoupons: false
+      });
+    }
+
+    if (!settings.hasInitializedCoupons) {
+      const count = await Coupon.countDocuments();
+      if (count === 0) {
+        await Coupon.insertMany(DEFAULT_COUPONS);
+      }
+      if (typeof settings.save === 'function') {
+        settings.hasInitializedCoupons = true;
+        await settings.save();
+      } else {
+        await StoreSetting.findOneAndUpdate(
+          { key: 'main_store_config' },
+          { hasInitializedCoupons: true }
+        );
+      }
     }
   } catch (err) {
     console.warn('Coupon auto-seed note:', err.message);
@@ -163,11 +185,21 @@ exports.createCoupon = async (req, res) => {
 // @route   PUT /api/coupons/:id
 exports.updateCoupon = async (req, res) => {
   try {
-    const coupon = await Coupon.findByIdAndUpdate(
-      req.params.id,
-      req.body,
-      { new: true, runValidators: true }
-    );
+    const rawId = (req.params.id || '').trim();
+    let coupon = null;
+    const isObjectId = /^[0-9a-fA-F]{24}$/.test(rawId);
+
+    if (isObjectId) {
+      coupon = await Coupon.findByIdAndUpdate(rawId, req.body, { new: true, runValidators: true });
+      if (!coupon) {
+        coupon = await Coupon.findOneAndUpdate({ _id: rawId }, req.body, { new: true, runValidators: true });
+      }
+    }
+
+    if (!coupon) {
+      coupon = await Coupon.findOneAndUpdate({ code: rawId.toUpperCase() }, req.body, { new: true, runValidators: true });
+    }
+
     if (!coupon) {
       return res.status(404).json({ success: false, message: 'Coupon not found' });
     }
@@ -181,11 +213,46 @@ exports.updateCoupon = async (req, res) => {
 // @route   DELETE /api/coupons/:id
 exports.deleteCoupon = async (req, res) => {
   try {
-    const coupon = await Coupon.findByIdAndDelete(req.params.id);
-    if (!coupon) {
-      return res.status(404).json({ success: false, message: 'Coupon not found' });
+    const rawId = (req.params.id || '').trim();
+    if (!rawId) {
+      return res.status(400).json({ success: false, message: 'Coupon identifier is required' });
     }
-    res.json({ success: true, message: `Coupon "${coupon.code}" deleted` });
+
+    let coupon = null;
+    const isObjectId = /^[0-9a-fA-F]{24}$/.test(rawId);
+
+    if (isObjectId) {
+      coupon = await Coupon.findByIdAndDelete(rawId);
+      if (!coupon) {
+        coupon = await Coupon.findOneAndDelete({ _id: rawId });
+      }
+    }
+
+    if (!coupon) {
+      coupon = await Coupon.findOneAndDelete({ code: rawId.toUpperCase() });
+    }
+
+    if (!coupon) {
+      return res.status(404).json({ success: false, message: 'Coupon not found or already deleted' });
+    }
+    res.json({ success: true, message: `Coupon "${coupon.code}" deleted successfully` });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// @desc    Restore default starter coupons manually (Admin)
+// @route   POST /api/coupons/reset-defaults
+exports.resetDefaultCoupons = async (req, res) => {
+  try {
+    for (const def of DEFAULT_COUPONS) {
+      const exists = await Coupon.findOne({ code: def.code });
+      if (!exists) {
+        await Coupon.create(def);
+      }
+    }
+    const coupons = await Coupon.find().sort({ createdAt: -1 });
+    res.json({ success: true, message: 'Default store coupons restored successfully', data: coupons });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }

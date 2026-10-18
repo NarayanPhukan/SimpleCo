@@ -92,6 +92,26 @@ const Order = {
     const { isConnected, memoryDB } = getDBState();
     if (isConnected) return MongooseOrder.countDocuments(query);
     return memoryDB.orders.countDocuments(query);
+  },
+  findByIdAndUpdate: (id, update, options) => {
+    const { isConnected, memoryDB } = getDBState();
+    if (isConnected) return MongooseOrder.findByIdAndUpdate(id, update, options);
+    return memoryDB.orders.findByIdAndUpdate(id, update, options);
+  },
+  findByIdAndDelete: (id) => {
+    const { isConnected, memoryDB } = getDBState();
+    if (isConnected) return MongooseOrder.findByIdAndDelete(id);
+    return memoryDB.orders.findByIdAndDelete(id);
+  },
+  findOneAndUpdate: (query, update, options) => {
+    const { isConnected, memoryDB } = getDBState();
+    if (isConnected) return MongooseOrder.findOneAndUpdate(query, update, options);
+    return memoryDB.orders.findOneAndUpdate(query, update, options);
+  },
+  findOneAndDelete: (query) => {
+    const { isConnected, memoryDB } = getDBState();
+    if (isConnected) return MongooseOrder.findOneAndDelete(query);
+    return memoryDB.orders.findOneAndDelete(query);
   }
 };
 

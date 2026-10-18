@@ -303,6 +303,17 @@ export const api = {
     return res.json();
   },
 
+  async resetDefaultCoupons() {
+    const res = await fetch(`${API_BASE}/coupons/reset-defaults`, {
+      method: 'POST'
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || 'Failed to restore default coupons');
+    }
+    return res.json();
+  },
+
   // Store Settings & Admin Auth
   async getSettings() {
     const res = await fetch(`${API_BASE}/settings`);

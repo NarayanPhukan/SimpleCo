@@ -197,14 +197,22 @@ export const App = () => {
               <div className="studio-banner-content">
                 <span className="studio-banner-pill">
                   <IconSparkles size={13} />
-                  <span>Artisanal Crafting Studio</span>
+                  <span>Artisanal Atelier Studio</span>
                 </span>
                 <h3 className="studio-banner-title">
-                  Build Your Dream Bouquet or Commission a Custom Friend 🌸
+                  Build Your Everlasting Bouquet or Commission a Bespoke Piece 🌸
                 </h3>
                 <p className="studio-banner-text">
-                  Pick your favorite milk-cotton flowers stem-by-stem, choose wrapping paper and silk ribbon, or request a made-to-order personalized plushie!
+                  Choose your favorite milk-cotton stems flower-by-flower, select premium wrapping paper and satin ribbons, or commission a personalized heirloom friend hand-hooked just for you.
                 </p>
+                <div className="studio-banner-chips">
+                  <span className="studio-chip">🌷 Pink Tulips</span>
+                  <span className="studio-chip">🌻 Sunflowers</span>
+                  <span className="studio-chip">🌼 Daisies</span>
+                  <span className="studio-chip">🌹 Velvet Roses</span>
+                  <span className="studio-chip">🎀 Satin Ribbon</span>
+                  <span className="studio-chip">📜 Calligraphy Note</span>
+                </div>
                 <div className="studio-banner-actions">
                   <button 
                     className="btn btn-primary"
@@ -215,7 +223,7 @@ export const App = () => {
                     style={{ display: 'inline-flex', alignItems: 'center', gap: '0.45rem' }}
                   >
                     <IconSparkles size={16} />
-                    <span>Open Custom Studio</span>
+                    <span>Launch Bouquet Studio</span>
                   </button>
                   <button 
                     className="btn btn-secondary"
@@ -225,7 +233,7 @@ export const App = () => {
                     }}
                     style={{ display: 'inline-flex', alignItems: 'center', gap: '0.45rem' }}
                   >
-                    <span>View Wishlist</span>
+                    <span>View Saved Wishlist</span>
                   </button>
                 </div>
               </div>
@@ -237,10 +245,10 @@ export const App = () => {
         <section className="catalog-section" id="catalog">
           <div className="container">
             <div className="section-header">
-              <span className="section-tag">The Studio Collection</span>
-              <h2 className="section-title">Things We’ve Made for You</h2>
+              <span className="section-tag">Limited Studio Releases</span>
+              <h2 className="section-title">Artisanal Hand-Hooked Collection</h2>
               <p className="section-subtitle">
-                From cuddly little desk companions to everlasting flowers and everyday totes — each one hand-hooked with love.
+                Mindfully crocheted in small batches. Everlasting botanicals, cuddly desk companions, and everyday heirloom totes crafted with 100% natural milk-cotton yarn.
               </p>
             </div>
 

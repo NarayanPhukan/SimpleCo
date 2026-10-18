@@ -5,11 +5,13 @@ const {
   validateCoupon,
   createCoupon,
   updateCoupon,
-  deleteCoupon
+  deleteCoupon,
+  resetDefaultCoupons
 } = require('../controllers/couponController');
 
 router.get('/', getCoupons);
 router.post('/validate', validateCoupon);
+router.post('/reset-defaults', resetDefaultCoupons);
 router.post('/', createCoupon);
 router.put('/:id', updateCoupon);
 router.delete('/:id', deleteCoupon);

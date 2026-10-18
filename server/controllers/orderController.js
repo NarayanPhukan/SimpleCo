@@ -217,12 +217,19 @@ exports.updateOrderStatus = async (req, res) => {
 // @route   DELETE /api/orders/:orderId
 exports.deleteOrder = async (req, res) => {
   try {
-    const cleanId = req.params.orderId.trim().toUpperCase();
-    const order = await Order.findOneAndDelete({ orderId: cleanId });
+    const rawId = (req.params.orderId || '').trim();
+    const cleanId = rawId.toUpperCase();
+    let order = await Order.findOneAndDelete({ orderId: cleanId });
+    if (!order && rawId.length === 24) {
+      order = await Order.findByIdAndDelete(rawId);
+    }
+    if (!order) {
+      order = await Order.findOneAndDelete({ _id: rawId });
+    }
     if (!order) {
       return res.status(404).json({ success: false, message: 'Order not found' });
     }
-    res.json({ success: true, message: `Order #${cleanId} deleted successfully` });
+    res.json({ success: true, message: `Order #${order.orderId || cleanId} deleted successfully` });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }

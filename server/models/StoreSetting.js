@@ -54,6 +54,10 @@ const storeSettingSchema = new mongoose.Schema({
   adminPassword: {
     type: String,
     default: 'admin123'
+  },
+  hasInitializedCoupons: {
+    type: Boolean,
+    default: false
   }
 }, {
   timestamps: true
