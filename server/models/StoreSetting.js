@@ -64,15 +64,15 @@ const storeSettingSchema = new mongoose.Schema({
     default: false
   },
   appVersion: {
-    latestVersionCode: { type: Number, default: 2 },
-    latestVersionName: { type: String, default: '1.1.0' },
+    latestVersionCode: { type: Number, default: 3 },
+    latestVersionName: { type: String, default: '1.2.0' },
     minRequiredVersionCode: { type: Number, default: 1 },
     releaseNotes: {
       type: String,
-      default: '• Integrated Firebase independent admin authentication\n• Added real-time error detection & diagnostics monitor\n• Added automatic update detection and changelog alerts\n• Enhanced order fulfillment tracking and network resilience'
+      default: '• Direct local photo selection with Coil DataUriFetcher\n• Instant in-memory and Base64 image preview for new & edited pieces\n• Customer POV live card preview before publishing\n• High-contrast UI: crisp white text across all blue buttons & chips\n• Real-time cloud-synced dynamic fulfillment dashboard'
     },
-    downloadUrl: { type: String, default: 'https://github.com/babyygurll/admin-releases/releases/latest' },
-    releaseDate: { type: String, default: '2026-10-30' },
+    downloadUrl: { type: String, default: 'https://raw.githubusercontent.com/NarayanPhukan/SimpleCo/main/android-admin/babyygurll-admin.apk' },
+    releaseDate: { type: String, default: '2026-10-31' },
     critical: { type: Boolean, default: false }
   }
 }, {

@@ -18,12 +18,12 @@ const DEFAULT_CONFIG = {
   studioAddress: 'Bandra West, Mumbai, Maharashtra 400050',
   adminPassword: 'admin123',
   appVersion: {
-    latestVersionCode: 2,
-    latestVersionName: '1.1.0',
+    latestVersionCode: 3,
+    latestVersionName: '1.2.0',
     minRequiredVersionCode: 1,
-    releaseNotes: '• Select product photos directly from local device gallery\n• Live Customer View Preview before publishing products\n• Real-time dynamic dashboard with live fulfillment pipeline\n• Auto-polling sync and permanent product management',
+    releaseNotes: '• Direct local photo selection with Coil DataUriFetcher\n• Instant in-memory and Base64 image preview for new & edited pieces\n• Customer POV live card preview before publishing\n• High-contrast UI: crisp white text across all blue buttons & chips\n• Real-time cloud-synced dynamic fulfillment dashboard',
     downloadUrl: 'https://raw.githubusercontent.com/NarayanPhukan/SimpleCo/main/android-admin/babyygurll-admin.apk',
-    releaseDate: '2026-10-30',
+    releaseDate: '2026-10-31',
     critical: false
   }
 };
