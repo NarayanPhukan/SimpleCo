@@ -21,7 +21,7 @@ import kotlinx.coroutines.launch
 data class AdminUiState(
     val isAuthenticated: Boolean = true,
     val isLoading: Boolean = false,
-    val serverUrl: String = "",
+    val serverUrl: String = PreferencesManager.DEFAULT_SERVER_URL,
     val errorMessage: String? = null,
     val adminEmail: String? = "Studio Administrator",
     val authProvider: String = "direct",

@@ -36,6 +36,8 @@ object NetworkModule {
             val endpoint = request.url.toString()
             val hint = if (endpoint.contains("10.0.2.2")) {
                 "Make sure your Node/Express backend is running on port 5000."
+            } else if (endpoint.contains("onrender.com")) {
+                "Render cloud server is waking up from sleep. Please wait ~30 seconds and retry."
             } else {
                 "Check server reachability or Wi-Fi connection."
             }
@@ -56,14 +58,18 @@ object NetworkModule {
         OkHttpClient.Builder()
             .addInterceptor(errorDetectionInterceptor)
             .addInterceptor(logging)
-            .connectTimeout(15, TimeUnit.SECONDS)
-            .readTimeout(20, TimeUnit.SECONDS)
-            .writeTimeout(20, TimeUnit.SECONDS)
+            .connectTimeout(60, TimeUnit.SECONDS)
+            .readTimeout(60, TimeUnit.SECONDS)
+            .writeTimeout(60, TimeUnit.SECONDS)
+            .retryOnConnectionFailure(true)
             .build()
     }
 
     fun getApiService(): AdminApiService {
-        val targetUrl = preferencesManager.serverUrl
+        var targetUrl = preferencesManager.serverUrl
+        if (targetUrl.isBlank() || targetUrl.contains("10.0.2.2") || targetUrl.contains("localhost")) {
+            targetUrl = PreferencesManager.DEFAULT_SERVER_URL
+        }
 
         if (cachedApiService == null || currentBaseUrl != targetUrl) {
             currentBaseUrl = targetUrl

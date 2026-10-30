@@ -14,7 +14,15 @@ fun ServerConfigDialog(
     onDismiss: () -> Unit,
     onSave: (String) -> Unit
 ) {
-    var urlText by remember { mutableStateOf(currentUrl) }
+    var urlText by remember {
+        mutableStateOf(
+            if (currentUrl.isBlank() || currentUrl.contains("10.0.2.2") || currentUrl.contains("localhost")) {
+                "https://simpleco.onrender.com/"
+            } else {
+                currentUrl
+            }
+        )
+    }
 
     AlertDialog(
         onDismissRequest = onDismiss,

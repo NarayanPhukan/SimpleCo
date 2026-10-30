@@ -13,21 +13,31 @@ class PreferencesManager(context: Context) {
         private const val KEY_ADMIN_PIN = "key_admin_pin"
         private const val KEY_ADMIN_EMAIL = "key_admin_email"
         private const val KEY_AUTH_PROVIDER = "key_auth_provider"
-        private const val DEFAULT_SERVER_URL = "https://simpleco.onrender.com/" // 24/7 Render Cloud Backend
+        const val DEFAULT_SERVER_URL = "https://simpleco.onrender.com/" // 24/7 Render Cloud Backend
     }
 
     var serverUrl: String
         get() {
-            var url = prefs.getString(KEY_SERVER_URL, DEFAULT_SERVER_URL) ?: DEFAULT_SERVER_URL
+            val saved = prefs.getString(KEY_SERVER_URL, null)
+            // If unset, empty, or pointing to local emulator / localhost from earlier builds, force Render cloud URL
+            if (saved.isNullOrBlank() || saved.contains("10.0.2.2") || saved.contains("localhost")) {
+                prefs.edit().putString(KEY_SERVER_URL, DEFAULT_SERVER_URL).apply()
+                return DEFAULT_SERVER_URL
+            }
+            var url = saved.trim()
             if (!url.endsWith("/")) url += "/"
             return url
         }
         set(value) {
             var formatted = value.trim()
-            if (!formatted.startsWith("http://") && !formatted.startsWith("https://")) {
-                formatted = "http://$formatted"
+            if (formatted.isBlank() || formatted.contains("10.0.2.2") || formatted.contains("localhost")) {
+                formatted = DEFAULT_SERVER_URL
+            } else {
+                if (!formatted.startsWith("http://") && !formatted.startsWith("https://")) {
+                    formatted = "https://$formatted"
+                }
+                if (!formatted.endsWith("/")) formatted += "/"
             }
-            if (!formatted.endsWith("/")) formatted += "/"
             prefs.edit().putString(KEY_SERVER_URL, formatted).apply()
         }
 
