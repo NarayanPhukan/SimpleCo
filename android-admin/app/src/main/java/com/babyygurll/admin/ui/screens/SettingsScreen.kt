@@ -159,7 +159,7 @@ fun SettingsScreen(
                     }
 
                     Text(
-                        text = "Current Installed Version: v1.2.0 (Build 3). The app automatically scans the server release manifest for updates on launch.",
+                        text = "Current Installed Version: v${com.babyygurll.admin.BuildConfig.VERSION_NAME} (Build ${com.babyygurll.admin.BuildConfig.VERSION_CODE}). The app automatically scans the server release manifest for updates on launch.",
                         style = MaterialTheme.typography.bodySmall,
                         color = CharcoalGray.copy(alpha = 0.7f)
                     )

@@ -3,6 +3,7 @@ package com.babyygurll.admin.ui.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.babyygurll.admin.BabyyGurllAdminApp
+import com.babyygurll.admin.BuildConfig
 import com.babyygurll.admin.data.api.NetworkModule
 import com.babyygurll.admin.data.auth.FirebaseAuthManager
 import com.babyygurll.admin.data.diagnostics.ErrorLogManager
@@ -535,19 +536,26 @@ class AdminViewModel : ViewModel() {
         }
     }
 
+    private var dismissedVersionCode: Int? = null
+
     // Auto-Update Detection
     fun checkForAppUpdates(silent: Boolean = false) {
         viewModelScope.launch {
             if (!silent) _uiState.update { it.copy(isCheckingUpdate = true) }
-            val currentVersionCode = 2 // Matches BuildConfig.VERSION_CODE
+            val currentVersionCode = getInstalledVersionCode()
+            val currentVersionName = getInstalledVersionName()
             val result = repository.fetchAppVersion()
             result.onSuccess { info ->
                 val hasUpdate = info.latestVersionCode > currentVersionCode
                 val critical = hasUpdate && (currentVersionCode < info.minRequiredVersionCode || info.critical)
+
+                // If it's a background silent check and non-critical, don't nag if dismissed this session
+                val shouldShowDialog = hasUpdate && (!silent || critical || dismissedVersionCode != info.latestVersionCode)
+
                 _uiState.update {
                     it.copy(
                         appUpdateInfo = info,
-                        isUpdateAvailable = hasUpdate,
+                        isUpdateAvailable = shouldShowDialog,
                         isCriticalUpdate = critical,
                         isCheckingUpdate = false
                     )
@@ -556,7 +564,7 @@ class AdminViewModel : ViewModel() {
                     if (hasUpdate) {
                         _eventMessage.emit("New update v${info.latestVersionName} available!")
                     } else {
-                        _eventMessage.emit("You are on the latest version (v1.1.0) ✓")
+                        _eventMessage.emit("You are on the latest version (v$currentVersionName) ✓")
                     }
                 }
             }.onFailure { err ->
@@ -570,7 +578,40 @@ class AdminViewModel : ViewModel() {
     }
 
     fun dismissUpdateDialog() {
+        val currentInfo = _uiState.value.appUpdateInfo
+        if (currentInfo != null) {
+            dismissedVersionCode = currentInfo.latestVersionCode
+        }
         _uiState.update { it.copy(isUpdateAvailable = false) }
+    }
+
+    private fun getInstalledVersionCode(): Int {
+        return try {
+            val context = BabyyGurllAdminApp.instance
+            val pInfo = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+                context.packageManager.getPackageInfo(context.packageName, android.content.pm.PackageManager.PackageInfoFlags.of(0))
+            } else {
+                @Suppress("DEPRECATION")
+                context.packageManager.getPackageInfo(context.packageName, 0)
+            }
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
+                pInfo.longVersionCode.toInt()
+            } else {
+                @Suppress("DEPRECATION")
+                pInfo.versionCode
+            }
+        } catch (e: Exception) {
+            BuildConfig.VERSION_CODE
+        }
+    }
+
+    private fun getInstalledVersionName(): String {
+        return try {
+            val context = BabyyGurllAdminApp.instance
+            context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: BuildConfig.VERSION_NAME
+        } catch (e: Exception) {
+            BuildConfig.VERSION_NAME
+        }
     }
 
     // Error Detection & System Diagnostics
