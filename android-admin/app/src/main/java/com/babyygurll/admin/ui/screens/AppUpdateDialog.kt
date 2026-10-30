@@ -1,17 +1,16 @@
 package com.babyygurll.admin.ui.screens
 
-import android.content.Intent
-import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.SystemUpdate
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -21,7 +20,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.babyygurll.admin.data.model.AppVersionInfo
+import com.babyygurll.admin.data.update.ApkUpdateDownloader
+import com.babyygurll.admin.data.update.UpdateDownloadState
 import com.babyygurll.admin.ui.theme.*
+import kotlinx.coroutines.launch
 
 @Composable
 fun AppUpdateDialog(
@@ -30,11 +32,16 @@ fun AppUpdateDialog(
     onDismiss: () -> Unit
 ) {
     val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
     val scrollState = rememberScrollState()
+    val downloadState by ApkUpdateDownloader.downloadState.collectAsState()
 
     AlertDialog(
         onDismissRequest = {
-            if (!isCritical) onDismiss()
+            if (!isCritical && downloadState !is UpdateDownloadState.Downloading) {
+                ApkUpdateDownloader.resetState()
+                onDismiss()
+            }
         },
         icon = {
             Box(
@@ -82,7 +89,7 @@ fun AppUpdateDialog(
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Text(
-                            text = "This update contains essential security and order fulfillment fixes. Updating is mandatory to continue managing the boutique.",
+                            text = "This update contains essential boutique fixes. Updating is required to continue.",
                             style = MaterialTheme.typography.bodySmall,
                             color = CrimsonAccent,
                             modifier = Modifier.padding(10.dp)
@@ -103,11 +110,84 @@ fun AppUpdateDialog(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text(
-                        text = updateInfo.releaseNotes.ifBlank { "• Performance optimizations and stability improvements." },
+                        text = updateInfo.releaseNotes.ifBlank { "• Performance optimizations and cloud sync improvements." },
                         style = MaterialTheme.typography.bodySmall,
                         color = CharcoalGray,
                         modifier = Modifier.padding(12.dp)
                     )
+                }
+
+                when (val state = downloadState) {
+                    is UpdateDownloadState.Downloading -> {
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text(
+                                    text = "Downloading APK package...",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = RoyalBlue,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                                Text(
+                                    text = "${state.progressPercent}%",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = RoyalBlue,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                            if (state.progressPercent > 0) {
+                                LinearProgressIndicator(
+                                    progress = { state.progressPercent / 100f },
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(6.dp)
+                                        .clip(RoundedCornerShape(3.dp)),
+                                    color = RoyalBlue
+                                )
+                            } else {
+                                LinearProgressIndicator(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(6.dp)
+                                        .clip(RoundedCornerShape(3.dp)),
+                                    color = RoyalBlue
+                                )
+                            }
+                        }
+                    }
+                    is UpdateDownloadState.ReadyToInstall -> {
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            color = Color(0xFFE8F5E9),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(
+                                text = "✓ APK Download complete. System installer launching...",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = Color(0xFF2E7D32),
+                                modifier = Modifier.padding(10.dp),
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+                    }
+                    is UpdateDownloadState.Error -> {
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            color = Color(0xFFFFEBEE),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(
+                                text = "Download failed: ${state.message}",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = CrimsonAccent,
+                                modifier = Modifier.padding(10.dp)
+                            )
+                        }
+                    }
+                    else -> {}
                 }
 
                 if (updateInfo.releaseDate.isNotBlank()) {
@@ -120,35 +200,63 @@ fun AppUpdateDialog(
             }
         },
         confirmButton = {
-            Button(
-                onClick = {
-                    val url = updateInfo.downloadUrl.ifBlank { "https://github.com/babyygurll/admin-releases/releases/latest" }
-                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url)).apply {
-                        flags = Intent.FLAG_ACTIVITY_NEW_TASK
+            when (val state = downloadState) {
+                is UpdateDownloadState.Downloading -> {
+                    Button(
+                        onClick = {},
+                        enabled = false,
+                        colors = ButtonDefaults.buttonColors(containerColor = RoyalBlue)
+                    ) {
+                        Text("Downloading (${state.progressPercent}%)...")
                     }
-                    try {
-                        context.startActivity(intent)
-                    } catch (_: Exception) {}
-                    if (!isCritical) onDismiss()
-                },
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = if (isCritical) CrimsonAccent else RoyalBlue
-                )
-            ) {
-                Text(
-                    text = if (isCritical) "Update Required" else "Update Now",
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White
-                )
+                }
+                is UpdateDownloadState.ReadyToInstall -> {
+                    Button(
+                        onClick = {
+                            ApkUpdateDownloader.installApk(context, state.apkFile)
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2E7D32))
+                    ) {
+                        Icon(Icons.Default.Download, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("Install Update", fontWeight = FontWeight.Bold, color = Color.White)
+                    }
+                }
+                else -> {
+                    Button(
+                        onClick = {
+                            coroutineScope.launch {
+                                ApkUpdateDownloader.startDownload(
+                                    context = context,
+                                    rawUrl = updateInfo.downloadUrl,
+                                    versionName = updateInfo.latestVersionName
+                                )
+                            }
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = if (isCritical) CrimsonAccent else RoyalBlue
+                        )
+                    ) {
+                        Text(
+                            text = if (isCritical) "Download & Install" else "Update Now",
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White
+                        )
+                    }
+                }
             }
         },
         dismissButton = {
-            if (!isCritical) {
-                TextButton(onClick = onDismiss) {
+            if (!isCritical && downloadState !is UpdateDownloadState.Downloading) {
+                TextButton(
+                    onClick = {
+                        ApkUpdateDownloader.resetState()
+                        onDismiss()
+                    }
+                ) {
                     Text("Later", color = CharcoalGray)
                 }
             }
         }
     )
 }
-

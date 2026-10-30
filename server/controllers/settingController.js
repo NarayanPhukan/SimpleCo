@@ -1,3 +1,5 @@
+const path = require('path');
+const fs = require('fs');
 const mongoose = require('mongoose');
 const StoreSetting = require('../models/StoreSetting');
 
@@ -16,11 +18,11 @@ const DEFAULT_CONFIG = {
   studioAddress: 'Bandra West, Mumbai, Maharashtra 400050',
   adminPassword: 'admin123',
   appVersion: {
-    latestVersionCode: 2,
-    latestVersionName: '1.1.0',
+    latestVersionCode: 1,
+    latestVersionName: '1.0.0',
     minRequiredVersionCode: 1,
-    releaseNotes: '• Integrated Firebase independent admin authentication\n• Added real-time error detection & diagnostics monitor\n• Added automatic update detection and changelog alerts\n• Enhanced order fulfillment tracking and network resilience',
-    downloadUrl: 'https://github.com/babyygurll/admin-releases/releases/latest',
+    releaseNotes: '• Direct 24/7 cloud sync with SimpleCo on Render\n• Integrated order fulfillment and catalog manager\n• Seamless in-app auto updates & diagnostics',
+    downloadUrl: 'https://simpleco.onrender.com/api/settings/download-apk',
     releaseDate: '2026-10-30',
     critical: false
   }
@@ -265,4 +267,25 @@ exports.reportError = (req, res) => {
 exports.clearErrorLogs = (req, res) => {
   serverErrorLogs.length = 0;
   res.json({ success: true, message: 'Diagnostics error logs cleared successfully' });
+};
+
+// @desc    Download the latest Android APK directly
+// @route   GET /api/settings/download-apk
+exports.downloadApk = (req, res) => {
+  const possiblePaths = [
+    path.join(__dirname, '../../android-admin/babyygurll-admin.apk'),
+    path.join(__dirname, '../../android-admin/app/build/outputs/apk/debug/app-debug.apk'),
+    path.join(process.cwd(), 'android-admin/babyygurll-admin.apk')
+  ];
+
+  for (const apkPath of possiblePaths) {
+    if (fs.existsSync(apkPath)) {
+      res.setHeader('Content-Type', 'application/vnd.android.package-archive');
+      res.setHeader('Content-Disposition', 'attachment; filename="BabyyGurll-Admin.apk"');
+      return res.sendFile(path.resolve(apkPath));
+    }
+  }
+
+  // Direct raw APK download fallback without going to GitHub web UI
+  res.redirect('https://raw.githubusercontent.com/NarayanPhukan/SimpleCo/main/android-admin/babyygurll-admin.apk');
 };

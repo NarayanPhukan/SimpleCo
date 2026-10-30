@@ -6,6 +6,7 @@ const {
   verifyAdmin,
   getAppVersion,
   updateAppVersion,
+  downloadApk,
   getSystemDiagnostics,
   reportError,
   clearErrorLogs
@@ -15,9 +16,10 @@ router.get('/', getSettings);
 router.put('/', updateSettings);
 router.post('/verify-admin', verifyAdmin);
 
-// Auto-Update Detection
+// Auto-Update Detection & Direct APK Distribution
 router.get('/app-version', getAppVersion);
 router.put('/app-version', updateAppVersion);
+router.get('/download-apk', downloadApk);
 
 // Error Detection & System Diagnostics
 router.get('/diagnostics', getSystemDiagnostics);
