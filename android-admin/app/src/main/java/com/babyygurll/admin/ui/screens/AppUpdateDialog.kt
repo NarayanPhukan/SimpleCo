@@ -68,7 +68,7 @@ fun AppUpdateDialog(
                     color = MidnightNavy
                 )
                 Text(
-                    text = "v1.0.0 → v${updateInfo.latestVersionName}",
+                    text = "New Version Available: v${updateInfo.latestVersionName}",
                     style = MaterialTheme.typography.bodySmall,
                     color = RoyalBlue,
                     fontWeight = FontWeight.SemiBold

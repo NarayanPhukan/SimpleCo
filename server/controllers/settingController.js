@@ -18,11 +18,11 @@ const DEFAULT_CONFIG = {
   studioAddress: 'Bandra West, Mumbai, Maharashtra 400050',
   adminPassword: 'admin123',
   appVersion: {
-    latestVersionCode: 1,
-    latestVersionName: '1.0.0',
+    latestVersionCode: 2,
+    latestVersionName: '1.1.0',
     minRequiredVersionCode: 1,
-    releaseNotes: '• Direct 24/7 cloud sync with SimpleCo on Render\n• Integrated order fulfillment and catalog manager\n• Seamless in-app auto updates & diagnostics',
-    downloadUrl: 'https://simpleco.onrender.com/api/settings/download-apk',
+    releaseNotes: '• Select product photos directly from local device gallery\n• Live Customer View Preview before publishing products\n• Real-time dynamic dashboard with live fulfillment pipeline\n• Auto-polling sync and permanent product management',
+    downloadUrl: 'https://raw.githubusercontent.com/NarayanPhukan/SimpleCo/main/android-admin/babyygurll-admin.apk',
     releaseDate: '2026-10-30',
     critical: false
   }

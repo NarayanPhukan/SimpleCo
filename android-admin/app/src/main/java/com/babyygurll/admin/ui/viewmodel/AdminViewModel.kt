@@ -539,7 +539,7 @@ class AdminViewModel : ViewModel() {
     fun checkForAppUpdates(silent: Boolean = false) {
         viewModelScope.launch {
             if (!silent) _uiState.update { it.copy(isCheckingUpdate = true) }
-            val currentVersionCode = 1 // Matches BuildConfig.VERSION_CODE
+            val currentVersionCode = 2 // Matches BuildConfig.VERSION_CODE
             val result = repository.fetchAppVersion()
             result.onSuccess { info ->
                 val hasUpdate = info.latestVersionCode > currentVersionCode
@@ -556,7 +556,7 @@ class AdminViewModel : ViewModel() {
                     if (hasUpdate) {
                         _eventMessage.emit("New update v${info.latestVersionName} available!")
                     } else {
-                        _eventMessage.emit("You are on the latest version (v1.0.0) ✓")
+                        _eventMessage.emit("You are on the latest version (v1.1.0) ✓")
                     }
                 }
             }.onFailure { err ->
