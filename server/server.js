@@ -24,6 +24,9 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Serve static images directly from assets
+app.use('/assets', express.static(path.join(__dirname, '../assets')));
+app.use('/assets', express.static(path.join(__dirname, '../client/public/assets')));
+app.use('/assets/images', express.static(path.join(__dirname, '../assets/images')));
 app.use('/assets/images', express.static(path.join(__dirname, '../client/public/assets/images')));
 
 // API Routes

@@ -7,6 +7,7 @@ import android.util.Base64
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.*
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -26,6 +27,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -83,6 +85,9 @@ fun ProductEditScreen(
         "Berry Keychain" to "/assets/images/strawberry-keychain.jpg"
     )
 
+    // In-memory decoded bitmap for immediate, reliable local preview
+    var localBitmap by remember { mutableStateOf<Bitmap?>(null) }
+
     // Local Device Photo Picker Launcher
     val photoPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
@@ -115,6 +120,7 @@ fun ProductEditScreen(
                     scaledBitmap.compress(Bitmap.CompressFormat.JPEG, 80, outputStream)
                     val byteArray = outputStream.toByteArray()
                     val base64String = Base64.encodeToString(byteArray, Base64.NO_WRAP)
+                    localBitmap = scaledBitmap
                     imageUrl = "data:image/jpeg;base64,$base64String"
                 }
             } catch (e: Exception) {
@@ -123,8 +129,24 @@ fun ProductEditScreen(
         }
     }
 
+    // Decode base64 data if editing an existing product whose image was stored as data URI
+    val parsedBase64Bitmap: Bitmap? = remember(imageUrl) {
+        if (localBitmap == null && imageUrl.startsWith("data:image/") && imageUrl.contains(";base64,")) {
+            try {
+                val base64Data = imageUrl.substringAfter(";base64,")
+                val bytes = Base64.decode(base64Data, Base64.DEFAULT)
+                BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+            } catch (e: Exception) {
+                null
+            }
+        } else null
+    }
+
+    val activeBitmap = localBitmap ?: parsedBase64Bitmap
+
     val resolvedImageUrl = remember(imageUrl, serverUrl) {
         when {
+            imageUrl.isBlank() -> ""
             imageUrl.startsWith("data:") -> imageUrl
             imageUrl.startsWith("http://") || imageUrl.startsWith("https://") -> imageUrl
             else -> "${serverUrl.trimEnd('/')}/${imageUrl.trimStart('/')}"
@@ -240,15 +262,48 @@ fun ProductEditScreen(
                                             .size(80.dp)
                                             .clip(RoundedCornerShape(12.dp))
                                             .background(BrandPrimaryLight)
-                                            .border(1.dp, BrandPrimary.copy(alpha = 0.3f), RoundedCornerShape(12.dp)),
+                                            .border(1.dp, BrandPrimary.copy(alpha = 0.3f), RoundedCornerShape(12.dp))
+                                            .clickable { photoPickerLauncher.launch("image/*") },
                                         contentAlignment = Alignment.Center
                                     ) {
-                                        AsyncImage(
-                                            model = resolvedImageUrl,
-                                            contentDescription = "Selected photo",
-                                            modifier = Modifier.fillMaxSize(),
-                                            contentScale = ContentScale.Crop
-                                        )
+                                        when {
+                                            activeBitmap != null -> {
+                                                Image(
+                                                    bitmap = activeBitmap.asImageBitmap(),
+                                                    contentDescription = "Selected photo",
+                                                    modifier = Modifier.fillMaxSize(),
+                                                    contentScale = ContentScale.Crop
+                                                )
+                                            }
+                                            resolvedImageUrl.isNotBlank() -> {
+                                                AsyncImage(
+                                                    model = resolvedImageUrl,
+                                                    contentDescription = "Selected photo",
+                                                    modifier = Modifier.fillMaxSize(),
+                                                    contentScale = ContentScale.Crop
+                                                )
+                                            }
+                                            else -> {
+                                                Column(
+                                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                                    verticalArrangement = Arrangement.Center
+                                                ) {
+                                                    Icon(
+                                                        imageVector = Icons.Default.AddPhotoAlternate,
+                                                        contentDescription = "Select photo",
+                                                        tint = BrandPrimary,
+                                                        modifier = Modifier.size(26.dp)
+                                                    )
+                                                    Spacer(modifier = Modifier.height(2.dp))
+                                                    Text(
+                                                        text = "Add Photo",
+                                                        fontSize = 9.sp,
+                                                        fontWeight = FontWeight.Bold,
+                                                        color = BrandPrimary
+                                                    )
+                                                }
+                                            }
+                                        }
                                     }
 
                                     Column(modifier = Modifier.weight(1f)) {
@@ -296,7 +351,10 @@ fun ProductEditScreen(
                                     photoPresets.forEach { (title, url) ->
                                         FilterChip(
                                             selected = imageUrl == url,
-                                            onClick = { imageUrl = url },
+                                            onClick = {
+                                                localBitmap = null
+                                                imageUrl = url
+                                            },
                                             label = { Text(title) },
                                             colors = FilterChipDefaults.filterChipColors(
                                                 selectedContainerColor = RoyalBlue,
@@ -532,14 +590,64 @@ fun ProductEditScreen(
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .height(260.dp)
-                                        .background(Color(0xFFF9F7F5))
+                                        .background(Color(0xFFF9F7F5)),
+                                    contentAlignment = Alignment.Center
                                 ) {
-                                    AsyncImage(
-                                        model = resolvedImageUrl,
-                                        contentDescription = name,
-                                        contentScale = ContentScale.Crop,
-                                        modifier = Modifier.fillMaxSize()
-                                    )
+                                    when {
+                                        activeBitmap != null -> {
+                                            Image(
+                                                bitmap = activeBitmap.asImageBitmap(),
+                                                contentDescription = name,
+                                                contentScale = ContentScale.Crop,
+                                                modifier = Modifier.fillMaxSize()
+                                            )
+                                        }
+                                        resolvedImageUrl.isNotBlank() -> {
+                                            AsyncImage(
+                                                model = resolvedImageUrl,
+                                                contentDescription = name,
+                                                contentScale = ContentScale.Crop,
+                                                modifier = Modifier.fillMaxSize()
+                                            )
+                                        }
+                                        else -> {
+                                            Column(
+                                                horizontalAlignment = Alignment.CenterHorizontally,
+                                                verticalArrangement = Arrangement.Center,
+                                                modifier = Modifier.padding(24.dp)
+                                            ) {
+                                                Box(
+                                                    modifier = Modifier
+                                                        .size(60.dp)
+                                                        .clip(CircleShape)
+                                                        .background(BrandPrimaryLight),
+                                                    contentAlignment = Alignment.Center
+                                                ) {
+                                                    Icon(
+                                                        imageVector = Icons.Default.AddPhotoAlternate,
+                                                        contentDescription = null,
+                                                        tint = BrandPrimary,
+                                                        modifier = Modifier.size(30.dp)
+                                                    )
+                                                }
+                                                Spacer(modifier = Modifier.height(10.dp))
+                                                Text(
+                                                    text = "Piece Showcase Preview",
+                                                    style = MaterialTheme.typography.titleMedium,
+                                                    fontWeight = FontWeight.Bold,
+                                                    color = MidnightNavy
+                                                )
+                                                Spacer(modifier = Modifier.height(4.dp))
+                                                Text(
+                                                    text = "Select a photo from device or choose a preset to preview the live customer card.",
+                                                    style = MaterialTheme.typography.bodySmall,
+                                                    color = CharcoalGray.copy(alpha = 0.7f),
+                                                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                                                    modifier = Modifier.padding(horizontal = 16.dp)
+                                                )
+                                            }
+                                        }
+                                    }
 
                                     // Badge in Top-Left
                                     if (badge.isNotBlank()) {
