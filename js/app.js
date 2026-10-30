@@ -1229,4 +1229,22 @@ document.addEventListener("DOMContentLoaded", () => {
   renderCatalog();
   updateCartUI();
   updateAccountHeaderButton();
+
+  // Sync products dynamically from cloud backend
+  async function loadProductsFromCloud() {
+    try {
+      const res = await fetch('/api/products');
+      if (res.ok) {
+        const json = await res.json();
+        if (json.success && Array.isArray(json.data)) {
+          PRODUCTS_DATA.length = 0;
+          PRODUCTS_DATA.push(...json.data);
+          renderCatalog();
+        }
+      }
+    } catch (e) {
+      console.warn('Could not load products from cloud API:', e.message);
+    }
+  }
+  loadProductsFromCloud();
 });
