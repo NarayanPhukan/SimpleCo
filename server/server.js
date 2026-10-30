@@ -46,8 +46,10 @@ app.get('/api/health', (req, res) => {
 
 // Root API Welcome / Status
 app.get('/', (req, res) => {
-  if (process.env.NODE_ENV === 'production' && !process.env.VERCEL) {
-    return res.sendFile(path.resolve(__dirname, '../client', 'dist', 'index.html'));
+  const fs = require('fs');
+  const distIndex = path.resolve(__dirname, '../client', 'dist', 'index.html');
+  if (process.env.NODE_ENV === 'production' && !process.env.VERCEL && fs.existsSync(distIndex)) {
+    return res.sendFile(distIndex);
   }
   res.json({
     status: 'ok',
@@ -59,10 +61,20 @@ app.get('/', (req, res) => {
 });
 
 // Serve frontend in production if built (for traditional monolithic VPS / Render hosting)
-if (process.env.NODE_ENV === 'production' && !process.env.VERCEL) {
-  app.use(express.static(path.join(__dirname, '../client/dist')));
+const distPath = path.join(__dirname, '../client/dist');
+const fs = require('fs');
+if (process.env.NODE_ENV === 'production' && !process.env.VERCEL && fs.existsSync(distPath)) {
+  app.use(express.static(distPath));
   app.get('*', (req, res) => {
-    res.sendFile(path.resolve(__dirname, '../client', 'dist', 'index.html'));
+    const indexPath = path.resolve(distPath, 'index.html');
+    if (fs.existsSync(indexPath)) {
+      res.sendFile(indexPath);
+    } else {
+      res.json({
+        status: 'ok',
+        message: 'BabyyGurll Crochet Express API Server'
+      });
+    }
   });
 }
 

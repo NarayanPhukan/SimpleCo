@@ -13,7 +13,7 @@ class PreferencesManager(context: Context) {
         private const val KEY_ADMIN_PIN = "key_admin_pin"
         private const val KEY_ADMIN_EMAIL = "key_admin_email"
         private const val KEY_AUTH_PROVIDER = "key_auth_provider"
-        private const val DEFAULT_SERVER_URL = "http://10.0.2.2:5000/" // Android Emulator localhost
+        private const val DEFAULT_SERVER_URL = "https://simpleco.onrender.com/" // 24/7 Render Cloud Backend
     }
 
     var serverUrl: String

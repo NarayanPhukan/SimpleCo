@@ -57,8 +57,8 @@ fun ServerConfigDialog(
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     SuggestionChip(
-                        onClick = { urlText = "https://babyygurll-api.onrender.com/" },
-                        label = { Text("Render Cloud", style = MaterialTheme.typography.labelSmall) }
+                        onClick = { urlText = "https://simpleco.onrender.com/" },
+                        label = { Text("SimpleCo Live", style = MaterialTheme.typography.labelSmall) }
                     )
                     SuggestionChip(
                         onClick = { urlText = "http://10.0.2.2:5000/" },
