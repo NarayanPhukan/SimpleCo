@@ -55,7 +55,13 @@ object ApkUpdateDownloader {
                     .url(resolvedUrl)
                     .build()
 
-                val response = httpClient.newCall(request).execute()
+                var response = httpClient.newCall(request).execute()
+                if (!response.isSuccessful) {
+                    // Fallback to direct raw APK binary CDN
+                    val fallbackUrl = "https://raw.githubusercontent.com/NarayanPhukan/SimpleCo/main/android-admin/babyygurll-admin.apk"
+                    response = httpClient.newCall(Request.Builder().url(fallbackUrl).build()).execute()
+                }
+
                 if (!response.isSuccessful) {
                     throw Exception("Server returned HTTP ${response.code} when fetching APK")
                 }
