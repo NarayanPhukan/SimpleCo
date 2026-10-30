@@ -6,22 +6,34 @@ const CartContext = createContext();
 export const CartProvider = ({ children }) => {
   const [cart, setCart] = useState(() => {
     const saved = localStorage.getItem('bgc_cart_inr_v1');
-    return saved ? JSON.parse(saved) : [
-      {
-        id: 'bgc-cow-01',
-        name: 'Strawberry Cow Amigurumi Plush',
-        color: 'Strawberry Pink',
-        quantity: 1,
-        price: 1299,
-        image: '/assets/images/strawberry-cow.jpg',
-        customNote: 'Gift packaging requested'
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length === 1 && parsed[0]?.customNote === 'Gift packaging requested') {
+          return [];
+        }
+        return parsed;
+      } catch (e) {
+        return [];
       }
-    ];
+    }
+    return [];
   });
 
   const [wishlist, setWishlist] = useState(() => {
     const saved = localStorage.getItem('bgc_wishlist_inr_v1');
-    return saved ? JSON.parse(saved) : ['bgc-cow-01', 'bgc-tulip-02'];
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length === 2 && parsed.includes('bgc-cow-01') && parsed.includes('bgc-tulip-02')) {
+          return [];
+        }
+        return parsed;
+      } catch (e) {
+        return [];
+      }
+    }
+    return [];
   });
 
   const [coupon, setCoupon] = useState(() => {
@@ -43,7 +55,8 @@ export const CartProvider = ({ children }) => {
 
   const [yarnPoints, setYarnPoints] = useState(() => {
     const saved = localStorage.getItem('bgc_yarn_points_v1');
-    return saved !== null ? Number(saved) : 280;
+    if (saved === '280') return 0;
+    return saved !== null ? Number(saved) : 0;
   });
 
   const [recentlyViewed, setRecentlyViewed] = useState(() => {

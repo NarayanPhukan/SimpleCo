@@ -19,165 +19,7 @@ const CURRENCY_RATES = {
 
 // Initial Seed Data
 const DEFAULT_USER = null;
-
-const DEFAULT_ORDERS = [
-  {
-    orderId: "BGC-89241",
-    createdAt: "2026-10-08T09:30:00Z",
-    dateFormatted: "Oct 8, 2026",
-    statusStage: 3, // 0: received, 1: crafted, 2: packed, 3: shipped, 4: delivered
-    statusLabel: "In Transit with Courier",
-    statusCode: "shipped",
-    carrier: "Express Delivery",
-    trackingNumber: "TRK-BGC-89241-US",
-    estimatedDelivery: "Oct 12, 2026",
-    shippingAddress: {
-      recipientName: "Chloe Bennett",
-      phone: "+1 (555) 234-5678",
-      street: "742 Evergreen Blossom Way, Apt 4B",
-      city: "Portland",
-      state: "OR",
-      zip: "97201",
-      country: "United States"
-    },
-    paymentMethod: "Visa ending in •••• 4242",
-    subtotal: 34.99,
-    discount: 5.25,
-    shippingCost: 0.00,
-    tax: 2.38,
-    total: 32.12,
-    items: [
-      {
-        id: "bgc-cow-01",
-        name: "Strawberry Cow Amigurumi Plush",
-        color: "Strawberry Pink",
-        quantity: 1,
-        price: 34.99,
-        image: "assets/images/strawberry-cow.jpg"
-      }
-    ],
-    timeline: [
-      {
-        stage: "received",
-        title: "Order Placed & Yarn Selected",
-        time: "Oct 8, 09:30 AM",
-        completed: true,
-        current: false,
-        desc: "Order confirmed! Artisanal milk cotton yarn skeins assigned to master crochet hook."
-      },
-      {
-        stage: "crafted",
-        title: "Handmade Stitched with Love",
-        time: "Oct 9, 02:15 PM",
-        completed: true,
-        current: false,
-        desc: "Over 850 stitches completed by hand. Strawberry leaf horns attached and secured."
-      },
-      {
-        stage: "packed",
-        title: "Ribbon Wrapped & Sweet Scented",
-        time: "Oct 9, 06:40 PM",
-        completed: true,
-        current: false,
-        desc: "Inspected for stitch perfection, packed in eco-friendly cotton wrap with handwritten note."
-      },
-      {
-        stage: "shipped",
-        title: "Departed Studio & In Transit",
-        time: "Oct 10, 08:20 AM",
-        completed: true,
-        current: true,
-        desc: "Departed from studio: Tracking waybill will activate upon transit scan."
-      },
-      {
-        stage: "delivered",
-        title: "Delivered to Doorstep",
-        time: "Est. Oct 12, By 5:00 PM",
-        completed: false,
-        current: false,
-        desc: "Artisan package will be gently delivered to your front porch or parcel locker."
-      }
-    ]
-  },
-  {
-    orderId: "BGC-91402",
-    createdAt: "2026-10-10T11:00:00Z",
-    dateFormatted: "Oct 10, 2026",
-    statusStage: 1, // crafting stage
-    statusLabel: "Artisan Handcrafting in Progress",
-    statusCode: "crafting",
-    carrier: "Pending Dispatch",
-    trackingNumber: "TRK-BGC-91402-EXP",
-    estimatedDelivery: "Oct 16, 2026",
-    shippingAddress: {
-      recipientName: "Chloe Bennett",
-      phone: "+1 (555) 234-5678",
-      street: "742 Evergreen Blossom Way, Apt 4B",
-      city: "Portland",
-      state: "OR",
-      zip: "97201",
-      country: "United States"
-    },
-    paymentMethod: "Apple Pay (Card •••• 8821)",
-    subtotal: 42.00,
-    discount: 0.00,
-    shippingCost: 0.00,
-    tax: 3.36,
-    total: 45.36,
-    items: [
-      {
-        id: "bgc-tulip-02",
-        name: "Everlasting Pastel Tulip Bouquet",
-        color: "Blush Harmony",
-        quantity: 1,
-        price: 42.00,
-        image: "assets/images/tulip-bouquet.jpg"
-      }
-    ],
-    timeline: [
-      {
-        stage: "received",
-        title: "Order Placed & Yarn Selected",
-        time: "Oct 10, 11:00 AM",
-        completed: true,
-        current: false,
-        desc: "Artisan ticket issued. Soft blush and sage cotton skeins wound for stems and petals."
-      },
-      {
-        stage: "crafted",
-        title: "Handmade Stitched with Love",
-        time: "Oct 10, 03:30 PM",
-        completed: true,
-        current: true,
-        desc: "Currently crocheting the 9 flower heads with flexible wire floral stems."
-      },
-      {
-        stage: "packed",
-        title: "Ribbon Wrapped & Sweet Scented",
-        time: "Scheduled Oct 11",
-        completed: false,
-        current: false,
-        desc: "Will be wrapped in aesthetic matte Korean floral paper with pink satin ribbon."
-      },
-      {
-        stage: "shipped",
-        title: "Departed Studio & In Transit",
-        time: "Est. Oct 12",
-        completed: false,
-        current: false,
-        desc: "Carrier pickup scheduled."
-      },
-      {
-        stage: "delivered",
-        title: "Delivered to Doorstep",
-        time: "Est. Oct 16",
-        completed: false,
-        current: false,
-        desc: "Expected arrival at recipient address."
-      }
-    ]
-  }
-];
+const DEFAULT_ORDERS = [];
 
 class Store {
   constructor() {
@@ -242,9 +84,9 @@ class Store {
         id: "usr_" + Date.now(),
         name: email.split("@")[0].replace(/[._]/g, " ").replace(/\b\w/g, c => c.toUpperCase()),
         email: email,
-        phone: "+91 98765 00000",
-        memberTier: "VIP Stitcher Club 🧶",
-        memberSince: "October 2026",
+        phone: "",
+        memberTier: "Stitcher Club 🧶",
+        memberSince: "Member",
         savedAddresses: []
       };
     } else {
@@ -258,25 +100,12 @@ class Store {
     this.user = {
       isLoggedIn: true,
       id: "usr_" + Date.now(),
-      name: name || "Crochet Cutie",
+      name: name || "Customer",
       email: email,
-      phone: phone || "+1 (555) 000-0000",
-      memberTier: "VIP Stitcher Club 🧶",
-      memberSince: "October 2026",
-      savedAddresses: [
-        {
-          id: "addr_" + Date.now(),
-          label: "Primary Home",
-          recipientName: name,
-          phone: phone,
-          street: "100 Cozy Lane",
-          city: "Sunnyvale",
-          state: "CA",
-          zip: "94086",
-          country: "United States",
-          isDefault: true
-        }
-      ]
+      phone: phone || "",
+      memberTier: "Stitcher Club 🧶",
+      memberSince: "Member",
+      savedAddresses: []
     };
     this.saveUser();
     return this.user;
@@ -374,20 +203,14 @@ class Store {
   loadCart() {
     const raw = localStorage.getItem(STORAGE_KEYS.CART);
     if (!raw) {
-      // Seed default cart item so cart isn't empty initially!
-      const initialCart = [
-        {
-          productId: "bgc-cow-01",
-          color: "Strawberry Pink",
-          quantity: 1,
-          customNote: "Extra cute please! 🍓"
-        }
-      ];
-      localStorage.setItem(STORAGE_KEYS.CART, JSON.stringify(initialCart));
-      return initialCart;
+      return [];
     }
     try {
-      return JSON.parse(raw);
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length === 1 && parsed[0]?.customNote?.includes("Extra cute please")) {
+        return [];
+      }
+      return parsed;
     } catch (e) {
       return [];
     }
@@ -510,8 +333,14 @@ class Store {
   // Wishlist
   loadWishlist() {
     const raw = localStorage.getItem(STORAGE_KEYS.WISHLIST);
-    if (!raw) return ["bgc-cow-01", "bgc-tulip-02"];
-    try { return JSON.parse(raw); } catch (e) { return []; }
+    if (!raw) return [];
+    try {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length === 2 && parsed.includes("bgc-cow-01") && parsed.includes("bgc-tulip-02")) {
+        return [];
+      }
+      return parsed;
+    } catch (e) { return []; }
   }
 
   toggleWishlist(productId) {
@@ -536,13 +365,16 @@ class Store {
   loadOrders() {
     const raw = localStorage.getItem(STORAGE_KEYS.ORDERS);
     if (!raw) {
-      localStorage.setItem(STORAGE_KEYS.ORDERS, JSON.stringify(DEFAULT_ORDERS));
-      return [...DEFAULT_ORDERS];
+      return [];
     }
     try {
-      return JSON.parse(raw);
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.some(o => o.orderId === "BGC-89241")) {
+        return [];
+      }
+      return parsed;
     } catch (e) {
-      return [...DEFAULT_ORDERS];
+      return [];
     }
   }
 

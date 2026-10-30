@@ -67,10 +67,10 @@ export const PrintReceiptModal = ({ order, isOpen, onClose }) => {
           <div className="receipt-meta-grid">
             <div className="receipt-meta-col">
               <h5>Billed & Shipped To:</h5>
-              <strong>{addr.recipientName || order.userEmail || 'Valued Customer'}</strong>
-              <p>{addr.street || 'Address on file'}</p>
-              <p>{addr.city ? `${addr.city}, ${addr.state || ''} - ${addr.zip || ''}` : 'India'}</p>
-              <p>Phone: {addr.phone || 'N/A'}</p>
+              <strong>{addr.recipientName || order.userEmail || 'Customer'}</strong>
+              {addr.street && <p>{addr.street}</p>}
+              {addr.city && <p>{addr.city}{addr.state ? `, ${addr.state}` : ''}{addr.zip ? ` - ${addr.zip}` : ''}</p>}
+              {addr.phone && <p>Phone: {addr.phone}</p>}
             </div>
             <div className="receipt-meta-col">
               <h5>Order Information:</h5>

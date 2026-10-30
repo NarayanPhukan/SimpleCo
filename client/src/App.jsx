@@ -104,7 +104,7 @@ export const App = () => {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
 
-    const colors = ['#E8739A', '#F7A8B8', '#FFAAA6', '#FFD3B6', '#E29578', '#C86284'];
+    const colors = ['#021861', '#255DCE', '#467DF2', '#DE1110', '#85ACFA', '#FF5756'];
     const pieces = [];
     for (let i = 0; i < 90; i++) {
       pieces.push({

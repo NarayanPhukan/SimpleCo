@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "847852219630",
+    "project_id": "babygurl-crochet-dev",
+    "storage_bucket": "babygurl-crochet-dev.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:847852219630:android:67c67648b71838de1957ff",
+        "android_client_info": {
+          "package_name": "com.babyygurll.admin"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBEXSNs1l4KHIkquBiAbw8xG0MOxSFOpzY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
+

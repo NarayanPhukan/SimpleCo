@@ -60,8 +60,8 @@ export const WishlistDrawer = ({ isOpen, onClose, products = [], onShowToast, on
         {/* Header */}
         <div className="cart-header">
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-            <span style={{ color: 'var(--primary)', display: 'inline-flex' }}>
-              <IconHeart size={22} fill="var(--primary)" stroke="var(--primary)" />
+            <span style={{ color: '#DE1110', display: 'inline-flex' }}>
+              <IconHeart size={22} fill="#DE1110" stroke="#DE1110" />
             </span>
             <div>
               <h3 style={{ margin: 0, fontSize: '1.2rem', fontFamily: 'var(--font-serif)', color: 'var(--text-dark)' }}>

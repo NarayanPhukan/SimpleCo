@@ -4,7 +4,7 @@ import { useCart } from '../context/CartContext';
 
 export const OrderTracker = ({ trackOrderId, onShowToast }) => {
   const { formatPrice } = useCart();
-  const [orderIdInput, setOrderIdInput] = useState('BGC-89241');
+  const [orderIdInput, setOrderIdInput] = useState('');
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -12,8 +12,6 @@ export const OrderTracker = ({ trackOrderId, onShowToast }) => {
     if (trackOrderId) {
       setOrderIdInput(trackOrderId);
       fetchOrder(trackOrderId);
-    } else {
-      fetchOrder('BGC-89241');
     }
   }, [trackOrderId]);
 
@@ -55,7 +53,7 @@ export const OrderTracker = ({ trackOrderId, onShowToast }) => {
           <span className="section-tag">Order Tracking</span>
           <h2 className="section-title">Track Your Package</h2>
           <p className="section-subtitle">
-            Enter your Order ID (or select a sample below) to monitor real-time delivery status across India.
+            Enter your Order ID to monitor real-time delivery status across India.
           </p>
         </div>
 
@@ -64,23 +62,13 @@ export const OrderTracker = ({ trackOrderId, onShowToast }) => {
             <input 
               type="text" 
               className="track-input" 
-              placeholder="Enter Order ID (e.g. BGC-89241)" 
+              placeholder="Enter your Order ID (e.g. BGC-12345)" 
               value={orderIdInput}
               onChange={(e) => setOrderIdInput(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter') fetchOrder(orderIdInput); }}
             />
             <button className="btn btn-primary" onClick={() => fetchOrder(orderIdInput)}>
               {loading ? 'Searching...' : 'Track Order'}
-            </button>
-          </div>
-
-          <div className="quick-sample-chips">
-            <span>Quick test orders:</span>
-            <button className="sample-chip" onClick={() => { setOrderIdInput('BGC-89241'); fetchOrder('BGC-89241'); }}>
-              BGC-89241 (In Transit)
-            </button>
-            <button className="sample-chip" onClick={() => { setOrderIdInput('BGC-91402'); fetchOrder('BGC-91402'); }}>
-              BGC-91402 (Handcrafting)
             </button>
           </div>
 

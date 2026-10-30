@@ -9,6 +9,9 @@
   <!-- Favicon Emoji -->
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220%22%20%220%22%20100%20100%22><text y=%22.9em%22 font-size=%2290%22>🧶</text></svg>">
 
+  <!-- Theme Color -->
+  <meta name="theme-color" content="#021861">
+
   <!-- Stylesheet -->
   <link rel="stylesheet" href="css/style.css">
 </head>
@@ -222,19 +225,13 @@
         <div class="section-header">
           <span class="section-tag">Live Order Progress</span>
           <h2 class="section-title">Track Your Crochet Package</h2>
-          <p class="section-subtitle">Enter your Order ID (or select a demo order below) to see live artisanal stitching milestones & courier transit status.</p>
+          <p class="section-subtitle">Enter your Order ID to see live artisanal stitching milestones & courier transit status.</p>
         </div>
 
         <div class="tracking-search-card">
           <div class="track-input-group">
-            <input type="text" class="track-input" id="orderTrackInput" placeholder="Enter Order ID (e.g. BGC-89241)" autocomplete="off">
+            <input type="text" class="track-input" id="orderTrackInput" placeholder="Enter Order ID (e.g. BGC-12345)" autocomplete="off">
             <button class="btn btn-primary" id="trackOrderSubmitBtn">Track Package 🔎</button>
-          </div>
-
-          <div class="quick-sample-chips">
-            <span>Quick test orders:</span>
-            <button class="sample-chip" data-order-id="BGC-89241">BGC-89241 (In Transit)</button>
-            <button class="sample-chip" data-order-id="BGC-91402">BGC-91402 (Handcrafting)</button>
           </div>
 
           <!-- Dynamic Order Result Area -->
@@ -242,22 +239,14 @@
             <!-- Header Meta -->
             <div class="tracker-header">
               <div class="tracker-order-meta">
-                <h3 id="trackerOrderIdDisplay">Order #BGC-89241</h3>
-                <p>Placed on <span id="trackerOrderDateDisplay">Oct 8, 2026</span> • Est. Delivery: <strong id="trackerDeliveryDateDisplay">Oct 12, 2026</strong></p>
-                <p>Waybill / Tracking: <code id="trackerWaybillDisplay">TRK-BGC-89241-US</code><span id="trackerCarrierDisplay" style="display:none;"></span></p>
+                <h3 id="trackerOrderIdDisplay">Order Status</h3>
+                <p>Placed on <span id="trackerOrderDateDisplay">--</span> • Est. Delivery: <strong id="trackerDeliveryDateDisplay">--</strong></p>
+                <p>Waybill / Tracking: <code id="trackerWaybillDisplay">--</code><span id="trackerCarrierDisplay" style="display:none;"></span></p>
               </div>
 
               <div>
-                <span class="tracker-status-pill status-pill-shipped" id="trackerStatusPill">In Transit</span>
+                <span class="tracker-status-pill status-pill-shipped" id="trackerStatusPill">In Progress</span>
               </div>
-            </div>
-
-            <!-- Interactive Stage Advance Bar (For Demo & Testing) -->
-            <div class="simulation-control-bar">
-              <div class="sim-info">
-                <span>⚡ Interactive Simulator: Test how order updates progress over time</span>
-              </div>
-              <button class="btn-sim-advance" id="btnAdvanceStage">Advance Next Stage ⏩</button>
             </div>
 
             <!-- Visual Progress Stepper -->
@@ -276,12 +265,10 @@
 
               <div class="shipping-recap-box">
                 <h5>Shipping Destination</h5>
-                <p id="trackerRecipientDisplay"><strong>Chloe Bennett</strong></p>
-                <p id="trackerAddressDisplay">742 Evergreen Blossom Way, Apt 4B<br>Portland, OR 97201, United States</p>
-                <p id="trackerPhoneDisplay">Phone: +1 (555) 234-5678</p>
-                <p id="trackerPaymentDisplay" style="margin-top: 0.8rem; font-size: 0.82rem; color: var(--text-muted);">
-                  Paid with: Visa ending in 4242
-                </p>
+                <p id="trackerRecipientDisplay"><strong>Customer</strong></p>
+                <p id="trackerAddressDisplay">Delivery address on file</p>
+                <p id="trackerPhoneDisplay"></p>
+                <p id="trackerPaymentDisplay" style="margin-top: 0.8rem; font-size: 0.82rem; color: var(--text-muted);"></p>
               </div>
             </div>
           </div>
@@ -570,12 +557,12 @@
       <!-- Tab View 1: Profile & Saved Addresses -->
       <div id="profileViewPanel">
         <div class="profile-hero">
-          <div class="profile-avatar-large" id="profileInitials">CB</div>
+          <div class="profile-avatar-large" id="profileInitials">CU</div>
           <div class="profile-info">
-            <h3 id="profileNameDisplay">Chloe Bennett</h3>
-            <p id="profileEmailDisplay">chloe@babyygurll.dev</p>
-            <p id="profilePhoneDisplay">Mobile: +1 (555) 234-5678</p>
-            <span class="tier-badge" id="profileTierDisplay">VIP Stitcher Club 🧶</span>
+            <h3 id="profileNameDisplay">Valued Collector</h3>
+            <p id="profileEmailDisplay">Please sign in to view your orders</p>
+            <p id="profilePhoneDisplay"></p>
+            <span class="tier-badge" id="profileTierDisplay">Stitcher Club 🧶</span>
           </div>
         </div>
 
@@ -792,29 +779,29 @@
         <h3 style="font-family: var(--font-serif); font-size: 1.35rem; margin-bottom: 0.5rem;">Payment Information</h3>
         <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.25rem;">Encrypted & secure simulated checkout.</p>
 
-        <!-- Mock Card Visual -->
+        <!-- Card Visual -->
         <div class="mock-card-visual">
           <div class="card-chip"></div>
-          <div class="card-num-preview">•••• •••• •••• 4242</div>
+          <div class="card-num-preview">•••• •••• •••• ••••</div>
           <div class="card-meta-preview">
-            <span id="cardHolderPreview">CHLOE BENNETT</span>
-            <span>10 / 28</span>
+            <span id="cardHolderPreview">CARDHOLDER NAME</span>
+            <span>MM / YY</span>
           </div>
         </div>
 
         <div class="form-grid" style="margin-bottom: 1.5rem;">
           <div class="form-group">
             <label class="form-label" for="cardNumInput">Card Number</label>
-            <input type="text" class="form-input" id="cardNumInput" placeholder="4242 •••• •••• 4242" value="4242 4242 4242 4242">
+            <input type="text" class="form-input" id="cardNumInput" placeholder="•••• •••• •••• ••••" value="">
           </div>
           <div class="form-row">
             <div class="form-group">
               <label class="form-label" for="cardExpInput">Expiry Date</label>
-              <input type="text" class="form-input" id="cardExpInput" placeholder="MM/YY" value="10/28">
+              <input type="text" class="form-input" id="cardExpInput" placeholder="MM/YY" value="">
             </div>
             <div class="form-group">
               <label class="form-label" for="cardCvcInput">CVC Security</label>
-              <input type="text" class="form-input" id="cardCvcInput" placeholder="123" value="789">
+              <input type="text" class="form-input" id="cardCvcInput" placeholder="123" value="">
             </div>
           </div>
         </div>

@@ -46,7 +46,7 @@ export const ProductCard = ({ product, onQuickView, onShowToast }) => {
           title={wishlisted ? "Remove from Wishlist" : "Save to Wishlist"}
           style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
         >
-          <IconHeart size={18} fill={wishlisted ? '#E11D48' : 'none'} stroke={wishlisted ? '#E11D48' : '#475569'} />
+          <IconHeart size={18} fill={wishlisted ? '#DE1110' : 'none'} stroke={wishlisted ? '#DE1110' : '#475569'} />
         </button>
 
         <img src={product.image} alt={product.name} loading="lazy" width="400" height="400" />
@@ -72,9 +72,17 @@ export const ProductCard = ({ product, onQuickView, onShowToast }) => {
         </h3>
         
         <div className="card-rating">
-          <span className="star-symbol">★</span>
-          <span className="rating-num">{Number(product.rating || 5).toFixed(1)}</span>
-          <span className="rating-count">({product.reviewsCount || 12} reviews)</span>
+          {product.reviewsCount > 0 ? (
+            <>
+              <span className="star-symbol">★</span>
+              <span className="rating-num">{Number(product.rating || 5).toFixed(1)}</span>
+              <span className="rating-count">({product.reviewsCount} {product.reviewsCount === 1 ? 'review' : 'reviews'})</span>
+            </>
+          ) : (
+            <span className="rating-count" style={{ fontStyle: 'normal', color: 'var(--text-muted)' }}>
+              ★ 5.0 • Fresh Studio Batch
+            </span>
+          )}
         </div>
 
         {product.colors && product.colors.length > 0 && (

@@ -107,7 +107,7 @@ export const Navbar = ({
             title={`Wishlist (${wishlist.length} saved)`}
           >
             <span className="wishlist-icon-svg" aria-hidden="true" style={{ display: 'inline-flex' }}>
-              <IconHeart size={20} fill={wishlist.length > 0 ? 'var(--primary)' : 'none'} stroke="currentColor" />
+              <IconHeart size={20} fill={wishlist.length > 0 ? '#DE1110' : 'none'} stroke={wishlist.length > 0 ? '#DE1110' : 'currentColor'} />
             </span>
             {wishlist.length > 0 && (
               <span className="nav-cart-badge nav-wishlist-badge">{wishlist.length}</span>

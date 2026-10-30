@@ -1,0 +1,16 @@
+<resources>
+    <string name="app_name">BabyyGurll Admin</string>
+    <string name="tagline">Studio Control Center</string>
+    <string name="login_title">Studio Authentication</string>
+    <string name="login_prompt">Enter studio administrator password to manage orders and boutique catalog</string>
+    <string name="password_hint">Studio Admin Password</string>
+    <string name="login_btn">Unlock Studio Portal</string>
+    <string name="server_settings_btn">Server Config</string>
+
+    <string name="nav_dashboard">Dashboard</string>
+    <string name="nav_orders">Orders</string>
+    <string name="nav_products">Catalog</string>
+    <string name="nav_coupons">Coupons</string>
+    <string name="nav_settings">Settings</string>
+</resources>
+

@@ -37,7 +37,7 @@ exports.createOrder = async (req, res) => {
         time: 'Pending Crafting',
         completed: false,
         current: false,
-        desc: 'Artisan Priya is preparing her golden crochet hooks for your bespoke order.'
+        desc: 'Our master crafter is preparing the crochet hooks for your bespoke order.'
       },
       {
         stage: 'packed',

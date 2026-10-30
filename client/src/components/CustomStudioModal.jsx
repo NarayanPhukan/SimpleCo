@@ -338,7 +338,7 @@ export const CustomStudioModal = ({ isOpen, onClose, onShowToast, onOpenCart }) 
                       onClick={() => setCommType(cat.id)}
                       style={{ cursor: 'pointer' }}
                     >
-                      <div className="stem-emoji-avatar" style={{ backgroundColor: '#FFF0F4' }}>
+                      <div className="stem-emoji-avatar" style={{ backgroundColor: 'var(--primary-light)' }}>
                         <span style={{ fontSize: '1.5rem' }}>{cat.icon}</span>
                       </div>
                       <div className="stem-info">

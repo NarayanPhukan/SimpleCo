@@ -1,15 +1,28 @@
-import React, { useState } from 'react';
-import { IconWhatsApp, IconClose, IconArrowRight } from './Icons';
+import React, { useState, useEffect } from 'react';
+import { api } from '../services/api';
+import { IconWhatsApp, IconArrowRight } from './Icons';
 
 export const WhatsAppConcierge = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [message, setMessage] = useState('');
+  const [crafterPhone, setCrafterPhone] = useState(
+    () => (import.meta.env.VITE_WHATSAPP_PHONE || '').replace(/[^0-9]/g, '')
+  );
 
-  const CRAFTER_PHONE = '919876543210'; // Studio WhatsApp Hotline
+  useEffect(() => {
+    if (!crafterPhone) {
+      api.getSettings().then(res => {
+        if (res.data?.supportPhone) {
+          const digits = res.data.supportPhone.replace(/[^0-9]/g, '');
+          if (digits) setCrafterPhone(digits);
+        }
+      }).catch(() => {});
+    }
+  }, [crafterPhone]);
 
   const quickPrompts = [
     { label: '🎨 Custom Color Request', text: "Hi! I'd love to ask about custom yarn colors for a crochet piece." },
-    { label: '⚡ Urgent Birthday Delivery', text: "Hey! Can this order reach me before this weekend for a birthday gift?" },
+    { label: '⚡ Urgent Delivery Question', text: "Hey! Can this order reach me before this weekend for a gift?" },
     { label: '🚚 Order Tracking Help', text: "Hello! I need assistance tracking my BabyyGurll crochet order." },
     { label: '🌸 Custom Bouquet Advice', text: "Hi! Could you recommend flower combinations for an anniversary bouquet?" }
   ];
@@ -17,7 +30,11 @@ export const WhatsAppConcierge = () => {
   const handleSend = (textToSend) => {
     const finalMsg = textToSend || message.trim() || "Hi BabyyGurll Crochet! I have a question about your handmade creations 🌸";
     const encoded = encodeURIComponent(finalMsg);
-    window.open(`https://wa.me/${CRAFTER_PHONE}?text=${encoded}`, '_blank', 'noopener,noreferrer');
+    if (crafterPhone) {
+      window.open(`https://wa.me/${crafterPhone}?text=${encoded}`, '_blank', 'noopener,noreferrer');
+    } else {
+      window.open(`https://wa.me/?text=${encoded}`, '_blank', 'noopener,noreferrer');
+    }
     setMessage('');
     setIsOpen(false);
   };

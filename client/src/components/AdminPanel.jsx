@@ -710,13 +710,13 @@ export const AdminPanel = ({ isOpen, onClose, onShowToast, onProductCatalogUpdat
                   width: '56px',
                   height: '56px',
                   borderRadius: '14px',
-                  background: 'linear-gradient(135deg, #FF7B9C 0%, #E11D48 100%)',
+                  background: 'linear-gradient(135deg, #021861 0%, #255DCE 100%)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   margin: '0 auto 1rem auto',
                   color: '#FFFFFF',
-                  boxShadow: '0 8px 16px rgba(225, 29, 72, 0.25)'
+                  boxShadow: '0 8px 16px rgba(37, 93, 206, 0.25)'
                 }}
               >
                 <IconStudio size={28} />
@@ -768,7 +768,7 @@ export const AdminPanel = ({ isOpen, onClose, onShowToast, onProductCatalogUpdat
               <button 
                 type="submit" 
                 style={{
-                  background: 'linear-gradient(135deg, #FF7B9C 0%, #E11D48 100%)',
+                  background: 'linear-gradient(135deg, #021861 0%, #255DCE 100%)',
                   color: '#FFFFFF',
                   border: 'none',
                   padding: '0.85rem',
@@ -777,7 +777,7 @@ export const AdminPanel = ({ isOpen, onClose, onShowToast, onProductCatalogUpdat
                   fontSize: '0.95rem',
                   cursor: 'pointer',
                   marginTop: '0.5rem',
-                  boxShadow: '0 4px 12px rgba(225, 29, 72, 0.25)'
+                  boxShadow: '0 4px 12px rgba(37, 93, 206, 0.25)'
                 }}
               >
                 Sign In to Studio Portal
@@ -815,7 +815,7 @@ export const AdminPanel = ({ isOpen, onClose, onShowToast, onProductCatalogUpdat
             {/* Studio Brand Header */}
             <div style={{ padding: '1.4rem 1.25rem', borderBottom: '1px solid #1E293B', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', overflow: 'hidden' }}>
-                <div style={{ width: '34px', height: '34px', borderRadius: '8px', background: 'rgba(255, 123, 156, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#FF7B9C', flexShrink: 0 }}>
+                <div style={{ width: '34px', height: '34px', borderRadius: '8px', background: 'rgba(37, 93, 206, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#255DCE', flexShrink: 0 }}>
                   <IconStudio size={19} />
                 </div>
                 {sidebarOpen && (

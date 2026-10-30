@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="primary">#255DCE</color>
+    <color name="primary_dark">#153E9B</color>
+    <color name="primary_light">#EEF4FF</color>
+    
+    <color name="secondary">#021861</color>
+    <color name="secondary_dark">#010F40</color>
+    
+    <color name="accent_red">#DE1110</color>
+    <color name="accent_red_light">#FEE2E2</color>
+
+    <color name="background_light">#F8FAFD</color>
+    <color name="surface_card">#FFFFFF</color>
+    
+    <color name="text_primary">#021861</color>
+    <color name="text_secondary">#475569</color>
+    <color name="text_muted">#94A3B8</color>
+    
+    <color name="border_subtle">#E2E8F0</color>
+    
+    <color name="status_received">#255DCE</color>
+    <color name="status_crafted">#9333EA</color>
+    <color name="status_packed">#D97706</color>
+    <color name="status_shipped">#0284C7</color>
+    <color name="status_delivered">#059669</color>
+    <color name="status_cancelled">#DE1110</color>
+</resources>
+

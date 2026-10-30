@@ -9,8 +9,8 @@ const seedProducts = [
     originalPrice: 1599,
     image: "/assets/images/strawberry-cow.jpg",
     badge: "Bestseller",
-    rating: 4.9,
-    reviewsCount: 184,
+    rating: 5.0,
+    reviewsCount: 0,
     leadTime: "Ready to ship (1-2 days)",
     description: "An internet sensation! Our bestselling handmade strawberry cow is crafted with super-plush milk cotton chenille yarn, charming pink patches, and crochet strawberry horns. Accented with a dainty daisy flower collar.",
     specs: {
@@ -36,7 +36,7 @@ const seedProducts = [
     image: "/assets/images/tulip-bouquet.jpg",
     badge: "Top Gift",
     rating: 5.0,
-    reviewsCount: 212,
+    reviewsCount: 0,
     leadTime: "Handmade in 2-3 days",
     description: "Real flowers wilt, but these handmade crochet blooms last forever! Features 9 meticulously stitched pastel tulips and mini daisies wrapped in aesthetic Korean matte floral paper with a luxurious satin ribbon bow.",
     specs: {
@@ -61,8 +61,8 @@ const seedProducts = [
     originalPrice: 1399,
     image: "/assets/images/granny-bag.jpg",
     badge: "Trending",
-    rating: 4.8,
-    reviewsCount: 95,
+    rating: 5.0,
+    reviewsCount: 0,
     leadTime: "Ready to ship (1-2 days)",
     description: "The ultimate aesthetic tote for college, bookstore dates, and yarn trips. Handcrafted by assembling 13 intricate floral granny squares with double-stitched reinforced strap handles for daily durability.",
     specs: {
@@ -87,8 +87,8 @@ const seedProducts = [
     originalPrice: 2999,
     image: "/assets/images/crochet-cardigan.jpg",
     badge: "Artisan Heirloom",
-    rating: 4.9,
-    reviewsCount: 67,
+    rating: 5.0,
+    reviewsCount: 0,
     leadTime: "Custom made in 4-6 days",
     description: "A statement heirloom knitwear. Individually crocheted cloud patchwork squares joined together into an ultra-cozy oversized slouchy silhouette. Features ribbed balloon cuffs and vintage mother-of-pearl buttons.",
     specs: {
@@ -113,8 +113,8 @@ const seedProducts = [
     originalPrice: 1099,
     image: "/assets/images/lavender-bunny.jpg",
     badge: "New Arrival",
-    rating: 4.9,
-    reviewsCount: 88,
+    rating: 5.0,
+    reviewsCount: 0,
     leadTime: "Ready to ship (1-2 days)",
     description: "Meet Pip the floppy-eared bunny! Hand-crocheted with plush velvet yarn, sweet blushing cheeks, and a delicate scalloped collar. Comes with an adoption certificate and care card.",
     specs: {
@@ -139,8 +139,8 @@ const seedProducts = [
     originalPrice: 799,
     image: "/assets/images/crochet-coasters.jpg",
     badge: "Cozy Home",
-    rating: 4.8,
-    reviewsCount: 53,
+    rating: 5.0,
+    reviewsCount: 0,
     leadTime: "Ready to ship",
     description: "Level up your morning chai or coffee with four floral scalloped mug rugs. Naturally absorbent cotton protects your desk surface while looking effortlessly charming.",
     specs: {
@@ -165,8 +165,8 @@ const seedProducts = [
     originalPrice: 999,
     image: "/assets/images/bucket-hat.jpg",
     badge: "Summer Collection",
-    rating: 4.7,
-    reviewsCount: 74,
+    rating: 5.0,
+    reviewsCount: 0,
     leadTime: "Ready to ship (1-2 days)",
     description: "Protect your hair in style with this whimsical scalloped bucket hat. Woven with breathable lightweight cotton thread, it folds seamlessly into any handbag without losing its wavy structure.",
     specs: {
@@ -192,7 +192,7 @@ const seedProducts = [
     image: "/assets/images/strawberry-keychain.jpg",
     badge: "Handcrafted",
     rating: 5.0,
-    reviewsCount: 310,
+    reviewsCount: 0,
     leadTime: "Ready to ship (Same day)",
     description: "The cutest companion for your keys, tote bag, or backpack zipper! Handcrafted pair of micro strawberries with little crochet leaves, golden bell chime, and a sturdy 14k gold-plated swivel clasp.",
     specs: {

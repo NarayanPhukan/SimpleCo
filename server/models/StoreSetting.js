@@ -58,6 +58,18 @@ const storeSettingSchema = new mongoose.Schema({
   hasInitializedCoupons: {
     type: Boolean,
     default: false
+  },
+  appVersion: {
+    latestVersionCode: { type: Number, default: 2 },
+    latestVersionName: { type: String, default: '1.1.0' },
+    minRequiredVersionCode: { type: Number, default: 1 },
+    releaseNotes: {
+      type: String,
+      default: '• Integrated Firebase independent admin authentication\n• Added real-time error detection & diagnostics monitor\n• Added automatic update detection and changelog alerts\n• Enhanced order fulfillment tracking and network resilience'
+    },
+    downloadUrl: { type: String, default: 'https://github.com/babyygurll/admin-releases/releases/latest' },
+    releaseDate: { type: String, default: '2026-10-30' },
+    critical: { type: Boolean, default: false }
   }
 }, {
   timestamps: true

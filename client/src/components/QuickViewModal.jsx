@@ -40,7 +40,8 @@ export const QuickViewModal = ({ product, onClose, onShowToast, onOpenCart }) =>
 
   // PIN Code Delivery Checker State
   const [pinCode, setPinCode] = useState(() => {
-    return localStorage.getItem('bgc_user_pincode') || '560001';
+    const saved = localStorage.getItem('bgc_user_pincode');
+    return (saved && saved !== '560001') ? saved : '';
   });
   const [pinResult, setPinResult] = useState(null);
   const [pinLoading, setPinLoading] = useState(false);

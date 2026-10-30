@@ -293,8 +293,8 @@ export const CartDrawer = ({ isOpen, onClose, onProceedCheckout, onShowToast, on
               {showOffers && (
                 <div 
                   style={{
-                    background: '#FFF5F8',
-                    border: '1px solid #FECDD3',
+                    background: '#F0F5FE',
+                    border: '1px solid #BFD5F8',
                     borderRadius: '12px',
                     padding: '0.75rem',
                     marginBottom: '0.85rem',
@@ -302,7 +302,7 @@ export const CartDrawer = ({ isOpen, onClose, onProceedCheckout, onShowToast, on
                     overflowY: 'auto'
                   }}
                 >
-                  <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#9F1239', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '0.5rem' }}>
+                  <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#021861', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '0.5rem' }}>
                     🏷️ Available Boutique Offers & Coupons
                   </div>
 
@@ -322,7 +322,7 @@ export const CartDrawer = ({ isOpen, onClose, onProceedCheckout, onShowToast, on
                           style={{
                             background: '#FFFFFF',
                             borderRadius: '9px',
-                            border: `1.5px ${isApplied ? 'solid #059669' : (limitMet ? 'dashed #FDA4AF' : 'solid #E2E8F0')}`,
+                            border: `1.5px ${isApplied ? 'solid #059669' : (limitMet ? 'dashed #DE1110' : 'solid #E2E8F0')}`,
                             padding: '0.65rem 0.8rem',
                             display: 'flex',
                             flexDirection: 'column',
@@ -333,8 +333,8 @@ export const CartDrawer = ({ isOpen, onClose, onProceedCheckout, onShowToast, on
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                               <span style={{ 
-                                background: isApplied ? '#ECFDF5' : '#FFF1F2',
-                                color: isApplied ? '#047857' : '#BE123C',
+                                background: isApplied ? '#ECFDF5' : '#FEEBEB',
+                                color: isApplied ? '#047857' : '#DE1110',
                                 fontWeight: 800,
                                 fontSize: '0.85rem',
                                 padding: '0.15rem 0.5rem',

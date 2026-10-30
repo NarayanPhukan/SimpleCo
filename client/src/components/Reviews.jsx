@@ -2,41 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useCart } from '../context/CartContext';
 import { IconStar, IconCheck, IconClose, IconCamera, IconSparkles } from './Icons';
 
-const INITIAL_REVIEWS = [
-  {
-    id: 'rev-1',
-    name: 'Ananya S.',
-    city: 'Pune',
-    product: 'Strawberry Cow Amigurumi',
-    rating: 5,
-    quote: "Got the Strawberry Cow for my hostel desk and everyone in my wing keeps borrowing it! It's surprisingly soft and the blush pink cheeks are so well done. Came packed with a handwritten note and cute stickers too.",
-    verified: true,
-    initials: 'AS',
-    photo: '/assets/images/strawberry-cow.jpg'
-  },
-  {
-    id: 'rev-2',
-    name: 'Rhea K.',
-    city: 'Bengaluru',
-    product: 'Everlasting Tulip Bouquet',
-    rating: 5,
-    quote: "Ordered the pastel tulip bouquet for my mom's birthday because real flowers always die in 3 days. She literally keeps them on her dining table now. The stem wire is sturdy and bends nicely into any vase.",
-    verified: true,
-    initials: 'RK',
-    photo: '/assets/images/tulip-bouquet.jpg'
-  },
-  {
-    id: 'rev-3',
-    name: 'Tanvi M.',
-    city: 'Mumbai',
-    product: 'Daisy Granny Square Tote',
-    rating: 5,
-    quote: "The Daisy Tote bag is spacious enough for my daily notebook and water bottle. Took about 4 days to stitch because of backorders, but totally worth the wait — the quality is far better than fast-fashion bags.",
-    verified: true,
-    initials: 'TM',
-    photo: '/assets/images/granny-bag.jpg'
-  }
-];
+const INITIAL_REVIEWS = [];
 
 export const Reviews = ({ onShowToast }) => {
   const { addYarnPoints } = useCart();
@@ -44,12 +10,15 @@ export const Reviews = ({ onShowToast }) => {
     const saved = localStorage.getItem('bgc_user_reviews_v1');
     if (saved) {
       try {
-        return [...JSON.parse(saved), ...INITIAL_REVIEWS];
+        const parsed = JSON.parse(saved);
+        return Array.isArray(parsed) 
+          ? parsed.filter(r => !['rev-1', 'rev-2', 'rev-3'].includes(r.id))
+          : [];
       } catch (e) {
-        return INITIAL_REVIEWS;
+        return [];
       }
     }
-    return INITIAL_REVIEWS;
+    return [];
   });
 
   const [isWriteModalOpen, setIsWriteModalOpen] = useState(false);
@@ -114,64 +83,88 @@ export const Reviews = ({ onShowToast }) => {
         </div>
 
         {/* Review Highlights & Write Review CTA */}
-        <div className="reviews-summary-bar">
-          <div className="rating-score-box">
-            <div className="rating-huge-number">4.9</div>
-            <div className="rating-huge-stars">
-              <span style={{ color: '#F59E0B' }}>★★★★★</span>
-              <span className="rating-caption">Based on 2,400+ handmade parcels</span>
-            </div>
-          </div>
+        {reviews.length > 0 ? (
+          <>
+            <div className="reviews-summary-bar">
+              <div className="rating-score-box">
+                <div className="rating-huge-number">
+                  {(reviews.reduce((acc, r) => acc + (Number(r.rating) || 5), 0) / reviews.length).toFixed(1)}
+                </div>
+                <div className="rating-huge-stars">
+                  <span style={{ color: '#F59E0B' }}>★★★★★</span>
+                  <span className="rating-caption">
+                    Based on {reviews.length} collector {reviews.length === 1 ? 'review' : 'reviews'}
+                  </span>
+                </div>
+              </div>
 
-          <div className="reviews-cta-wrap">
+              <div className="reviews-cta-wrap">
+                <button 
+                  className="btn btn-primary"
+                  onClick={() => setIsWriteModalOpen(true)}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}
+                >
+                  <IconSparkles size={16} />
+                  <span>Share Your Note (+50 Pts)</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Reviews Grid */}
+            <div className="reviews-grid">
+              {reviews.map((rev) => (
+                <div key={rev.id} className="review-card">
+                  <div>
+                    <div className="review-card-top-row">
+                      <div className="review-stars">
+                        {'★'.repeat(rev.rating)}
+                        {'☆'.repeat(Math.max(0, 5 - rev.rating))}
+                      </div>
+                      {rev.verified && (
+                        <span className="verified-buyer-chip">
+                          <IconCheck size={11} />
+                          <span>Verified Adoption</span>
+                        </span>
+                      )}
+                    </div>
+
+                    <p className="review-quote">"{rev.quote}"</p>
+
+                    {rev.photo && (
+                      <div className="review-photo-preview">
+                        <img src={rev.photo} alt={`Photo from ${rev.name}`} loading="lazy" />
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="review-author">
+                    <div className="avatar-circle">{rev.initials || 'BG'}</div>
+                    <div className="author-meta">
+                      <h5>{rev.name}</h5>
+                      <p>{rev.city} • {rev.product}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
+        ) : (
+          <div className="reviews-empty-banner" style={{ textAlign: 'center', padding: '3rem 1.5rem', background: '#FFFFFF', borderRadius: 'var(--radius-lg)', border: '1px dashed var(--border-card)', margin: '1.5rem 0' }}>
+            <span style={{ fontSize: '2.5rem', display: 'block', marginBottom: '0.75rem' }}>🧶✨</span>
+            <h4 style={{ fontFamily: 'var(--font-serif)', color: 'var(--text-dark)', fontSize: '1.25rem', marginBottom: '0.5rem' }}>Be the First to Review</h4>
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.92rem', maxWidth: '440px', margin: '0 auto 1.5rem', lineHeight: '1.5' }}>
+              Received a handcrafted piece from our studio? Share your adoption story and yarn notes with our community!
+            </p>
             <button 
               className="btn btn-primary"
               onClick={() => setIsWriteModalOpen(true)}
               style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}
             >
               <IconSparkles size={16} />
-              <span>Share Your Note (+50 Pts)</span>
+              <span>Write the First Review (+50 Pts)</span>
             </button>
           </div>
-        </div>
-
-        {/* Reviews Grid */}
-        <div className="reviews-grid">
-          {reviews.map((rev) => (
-            <div key={rev.id} className="review-card">
-              <div>
-                <div className="review-card-top-row">
-                  <div className="review-stars">
-                    {'★'.repeat(rev.rating)}
-                    {'☆'.repeat(Math.max(0, 5 - rev.rating))}
-                  </div>
-                  {rev.verified && (
-                    <span className="verified-buyer-chip">
-                      <IconCheck size={11} />
-                      <span>Verified Adoption</span>
-                    </span>
-                  )}
-                </div>
-
-                <p className="review-quote">"{rev.quote}"</p>
-
-                {rev.photo && (
-                  <div className="review-photo-preview">
-                    <img src={rev.photo} alt={`Photo from ${rev.name}`} loading="lazy" />
-                  </div>
-                )}
-              </div>
-
-              <div className="review-author">
-                <div className="avatar-circle">{rev.initials || 'BG'}</div>
-                <div className="author-meta">
-                  <h5>{rev.name}</h5>
-                  <p>{rev.city} • {rev.product}</p>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
+        )}
       </div>
 
       {/* Write a Review Modal */}

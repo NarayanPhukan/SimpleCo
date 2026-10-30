@@ -13,7 +13,7 @@ const DEFAULT_COUPONS = [
     expiryDate: new Date('2026-12-31T23:59:59.000Z'),
     isPublic: true,
     isActive: true,
-    usageCount: 18
+    usageCount: 0
   },
   {
     code: 'CUTIE100',
@@ -24,7 +24,7 @@ const DEFAULT_COUPONS = [
     expiryDate: new Date('2026-11-30T23:59:59.000Z'),
     isPublic: true,
     isActive: true,
-    usageCount: 42
+    usageCount: 0
   },
   {
     code: 'FREESHIP',
@@ -35,7 +35,7 @@ const DEFAULT_COUPONS = [
     expiryDate: new Date('2026-12-31T23:59:59.000Z'),
     isPublic: true,
     isActive: true,
-    usageCount: 79
+    usageCount: 0
   }
 ];
 

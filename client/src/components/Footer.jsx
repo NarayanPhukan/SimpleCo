@@ -94,7 +94,7 @@ export const Footer = ({ onOpenAccount, onScrollToTrack, onSelectCategory, onOpe
 
           <div className="footer-col">
             <h4>The Stitch Club</h4>
-            <p style={{ color: '#D4BFC4', fontSize: '0.85rem', lineHeight: '1.5' }}>
+            <p style={{ color: '#CBD5E1', fontSize: '0.85rem', lineHeight: '1.5' }}>
               Join our cozy circle for private batch drops, seasonal pattern previews, and 15% off your first handmade piece.
             </p>
             <form className="newsletter-form" onSubmit={handleSubscribe}>

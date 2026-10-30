@@ -585,7 +585,9 @@ document.addEventListener("DOMContentLoaded", () => {
     store.setCurrency(e.target.value);
     renderCatalog();
     updateCartUI();
-    renderTrackingOrder(state.checkoutSelectedOrderId || "BGC-89241");
+    if (state.checkoutSelectedOrderId) {
+      renderTrackingOrder(state.checkoutSelectedOrderId);
+    }
     showToast(`Currency switched to ${e.target.value}`, "💱");
   });
 
@@ -860,7 +862,7 @@ document.addEventListener("DOMContentLoaded", () => {
   function renderTrackingOrder(orderId) {
     const order = store.getOrderById(orderId);
     if (!order) {
-      showToast(`Order "${orderId}" not found. Try sample order BGC-89241!`, "⚠️");
+      showToast(`Order "${orderId}" not found. Please verify your order number.`, "⚠️");
       return;
     }
 
@@ -958,24 +960,29 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   // Interactive Stage Advance Simulator
-  el.btnAdvanceStage.addEventListener("click", () => {
-    const currentId = state.checkoutSelectedOrderId || "BGC-89241";
-    const updated = store.advanceOrderStage(currentId);
-    if (updated) {
-      renderTrackingOrder(currentId);
-      if (updated.statusStage === 4) {
-        showToast(`Order ${updated.orderId} is DELIVERED to your doorstep! 🏡🎉`, "🌸");
-        triggerConfetti();
-      } else {
-        showToast(`Advanced to: ${updated.statusLabel}! ⚡`, "✨");
+  if (el.btnAdvanceStage) {
+    el.btnAdvanceStage.addEventListener("click", () => {
+      const currentId = state.checkoutSelectedOrderId;
+      if (!currentId) return;
+      const updated = store.advanceOrderStage(currentId);
+      if (updated) {
+        renderTrackingOrder(currentId);
+        if (updated.statusStage === 4) {
+          showToast(`Order ${updated.orderId} is DELIVERED to your doorstep! 🏡🎉`, "🌸");
+          triggerConfetti();
+        } else {
+          showToast(`Advanced to: ${updated.statusLabel}! ⚡`, "✨");
+        }
       }
-    }
-  });
+    });
+  }
 
   // Top Nav "Track Order" link
   el.navOrderTracker.addEventListener("click", (e) => {
     e.preventDefault();
-    renderTrackingOrder("BGC-89241");
+    if (state.checkoutSelectedOrderId) {
+      renderTrackingOrder(state.checkoutSelectedOrderId);
+    }
     document.getElementById("orderTracking").scrollIntoView({ behavior: "smooth" });
   });
 
@@ -1132,7 +1139,7 @@ document.addEventListener("DOMContentLoaded", () => {
     canvas.height = window.innerHeight;
 
     const pieces = [];
-    const colors = ["#FF6584", "#9B72CF", "#FFCCD7", "#E9D5FF", "#7AA885", "#FFD166"];
+    const colors = ["#021861", "#255DCE", "#467DF2", "#DE1110", "#85ACFA", "#FF5756"];
     for (let i = 0; i < 90; i++) {
       pieces.push({
         x: canvas.width / 2,
@@ -1186,6 +1193,4 @@ document.addEventListener("DOMContentLoaded", () => {
   renderCatalog();
   updateCartUI();
   updateAccountHeaderButton();
-  // Pre-render sample order into tracking section so it's populated and ready
-  renderTrackingOrder("BGC-89241");
 });
