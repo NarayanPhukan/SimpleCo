@@ -126,11 +126,14 @@ fun CouponsScreen(
                         Spacer(modifier = Modifier.height(20.dp))
                         Button(
                             onClick = { showCreateDialog = true },
-                            colors = ButtonDefaults.buttonColors(containerColor = RoyalBlue)
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = RoyalBlue,
+                                contentColor = Color.White
+                            )
                         ) {
-                            Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp), tint = Color.White)
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text("Create First Coupon")
+                            Text("Create First Coupon", color = Color.White, fontWeight = FontWeight.Bold)
                         }
                     }
                 }
@@ -183,7 +186,10 @@ fun CouponsScreen(
                         coupon.id?.let { viewModel.deleteCoupon(it) }
                         couponToDelete = null
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = CrimsonAccent)
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = CrimsonAccent,
+                        contentColor = Color.White
+                    )
                 ) {
                     Text("Delete Coupon", color = Color.White)
                 }
@@ -508,7 +514,10 @@ fun CreateCouponDialog(
                         )
                     )
                 },
-                colors = ButtonDefaults.buttonColors(containerColor = RoyalBlue)
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = RoyalBlue,
+                    contentColor = Color.White
+                )
             ) {
                 Text("Create Code", color = Color.White, fontWeight = FontWeight.Bold)
             }

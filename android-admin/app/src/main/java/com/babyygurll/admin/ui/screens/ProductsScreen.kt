@@ -188,9 +188,12 @@ fun ProductsScreen(
                         productToDelete?.let { onDeleteProduct(it.id) }
                         productToDelete = null
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = BrandAccentRed)
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = BrandAccentRed,
+                        contentColor = Color.White
+                    )
                 ) {
-                    Text("Delete")
+                    Text("Delete", color = Color.White, fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {

@@ -345,7 +345,10 @@ fun LoginScreen(
                                 .fillMaxWidth()
                                 .height(50.dp),
                             shape = RoundedCornerShape(12.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = RoyalBlue)
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = RoyalBlue,
+                                contentColor = Color.White
+                            )
                         ) {
                             if (isLoading) {
                                 CircularProgressIndicator(
@@ -475,7 +478,10 @@ fun LoginScreen(
                                 .fillMaxWidth()
                                 .height(50.dp),
                             shape = RoundedCornerShape(12.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = RoyalBlue)
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = RoyalBlue,
+                                contentColor = Color.White
+                            )
                         ) {
                             if (isLoading) {
                                 CircularProgressIndicator(
@@ -581,7 +587,10 @@ fun LoginScreen(
                         onForgotPassword(resetEmail.trim())
                         showForgotDialog = false
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = RoyalBlue)
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = RoyalBlue,
+                        contentColor = Color.White
+                    )
                 ) {
                     Text("Send Reset Link", color = Color.White)
                 }

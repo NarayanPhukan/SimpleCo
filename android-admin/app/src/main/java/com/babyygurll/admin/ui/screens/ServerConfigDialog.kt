@@ -4,6 +4,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.babyygurll.admin.ui.theme.MidnightNavy
 import com.babyygurll.admin.ui.theme.RoyalBlue
@@ -87,9 +89,12 @@ fun ServerConfigDialog(
                         onDismiss()
                     }
                 },
-                colors = ButtonDefaults.buttonColors(containerColor = RoyalBlue)
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = RoyalBlue,
+                    contentColor = Color.White
+                )
             ) {
-                Text("Save & Connect")
+                Text("Save & Connect", color = Color.White, fontWeight = FontWeight.Bold)
             }
         },
         dismissButton = {

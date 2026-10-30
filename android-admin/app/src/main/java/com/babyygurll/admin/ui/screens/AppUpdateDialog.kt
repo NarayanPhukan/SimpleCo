@@ -205,9 +205,14 @@ fun AppUpdateDialog(
                     Button(
                         onClick = {},
                         enabled = false,
-                        colors = ButtonDefaults.buttonColors(containerColor = RoyalBlue)
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = RoyalBlue,
+                            contentColor = Color.White,
+                            disabledContainerColor = RoyalBlue.copy(alpha = 0.6f),
+                            disabledContentColor = Color.White
+                        )
                     ) {
-                        Text("Downloading (${state.progressPercent}%)...")
+                        Text("Downloading (${state.progressPercent}%)...", color = Color.White)
                     }
                 }
                 is UpdateDownloadState.ReadyToInstall -> {
@@ -215,9 +220,12 @@ fun AppUpdateDialog(
                         onClick = {
                             ApkUpdateDownloader.installApk(context, state.apkFile)
                         },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2E7D32))
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF2E7D32),
+                            contentColor = Color.White
+                        )
                     ) {
-                        Icon(Icons.Default.Download, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Icon(Icons.Default.Download, contentDescription = null, modifier = Modifier.size(16.dp), tint = Color.White)
                         Spacer(modifier = Modifier.width(6.dp))
                         Text("Install Update", fontWeight = FontWeight.Bold, color = Color.White)
                     }
@@ -234,7 +242,8 @@ fun AppUpdateDialog(
                             }
                         },
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = if (isCritical) CrimsonAccent else RoyalBlue
+                            containerColor = if (isCritical) CrimsonAccent else RoyalBlue,
+                            contentColor = Color.White
                         )
                     ) {
                         Text(

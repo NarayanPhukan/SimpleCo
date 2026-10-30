@@ -254,13 +254,26 @@ fun ProductEditScreen(
                                     Column(modifier = Modifier.weight(1f)) {
                                         Button(
                                             onClick = { photoPickerLauncher.launch("image/*") },
-                                            colors = ButtonDefaults.buttonColors(containerColor = RoyalBlue),
+                                            colors = ButtonDefaults.buttonColors(
+                                                containerColor = RoyalBlue,
+                                                contentColor = Color.White
+                                            ),
                                             shape = RoundedCornerShape(10.dp),
                                             modifier = Modifier.fillMaxWidth()
                                         ) {
-                                            Icon(Icons.Default.AddPhotoAlternate, contentDescription = null, modifier = Modifier.size(18.dp))
+                                            Icon(
+                                                Icons.Default.AddPhotoAlternate,
+                                                contentDescription = null,
+                                                modifier = Modifier.size(18.dp),
+                                                tint = Color.White
+                                            )
                                             Spacer(modifier = Modifier.width(8.dp))
-                                            Text("Choose from Device", fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                            Text(
+                                                text = "Choose from Device",
+                                                fontWeight = FontWeight.Bold,
+                                                fontSize = 13.sp,
+                                                color = Color.White
+                                            )
                                         }
 
                                         Text(
@@ -284,7 +297,13 @@ fun ProductEditScreen(
                                         FilterChip(
                                             selected = imageUrl == url,
                                             onClick = { imageUrl = url },
-                                            label = { Text(title) }
+                                            label = { Text(title) },
+                                            colors = FilterChipDefaults.filterChipColors(
+                                                selectedContainerColor = RoyalBlue,
+                                                selectedLabelColor = Color.White,
+                                                containerColor = Color.White,
+                                                labelColor = CharcoalGray
+                                            )
                                         )
                                     }
                                 }
@@ -331,7 +350,13 @@ fun ProductEditScreen(
                                         FilterChip(
                                             selected = category == catId,
                                             onClick = { category = catId },
-                                            label = { Text(catLabel) }
+                                            label = { Text(catLabel) },
+                                            colors = FilterChipDefaults.filterChipColors(
+                                                selectedContainerColor = RoyalBlue,
+                                                selectedLabelColor = Color.White,
+                                                containerColor = Color.White,
+                                                labelColor = CharcoalGray
+                                            )
                                         )
                                     }
                                 }
@@ -438,14 +463,17 @@ fun ProductEditScreen(
                             },
                             enabled = name.isNotBlank() && priceVal > 0,
                             shape = RoundedCornerShape(12.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = BrandPrimary),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = BrandPrimary,
+                                contentColor = Color.White
+                            ),
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(50.dp)
                         ) {
-                            Icon(Icons.Default.Check, contentDescription = null)
+                            Icon(Icons.Default.Check, contentDescription = null, tint = Color.White)
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text("Publish Piece to Boutique", fontWeight = FontWeight.Bold)
+                            Text("Publish Piece to Boutique", fontWeight = FontWeight.Bold, color = Color.White)
                         }
 
                         Spacer(modifier = Modifier.height(24.dp))
@@ -706,18 +734,21 @@ fun ProductEditScreen(
                                         enabled = inStock,
                                         colors = ButtonDefaults.buttonColors(
                                             containerColor = BrandPrimary,
-                                            disabledContainerColor = Color.LightGray
+                                            contentColor = Color.White,
+                                            disabledContainerColor = Color.LightGray,
+                                            disabledContentColor = Color.DarkGray
                                         ),
                                         shape = RoundedCornerShape(12.dp),
                                         modifier = Modifier
                                             .fillMaxWidth()
                                             .height(48.dp)
                                     ) {
-                                        Icon(Icons.Default.ShoppingBag, contentDescription = null, modifier = Modifier.size(18.dp))
+                                        Icon(Icons.Default.ShoppingBag, contentDescription = null, modifier = Modifier.size(18.dp), tint = Color.White)
                                         Spacer(modifier = Modifier.width(8.dp))
                                         Text(
                                             text = if (inStock) "Add to Bag • ₹${priceVal.toInt()}" else "Currently Sold Out",
-                                            fontWeight = FontWeight.Bold
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color.White
                                         )
                                     }
                                 }
@@ -746,14 +777,17 @@ fun ProductEditScreen(
                             },
                             enabled = name.isNotBlank() && priceVal > 0,
                             shape = RoundedCornerShape(12.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = BrandSecondary),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = BrandSecondary,
+                                contentColor = Color.White
+                            ),
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(50.dp)
                         ) {
-                            Icon(Icons.Default.Check, contentDescription = null)
+                            Icon(Icons.Default.Check, contentDescription = null, tint = Color.White)
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text("Everything Looks Great — Publish Now", fontWeight = FontWeight.Bold)
+                            Text("Everything Looks Great — Publish Now", fontWeight = FontWeight.Bold, color = Color.White)
                         }
 
                         Spacer(modifier = Modifier.height(24.dp))

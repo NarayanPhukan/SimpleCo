@@ -159,7 +159,7 @@ fun SettingsScreen(
                     }
 
                     Text(
-                        text = "Current Installed Version: v1.0.0 (Build 1). The app automatically scans the server release manifest for updates on launch.",
+                        text = "Current Installed Version: v1.1.0 (Build 2). The app automatically scans the server release manifest for updates on launch.",
                         style = MaterialTheme.typography.bodySmall,
                         color = CharcoalGray.copy(alpha = 0.7f)
                     )
@@ -167,7 +167,10 @@ fun SettingsScreen(
                     Button(
                         onClick = { viewModel.checkForAppUpdates(silent = false) },
                         enabled = !uiState.isCheckingUpdate,
-                        colors = ButtonDefaults.buttonColors(containerColor = RoyalBlue),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = RoyalBlue,
+                            contentColor = Color.White
+                        ),
                         shape = RoundedCornerShape(10.dp),
                         modifier = Modifier.fillMaxWidth()
                     ) {
@@ -178,11 +181,11 @@ fun SettingsScreen(
                                 strokeWidth = 2.dp
                             )
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text("Checking Release Manifest...")
+                            Text("Checking Release Manifest...", color = Color.White)
                         } else {
-                            Icon(Icons.Default.CloudSync, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Icon(Icons.Default.CloudSync, contentDescription = null, modifier = Modifier.size(18.dp), tint = Color.White)
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text("Check for Updates Now")
+                            Text("Check for Updates Now", color = Color.White, fontWeight = FontWeight.SemiBold)
                         }
                     }
                 }
@@ -643,11 +646,14 @@ fun SettingsScreen(
                                     viewModel.checkPincode(testPincode.trim())
                                 }
                             },
-                            colors = ButtonDefaults.buttonColors(containerColor = RoyalBlue),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = RoyalBlue,
+                                contentColor = Color.White
+                            ),
                             shape = RoundedCornerShape(10.dp),
                             modifier = Modifier.height(56.dp)
                         ) {
-                            Text("Check")
+                            Text("Check", color = Color.White, fontWeight = FontWeight.Bold)
                         }
                     }
 
@@ -749,15 +755,19 @@ fun SettingsScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(52.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = RoyalBlue),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = RoyalBlue,
+                    contentColor = Color.White
+                ),
                 shape = RoundedCornerShape(12.dp)
             ) {
-                Icon(Icons.Default.Save, contentDescription = null)
+                Icon(Icons.Default.Save, contentDescription = null, tint = Color.White)
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
                     text = "Save All Changes",
                     fontWeight = FontWeight.Bold,
-                    fontSize = 16.sp
+                    fontSize = 16.sp,
+                    color = Color.White
                 )
             }
 
@@ -798,11 +808,14 @@ fun SettingsScreen(
                         onClick = { showServerDialog = true },
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(10.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = RoyalBlue)
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = RoyalBlue,
+                            contentColor = Color.White
+                        )
                     ) {
-                        Icon(Icons.Default.Dns, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Icon(Icons.Default.Dns, contentDescription = null, modifier = Modifier.size(16.dp), tint = Color.White)
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("Switch Backend Server URL")
+                        Text("Switch Backend Server URL", color = Color.White, fontWeight = FontWeight.SemiBold)
                     }
                 }
             }

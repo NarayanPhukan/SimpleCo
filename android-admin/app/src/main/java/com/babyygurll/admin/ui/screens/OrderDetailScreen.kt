@@ -136,11 +136,14 @@ fun OrderDetailScreen(
                                     onClick = { onAdvanceStage(order.orderId) },
                                     modifier = Modifier.weight(1f),
                                     shape = RoundedCornerShape(10.dp),
-                                    colors = ButtonDefaults.buttonColors(containerColor = BrandPrimary)
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = BrandPrimary,
+                                        contentColor = Color.White
+                                    )
                                 ) {
-                                    Icon(Icons.Default.FastForward, contentDescription = null, modifier = Modifier.size(16.dp))
+                                    Icon(Icons.Default.FastForward, contentDescription = null, modifier = Modifier.size(16.dp), tint = Color.White)
                                     Spacer(modifier = Modifier.width(6.dp))
-                                    Text("Advance Stage")
+                                    Text("Advance Stage", color = Color.White, fontWeight = FontWeight.SemiBold)
                                 }
                             }
 
@@ -386,9 +389,13 @@ fun OrderDetailScreen(
                     onClick = {
                         onUpdateTracking(order.orderId, carrierInput, trackingInput, estDateInput)
                         showTrackingDialog = false
-                    }
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = BrandPrimary,
+                        contentColor = Color.White
+                    )
                 ) {
-                    Text("Save Tracking")
+                    Text("Save Tracking", color = Color.White, fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
