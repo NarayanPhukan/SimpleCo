@@ -53,13 +53,27 @@ const connectDB = async () => {
 const seedAtlasDatabase = async () => {
   try {
     const Product = require('../models/Product');
+    const StoreSetting = require('../models/StoreSetting');
+
+    const settingDoc = await StoreSetting.findOne({ key: 'main_store_config' });
+    if (settingDoc && settingDoc.hasSeededProducts) {
+      // Products have already been seeded in the past. Never re-seed deleted products!
+      return;
+    }
 
     const productCount = await Product.countDocuments();
     if (productCount === 0) {
-      console.log('[Database] Seeding initial products to MongoDB Atlas...');
+      console.log('[Database] One-time initial seeding of catalog products in MongoDB Atlas...');
       await Product.insertMany(seedProducts);
       console.log(`[Database] Seeded ${seedProducts.length} crochet products in Atlas.`);
     }
+
+    // Permanently mark products as seeded so user-deleted products never come back
+    await StoreSetting.updateOne(
+      { key: 'main_store_config' },
+      { $set: { hasSeededProducts: true } },
+      { upsert: true }
+    );
   } catch (err) {
     console.error('Error during Atlas database seeding:', err.message);
   }

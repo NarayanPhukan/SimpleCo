@@ -27,6 +27,10 @@ const storeSettingSchema = new mongoose.Schema({
     type: Boolean,
     default: true
   },
+  hasSeededProducts: {
+    type: Boolean,
+    default: false
+  },
   freeShippingThreshold: {
     type: Number,
     default: 999

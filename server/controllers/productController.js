@@ -40,7 +40,12 @@ exports.getProducts = async (req, res) => {
 // @route   GET /api/products/:id
 exports.getProductById = async (req, res) => {
   try {
-    const product = await Product.findOne({ id: req.params.id }) || await Product.findById(req.params.id);
+    const paramId = req.params.id;
+    let query = { id: paramId };
+    if (mongoose.Types.ObjectId.isValid(paramId)) {
+      query = { $or: [{ id: paramId }, { _id: paramId }] };
+    }
+    const product = await Product.findOne(query);
     if (!product) {
       return res.status(404).json({ success: false, message: 'Product not found' });
     }
@@ -104,7 +109,12 @@ exports.createProduct = async (req, res) => {
 exports.updateProduct = async (req, res) => {
   try {
     const paramId = req.params.id;
-    let product = await Product.findOne({ id: paramId }) || await Product.findById(paramId);
+    let query = { id: paramId };
+    if (mongoose.Types.ObjectId.isValid(paramId)) {
+      query = { $or: [{ id: paramId }, { _id: paramId }] };
+    }
+
+    let product = await Product.findOne(query);
     if (!product) {
       return res.status(404).json({ success: false, message: 'Product not found' });
     }
@@ -117,7 +127,7 @@ exports.updateProduct = async (req, res) => {
       Object.assign(product, updates);
       await product.save();
     } else {
-      product = await Product.findByIdAndUpdate(product._id || product.id, updates, { new: true });
+      product = await Product.findOneAndUpdate(query, updates, { new: true });
     }
 
     res.json({ success: true, data: product });
@@ -131,13 +141,25 @@ exports.updateProduct = async (req, res) => {
 exports.deleteProduct = async (req, res) => {
   try {
     const paramId = req.params.id;
-    const product = await Product.findOne({ id: paramId }) || await Product.findById(paramId);
-    if (!product) {
+    let query = { id: paramId };
+    if (mongoose.Types.ObjectId.isValid(paramId)) {
+      query = { $or: [{ id: paramId }, { _id: paramId }] };
+    }
+
+    const deleted = await Product.findOneAndDelete(query);
+    if (!deleted) {
       return res.status(404).json({ success: false, message: 'Product not found' });
     }
 
-    await Product.findByIdAndDelete(product._id || product.id);
-    res.json({ success: true, message: 'Product deleted successfully', id: paramId });
+    // Permanently mark database as seeded so deleted dummy products never re-seed
+    const StoreSetting = require('../models/StoreSetting');
+    await StoreSetting.updateOne(
+      { key: 'main_store_config' },
+      { $set: { hasSeededProducts: true } },
+      { upsert: true }
+    );
+
+    res.json({ success: true, message: 'Product deleted permanently', id: paramId });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
