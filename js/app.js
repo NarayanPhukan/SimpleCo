@@ -1094,6 +1094,42 @@ document.addEventListener("DOMContentLoaded", () => {
       totals: totals
     });
 
+    // Dynamically post order to live cloud backend
+    fetch('/api/orders', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        shippingAddress: {
+          recipientName: selectedAddr.recipientName || selectedAddr.name || 'Valued Customer',
+          phone: selectedAddr.phone || '+91 98200 12345',
+          street: selectedAddr.addressLine1 || selectedAddr.street || 'Studio Address',
+          city: selectedAddr.city || 'Mumbai',
+          state: selectedAddr.state || 'Maharashtra',
+          zip: selectedAddr.pincode || selectedAddr.zip || '400050',
+          country: 'India'
+        },
+        paymentMethod: "Visa ending in •••• 4242",
+        items: cartItems.map(ci => {
+          const prod = (typeof PRODUCTS_DATA !== 'undefined' ? PRODUCTS_DATA.find(p => p.id === ci.productId) : null) || {};
+          return {
+            id: ci.productId,
+            name: prod.name || 'Crochet Piece',
+            color: (ci.selectedColor && ci.selectedColor.name) || 'Pastel Harmony',
+            quantity: ci.quantity || 1,
+            price: prod.price || 999,
+            image: prod.image || '/assets/images/strawberry-cow.jpg'
+          };
+        }),
+        totals: {
+          subtotal: totals.subtotal,
+          discount: totals.discount || 0,
+          shipping: totals.shipping || 0,
+          tax: totals.tax || 0,
+          total: totals.total
+        }
+      })
+    }).catch(err => console.warn('Could not post order to cloud backend:', err));
+
     state.checkoutSelectedOrderId = newOrder.orderId;
     el.newPlacedOrderId.textContent = `Order #${newOrder.orderId}`;
     updateCartUI();

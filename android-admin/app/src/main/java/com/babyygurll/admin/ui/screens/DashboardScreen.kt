@@ -1,5 +1,6 @@
 package com.babyygurll.admin.ui.screens
 
+import androidx.compose.animation.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -41,20 +42,38 @@ fun DashboardScreen(
         }
     }
 
+    // Dynamic stage counts calculated from live orders
+    val receivedCount = remember(state.orders) { state.orders.count { it.statusCode == "received" } }
+    val craftedCount = remember(state.orders) { state.orders.count { it.statusCode == "crafted" } }
+    val packedCount = remember(state.orders) { state.orders.count { it.statusCode == "packed" } }
+    val shippedCount = remember(state.orders) { state.orders.count { it.statusCode == "shipped" } }
+    val deliveredCount = remember(state.orders) { state.orders.count { it.statusCode == "delivered" } }
+    val outOfStockCount = remember(state.products) { state.products.count { !it.inStock } }
+
     Scaffold(
         topBar = {
             TopAppBar(
                 title = {
                     Column {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = "Studio Overview",
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White
+                            )
+                            if (state.isSyncing) {
+                                Spacer(modifier = Modifier.width(8.dp))
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(14.dp),
+                                    strokeWidth = 2.dp,
+                                    color = Color.White.copy(alpha = 0.85f)
+                                )
+                            }
+                        }
                         Text(
-                            text = "Studio Overview",
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White
-                        )
-                        Text(
-                            text = state.settings.storeName,
-                            style = MaterialTheme.typography.bodyMedium,
+                            text = "${state.settings.storeName} • Dynamic Cloud",
+                            style = MaterialTheme.typography.bodySmall,
                             color = Color.White.copy(alpha = 0.75f)
                         )
                     }
@@ -80,43 +99,101 @@ fun DashboardScreen(
                 .fillMaxSize()
                 .padding(padding)
                 .padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
+            // Live Cloud Connection Status Banner
+            item {
+                Spacer(modifier = Modifier.height(2.dp))
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = Color.White,
+                    shadowElevation = 1.dp,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 14.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(9.dp)
+                                    .clip(CircleShape)
+                                    .background(Color(0xFF2E7D32))
+                            )
+                            Text(
+                                text = "SimpleCo Cloud (Render)",
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.SemiBold,
+                                color = BrandSecondary
+                            )
+                        }
+
+                        Text(
+                            text = if (state.isSyncing) "Syncing..." else "Live • ${state.lastSyncedTime}",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = if (state.isSyncing) RoyalBlue else CharcoalGray.copy(alpha = 0.6f),
+                            fontWeight = if (state.isSyncing) FontWeight.Bold else FontWeight.Normal
+                        )
+                    }
+                }
+            }
+
             if (state.isLoading) {
+                item {
+                    LinearProgressIndicator(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(4.dp)
+                            .clip(RoundedCornerShape(2.dp)),
+                        color = RoyalBlue
+                    )
+                }
+            }
+
+            // Out of stock dynamic alert
+            if (outOfStockCount > 0) {
                 item {
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(top = 4.dp),
+                            .clickable { onNavigateProducts() },
                         shape = RoundedCornerShape(12.dp),
-                        colors = CardDefaults.cardColors(containerColor = BrandPrimaryLight)
+                        colors = CardDefaults.cardColors(containerColor = CrimsonAccent.copy(alpha = 0.1f))
                     ) {
                         Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(12.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                            modifier = Modifier.padding(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(18.dp),
-                                strokeWidth = 2.dp,
-                                color = BrandPrimary
-                            )
-                            Text(
-                                text = "Connecting to SimpleCo Cloud...",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = BrandSecondary,
-                                fontWeight = FontWeight.Medium
-                            )
+                            Icon(Icons.Default.Warning, contentDescription = null, tint = CrimsonAccent, modifier = Modifier.size(20.dp))
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "$outOfStockCount item${if (outOfStockCount > 1) "s" else ""} sold out in catalog",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    fontWeight = FontWeight.Bold,
+                                    color = CrimsonAccent
+                                )
+                                Text(
+                                    text = "Tap to review stock levels and replenish items",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = CharcoalGray
+                                )
+                            }
+                            Icon(Icons.Default.ChevronRight, contentDescription = null, tint = CrimsonAccent)
                         }
                     }
                 }
             }
 
+            // Dynamic KPI Grid Row 1
             item {
-                Spacer(modifier = Modifier.height(4.dp))
-                // KPI Stat Grid Row 1
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -127,41 +204,122 @@ fun DashboardScreen(
                         value = currencyFormat.format(state.metrics.totalRevenue),
                         icon = Icons.Default.CurrencyRupee,
                         iconColor = BrandPrimary,
-                        bgColor = BrandPrimaryLight
+                        bgColor = BrandPrimaryLight,
+                        subtitle = "Gross boutique sales"
                     )
                     StatMetricCard(
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier
+                            .weight(1f)
+                            .clickable { onNavigateOrders() },
                         title = "Total Orders",
                         value = "${state.metrics.totalOrders}",
                         icon = Icons.Default.ReceiptLong,
                         iconColor = BrandSecondary,
-                        bgColor = BrandPrimaryLight
+                        bgColor = BrandPrimaryLight,
+                        subtitle = "Tap to view list"
                     )
                 }
             }
 
+            // Dynamic KPI Grid Row 2
             item {
-                // KPI Stat Grid Row 2
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     StatMetricCard(
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier
+                            .weight(1f)
+                            .clickable { onNavigateOrders() },
                         title = "Pending Dispatch",
                         value = "${state.metrics.pendingFulfillmentCount}",
                         icon = Icons.Default.LocalShipping,
-                        iconColor = if (state.metrics.pendingFulfillmentCount > 0) BrandAccentRed else StatusDelivered,
-                        bgColor = if (state.metrics.pendingFulfillmentCount > 0) BrandAccentRedLight else BrandPrimaryLight
+                        iconColor = if (state.metrics.pendingFulfillmentCount > 0) CrimsonAccent else Color(0xFF2E7D32),
+                        bgColor = if (state.metrics.pendingFulfillmentCount > 0) CrimsonAccent.copy(alpha = 0.12f) else BrandPrimaryLight,
+                        subtitle = if (state.metrics.pendingFulfillmentCount > 0) "Needs fulfillment" else "All orders dispatched"
                     )
                     StatMetricCard(
-                        modifier = Modifier.weight(1f),
-                        title = "Avg. Order Value",
-                        value = currencyFormat.format(state.metrics.averageOrderValue),
-                        icon = Icons.Default.ShoppingBag,
+                        modifier = Modifier
+                            .weight(1f)
+                            .clickable { onNavigateProducts() },
+                        title = "Active Pieces",
+                        value = "${state.metrics.activeProductsCount} / ${state.products.size}",
+                        icon = Icons.Default.Inventory2,
                         iconColor = BrandPrimary,
-                        bgColor = BrandPrimaryLight
+                        bgColor = BrandPrimaryLight,
+                        subtitle = "In stock in catalog"
                     )
+                }
+            }
+
+            // Dynamic Fulfillment Pipeline Card
+            item {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = BrandSurface),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "Live Fulfillment Pipeline",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = TextPrimary
+                            )
+                            TextButton(onClick = onNavigateOrders) {
+                                Text("Orders >", style = MaterialTheme.typography.labelSmall, color = RoyalBlue)
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(10.dp))
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            PipelineStageBadge(
+                                emoji = "📥",
+                                label = "Received",
+                                count = receivedCount,
+                                isPending = receivedCount > 0,
+                                onClick = onNavigateOrders
+                            )
+                            PipelineStageBadge(
+                                emoji = "🪡",
+                                label = "Crafting",
+                                count = craftedCount,
+                                isPending = craftedCount > 0,
+                                onClick = onNavigateOrders
+                            )
+                            PipelineStageBadge(
+                                emoji = "🎀",
+                                label = "Packed",
+                                count = packedCount,
+                                isPending = packedCount > 0,
+                                onClick = onNavigateOrders
+                            )
+                            PipelineStageBadge(
+                                emoji = "🚚",
+                                label = "Shipped",
+                                count = shippedCount,
+                                isPending = false,
+                                onClick = onNavigateOrders
+                            )
+                            PipelineStageBadge(
+                                emoji = "🎁",
+                                label = "Delivered",
+                                count = deliveredCount,
+                                isPending = false,
+                                onClick = onNavigateOrders
+                            )
+                        }
+                    }
                 }
             }
 
@@ -240,11 +398,20 @@ fun DashboardScreen(
                                 .padding(32.dp),
                             contentAlignment = Alignment.Center
                         ) {
-                            Text(
-                                text = "No orders recorded yet. As orders are placed in the boutique, they will appear here.",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = TextMuted
-                            )
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text(
+                                    text = "No orders recorded yet.",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = TextMuted,
+                                    fontWeight = FontWeight.Medium
+                                )
+                                Spacer(modifier = Modifier.height(6.dp))
+                                Text(
+                                    text = "As customer orders are placed in the boutique, they sync here in real time.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = TextMuted
+                                )
+                            }
                         }
                     }
                 }
@@ -265,13 +432,53 @@ fun DashboardScreen(
 }
 
 @Composable
+fun PipelineStageBadge(
+    emoji: String,
+    label: String,
+    count: Int,
+    isPending: Boolean,
+    onClick: () -> Unit
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier
+            .clip(RoundedCornerShape(8.dp))
+            .clickable { onClick() }
+            .padding(4.dp)
+    ) {
+        Surface(
+            shape = CircleShape,
+            color = if (isPending) CrimsonAccent.copy(alpha = 0.12f) else BrandPrimaryLight,
+            modifier = Modifier.size(36.dp)
+        ) {
+            Box(contentAlignment = Alignment.Center) {
+                Text(text = emoji, fontSize = 16.sp)
+            }
+        }
+        Spacer(modifier = Modifier.height(4.dp))
+        Text(
+            text = "$count",
+            fontWeight = FontWeight.Bold,
+            fontSize = 13.sp,
+            color = if (isPending) CrimsonAccent else MidnightNavy
+        )
+        Text(
+            text = label,
+            fontSize = 10.sp,
+            color = CharcoalGray.copy(alpha = 0.7f)
+        )
+    }
+}
+
+@Composable
 fun StatMetricCard(
     modifier: Modifier = Modifier,
     title: String,
     value: String,
     icon: ImageVector,
     iconColor: Color,
-    bgColor: Color
+    bgColor: Color,
+    subtitle: String = ""
 ) {
     Card(
         modifier = modifier,
@@ -280,11 +487,11 @@ fun StatMetricCard(
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier.padding(14.dp)
         ) {
             Box(
                 modifier = Modifier
-                    .size(40.dp)
+                    .size(38.dp)
                     .clip(CircleShape)
                     .background(bgColor),
                 contentAlignment = Alignment.Center
@@ -293,24 +500,37 @@ fun StatMetricCard(
                     icon,
                     contentDescription = null,
                     tint = iconColor,
-                    modifier = Modifier.size(20.dp)
+                    modifier = Modifier.size(18.dp)
                 )
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(10.dp))
 
             Text(
                 text = title,
-                style = MaterialTheme.typography.bodyMedium,
-                color = TextSecondary
+                style = MaterialTheme.typography.labelSmall,
+                color = TextSecondary,
+                fontWeight = FontWeight.Medium
             )
+
+            Spacer(modifier = Modifier.height(2.dp))
 
             Text(
                 text = value,
-                style = MaterialTheme.typography.headlineMedium,
+                style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
                 color = TextPrimary
             )
+
+            if (subtitle.isNotBlank()) {
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = subtitle,
+                    style = MaterialTheme.typography.labelSmall,
+                    fontSize = 10.sp,
+                    color = CharcoalGray.copy(alpha = 0.6f)
+                )
+            }
         }
     }
 }
@@ -428,4 +648,3 @@ fun RecentOrderRow(
         }
     }
 }
-

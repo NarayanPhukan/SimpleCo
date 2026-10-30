@@ -21,6 +21,8 @@ import kotlinx.coroutines.launch
 data class AdminUiState(
     val isAuthenticated: Boolean = true,
     val isLoading: Boolean = false,
+    val isSyncing: Boolean = false,
+    val lastSyncedTime: String = "Just now",
     val serverUrl: String = PreferencesManager.DEFAULT_SERVER_URL,
     val errorMessage: String? = null,
     val adminEmail: String? = "Studio Administrator",
@@ -89,6 +91,15 @@ class AdminViewModel : ViewModel() {
 
         // Direct access: immediately fetch store data without login
         refreshAll()
+
+        // Real-time periodic dynamic sync loop (polls every 12 seconds in background)
+        viewModelScope.launch {
+            while (true) {
+                kotlinx.coroutines.delay(12_000)
+                fetchDashboardAndOrders(silent = true)
+                fetchProducts(silent = true)
+            }
+        }
 
         // Silent auto-update check on boot
         checkForAppUpdates(silent = true)
@@ -241,9 +252,9 @@ class AdminViewModel : ViewModel() {
     }
 
     // Orders & Dashboard
-    fun fetchDashboardAndOrders() {
+    fun fetchDashboardAndOrders(silent: Boolean = false) {
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true) }
+            if (!silent) _uiState.update { it.copy(isLoading = true) } else _uiState.update { it.copy(isSyncing = true) }
             val result = repository.fetchAllOrders()
             result.onSuccess { orderList ->
                 val revenue = orderList.filter { it.statusCode != "cancelled" }.sumOf { it.total }
@@ -258,17 +269,23 @@ class AdminViewModel : ViewModel() {
                     averageOrderValue = aov
                 )
 
+                val timeStr = java.text.SimpleDateFormat("hh:mm a", java.util.Locale.getDefault()).format(java.util.Date())
+
                 _uiState.update { state ->
                     state.copy(
                         orders = orderList,
                         metrics = metrics,
-                        isLoading = false
+                        isLoading = false,
+                        isSyncing = false,
+                        lastSyncedTime = timeStr
                     )
                 }
                 applyOrderFilters()
             }.onFailure { err ->
-                _uiState.update { it.copy(isLoading = false) }
-                _eventMessage.emit("Orders sync: ${err.message}")
+                _uiState.update { it.copy(isLoading = false, isSyncing = false) }
+                if (!silent) {
+                    _eventMessage.emit("Orders sync: ${err.message}")
+                }
             }
         }
     }
@@ -344,14 +361,22 @@ class AdminViewModel : ViewModel() {
     }
 
     // Products
-    fun fetchProducts() {
+    fun fetchProducts(silent: Boolean = false) {
         viewModelScope.launch {
             val result = repository.fetchProducts()
             result.onSuccess { list ->
-                _uiState.update { it.copy(products = list) }
+                _uiState.update { state ->
+                    val activeCount = list.count { it.inStock }
+                    state.copy(
+                        products = list,
+                        metrics = state.metrics.copy(activeProductsCount = activeCount)
+                    )
+                }
                 applyProductFilters()
             }.onFailure { err ->
-                _eventMessage.emit("Catalog sync: ${err.message}")
+                if (!silent) {
+                    _eventMessage.emit("Catalog sync: ${err.message}")
+                }
             }
         }
     }

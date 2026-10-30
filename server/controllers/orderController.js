@@ -65,6 +65,26 @@ exports.createOrder = async (req, res) => {
       }
     ];
 
+    const normalizedAddress = {
+      recipientName: shippingAddress?.recipientName || shippingAddress?.name || 'Valued Customer',
+      phone: shippingAddress?.phone || '+91 98200 00000',
+      street: shippingAddress?.street || shippingAddress?.addressLine1 || shippingAddress?.address || 'Studio Address',
+      city: shippingAddress?.city || 'Mumbai',
+      state: shippingAddress?.state || 'Maharashtra',
+      zip: String(shippingAddress?.zip || shippingAddress?.pincode || '400050'),
+      country: shippingAddress?.country || 'India'
+    };
+
+    const normalizedItems = (items || []).map(it => ({
+      id: it.id || it.productId || 'item-' + Math.random().toString(36).substring(2, 7),
+      name: it.name || 'Handmade Crochet Piece',
+      color: it.color || (it.selectedColor && it.selectedColor.name) || 'Pastel Harmony',
+      quantity: Number(it.quantity) || 1,
+      price: Number(it.price) || 0,
+      image: it.image || '/assets/images/strawberry-cow.jpg',
+      customNote: it.customNote || ''
+    }));
+
     const order = await Order.create({
       orderId: newOrderId,
       userEmail: (userEmail || shippingAddress?.email || 'guest@babyygurll.in').trim().toLowerCase(),
@@ -75,17 +95,17 @@ exports.createOrder = async (req, res) => {
       carrier: 'Express Delivery',
       trackingNumber,
       estimatedDelivery: estDate,
-      shippingAddress,
+      shippingAddress: normalizedAddress,
       paymentMethod: paymentMethod || 'Razorpay Online',
       paymentStatus: paymentStatus || (paymentMethod?.toLowerCase().includes('cod') ? 'pending' : 'paid'),
       razorpayPaymentId: razorpayPaymentId || '',
       razorpayOrderId: razorpayOrderId || '',
-      subtotal: totals.subtotal,
-      discount: totals.discount || 0,
-      shippingCost: totals.shipping || 0,
-      tax: totals.tax || 0,
-      total: totals.total,
-      items,
+      subtotal: totals?.subtotal || 0,
+      discount: totals?.discount || 0,
+      shippingCost: totals?.shipping || 0,
+      tax: totals?.tax || 0,
+      total: totals?.total || 0,
+      items: normalizedItems,
       timeline
     });
 
