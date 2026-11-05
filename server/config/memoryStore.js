@@ -141,7 +141,9 @@ class MemoryCollection {
     const idx = this.data.findIndex(doc => doc._id === id || doc.id === id);
     if (idx === -1) return null;
     const doc = this.data[idx];
-    Object.assign(doc, update);
+    const fields = update && update.$set ? { ...update, ...update.$set } : { ...update };
+    if (fields.$set) delete fields.$set;
+    Object.assign(doc, fields);
     return new MemoryDocument(doc, this);
   }
 
@@ -156,7 +158,9 @@ class MemoryCollection {
     const idx = this.data.findIndex(doc => this._match(doc, query));
     if (idx === -1) return null;
     const doc = this.data[idx];
-    Object.assign(doc, update);
+    const fields = update && update.$set ? { ...update, ...update.$set } : { ...update };
+    if (fields.$set) delete fields.$set;
+    Object.assign(doc, fields);
     return new MemoryDocument(doc, this);
   }
 

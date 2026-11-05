@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const Product = require('../models/Product');
 
 // @desc    Get all products with filtering, search, sort
@@ -127,22 +128,19 @@ exports.updateProduct = async (req, res) => {
     }
 
     const updates = { ...req.body };
-    if (updates.price) updates.price = Number(updates.price);
-    if (updates.originalPrice) updates.originalPrice = Number(updates.originalPrice);
+    if (updates.price !== undefined) updates.price = Number(updates.price);
+    if (updates.originalPrice !== undefined) updates.originalPrice = Number(updates.originalPrice);
     if (updates.images && Array.isArray(updates.images) && updates.images.length > 0) {
       if (!updates.image) {
         updates.image = updates.images[0];
       }
     }
 
-    if (product.save) {
-      Object.assign(product, updates);
-      await product.save();
-    } else {
-      product = await Product.findOneAndUpdate(query, updates, { new: true });
-    }
+    // Do not overwrite immutable MongoDB identifier
+    delete updates._id;
 
-    res.json({ success: true, data: product });
+    const updated = await Product.findOneAndUpdate(query, { $set: updates }, { new: true });
+    res.json({ success: true, data: updated || product });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
