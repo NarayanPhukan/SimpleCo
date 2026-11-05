@@ -1,0 +1,12 @@
+<resources>
+    <color name="brand_primary">#E85D75</color>
+    <color name="brand_secondary">#021861</color>
+    <color name="brand_accent">#255DCE</color>
+    <color name="brand_pink">#FFB6C1</color>
+    <color name="brand_soft_pink">#FFF0F5</color>
+    <color name="brand_cream">#FFF9FA</color>
+    <color name="text_primary">#1E293B</color>
+    <color name="text_secondary">#64748B</color>
+    <color name="white">#FFFFFF</color>
+</resources>
+

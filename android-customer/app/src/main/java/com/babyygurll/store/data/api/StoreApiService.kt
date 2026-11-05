@@ -1,0 +1,62 @@
+package com.babyygurll.store.data.api
+
+import com.babyygurll.store.data.model.*
+import retrofit2.Response
+import retrofit2.http.*
+
+interface StoreApiService {
+
+    @GET("products")
+    suspend fun getProducts(
+        @Query("category") category: String? = null,
+        @Query("search") search: String? = null,
+        @Query("sort") sort: String? = null
+    ): Response<ApiResponse<List<Product>>>
+
+    @GET("products/{id}")
+    suspend fun getProductById(
+        @Path("id") id: String
+    ): Response<ApiResponse<Product>>
+
+    @GET("settings")
+    suspend fun getStoreSettings(): Response<ApiResponse<StoreSetting>>
+
+    @GET("coupons")
+    suspend fun getCoupons(): Response<ApiResponse<List<Coupon>>>
+
+    @POST("coupons/validate")
+    suspend fun validateCoupon(
+        @Body body: Map<String, @JvmSuppressWildcards Any>
+    ): Response<ApiResponse<Coupon>>
+
+    @POST("orders")
+    suspend fun createOrder(
+        @Body req: OrderCreateRequest
+    ): Response<ApiResponse<Order>>
+
+    @GET("orders")
+    suspend fun getCustomerOrders(
+        @Query("email") email: String
+    ): Response<ApiResponse<List<Order>>>
+
+    @GET("orders/{orderId}")
+    suspend fun getOrderById(
+        @Path("orderId") orderId: String
+    ): Response<ApiResponse<Order>>
+
+    @POST("auth/login")
+    suspend fun login(
+        @Body body: Map<String, String>
+    ): Response<AuthResponse>
+
+    @POST("auth/register")
+    suspend fun register(
+        @Body body: Map<String, String>
+    ): Response<AuthResponse>
+
+    @GET("shipping/serviceability")
+    suspend fun checkPincode(
+        @Query("delivery_postcode") deliveryPostcode: String
+    ): Response<ApiResponse<Map<String, Any>>>
+}
+
