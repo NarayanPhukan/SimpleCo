@@ -47,6 +47,12 @@ interface StoreApiService {
         @Path("orderId") orderId: String
     ): Response<ApiResponse<Order>>
 
+    @POST("orders/{orderId}/cancel")
+    suspend fun cancelOrder(
+        @Path("orderId") orderId: String,
+        @Body body: Map<String, String> = emptyMap()
+    ): Response<ApiResponse<Order>>
+
     @POST("auth/login")
     suspend fun login(
         @Body body: Map<String, String>

@@ -489,6 +489,24 @@ class StoreViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    fun cancelOrder(orderId: String, reason: String = "Changed mind", onResult: (Order?) -> Unit = {}) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            val res = orderRepo.cancelOrder(orderId, reason)
+            _isLoading.value = false
+            res.onSuccess { updatedOrder ->
+                _customerOrders.value = _customerOrders.value.map {
+                    if (it.orderId == updatedOrder.orderId) updatedOrder else it
+                }
+                _eventMessage.emit("Order #${updatedOrder.orderId} has been cancelled ✓")
+                onResult(updatedOrder)
+            }.onFailure { err ->
+                _eventMessage.emit(err.message ?: "Could not cancel order")
+                onResult(null)
+            }
+        }
+    }
+
     fun fetchOrderDetail(orderId: String) {
         viewModelScope.launch {
             val res = orderRepo.getOrderById(orderId)

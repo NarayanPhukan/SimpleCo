@@ -38,7 +38,7 @@ fun OrdersScreen(
     val isLoading by viewModel.isLoading.collectAsState()
 
     var selectedTab by remember { mutableStateOf("All") }
-    val tabs = listOf("All", "Processing", "Shipped", "Delivered")
+    val tabs = listOf("All", "Processing", "Shipped", "Delivered", "Cancelled")
 
     LaunchedEffect(currentUser) {
         currentUser?.email?.let { viewModel.fetchCustomerOrders(it) }
@@ -46,9 +46,10 @@ fun OrdersScreen(
 
     val filteredOrders = remember(orders, selectedTab) {
         when (selectedTab) {
-            "Processing" -> orders.filter { it.status.equals("processing", ignoreCase = true) || it.status.equals("placed", ignoreCase = true) }
-            "Shipped" -> orders.filter { it.status.equals("shipped", ignoreCase = true) }
-            "Delivered" -> orders.filter { it.status.equals("delivered", ignoreCase = true) }
+            "Processing" -> orders.filter { !it.isCancelled && (it.status.equals("processing", ignoreCase = true) || it.status.equals("placed", ignoreCase = true) || it.statusStage < 2) }
+            "Shipped" -> orders.filter { !it.isCancelled && it.status.equals("shipped", ignoreCase = true) }
+            "Delivered" -> orders.filter { !it.isCancelled && it.status.equals("delivered", ignoreCase = true) }
+            "Cancelled" -> orders.filter { it.isCancelled }
             else -> orders
         }
     }
@@ -275,16 +276,19 @@ fun OrderHistoryCard(
                     // Status Badge (Screenshot 2: HANDCRAFTED / SHIPPED / DELIVERED)
                     val statusUpper = order.status.uppercase()
                     val badgeColor = when {
+                        order.isCancelled || statusUpper.contains("CANCEL") -> StatusError
                         statusUpper.contains("DELIVER") -> StatusSuccess
                         statusUpper.contains("SHIP") -> BrandPrimary
                         else -> Color(0xFF2563EB)
                     }
                     val badgeBg = when {
+                        order.isCancelled || statusUpper.contains("CANCEL") -> StatusError.copy(alpha = 0.12f)
                         statusUpper.contains("DELIVER") -> Color(0xFFDCFCE7)
                         statusUpper.contains("SHIP") -> Color(0xFFEFF6FF)
                         else -> Color(0xFFEFF6FF)
                     }
                     val badgeText = when {
+                        order.isCancelled || statusUpper.contains("CANCEL") -> "CANCELLED"
                         statusUpper.contains("DELIVER") -> "DELIVERED"
                         statusUpper.contains("SHIP") -> "SHIPPED"
                         else -> "HANDCRAFTED"

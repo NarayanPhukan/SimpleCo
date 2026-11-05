@@ -52,10 +52,87 @@ fun OrderDetailScreen(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
+    var currentOrder by remember(order) { mutableStateOf(order) }
+    var showCancelDialog by remember { mutableStateOf(false) }
+    var selectedCancelReason by remember { mutableStateOf("Changed my mind") }
+
     val imageLoader = remember {
         coil.ImageLoader.Builder(context)
             .components { add(DataUriFetcher.Factory()) }
             .build()
+    }
+
+    if (showCancelDialog) {
+        AlertDialog(
+            onDismissRequest = { showCancelDialog = false },
+            title = {
+                Text(
+                    text = "Cancel Order #${currentOrder.orderId}?",
+                    fontWeight = FontWeight.Bold,
+                    color = BrandDarkNavy
+                )
+            },
+            text = {
+                Column {
+                    Text(
+                        text = "Are you sure you want to cancel this order? If prepaid, a full refund of ₹${currentOrder.total.toInt()} will be credited back to your original payment method.",
+                        fontSize = 13.sp,
+                        color = TextSecondary
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Text(
+                        text = "Reason for cancellation:",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = BrandDarkNavy
+                    )
+                    Spacer(modifier = Modifier.height(6.dp))
+                    listOf(
+                        "Changed my mind",
+                        "Placed order by mistake",
+                        "Want to add more items",
+                        "Found alternative piece"
+                    ).forEach { reasonOption ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { selectedCancelReason = reasonOption }
+                                .padding(vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            RadioButton(
+                                selected = selectedCancelReason == reasonOption,
+                                onClick = { selectedCancelReason = reasonOption },
+                                colors = RadioButtonDefaults.colors(selectedColor = BrandPrimary)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(text = reasonOption, fontSize = 13.sp, color = TextPrimary)
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showCancelDialog = false
+                        viewModel.cancelOrder(currentOrder.orderId, selectedCancelReason) { updated ->
+                            if (updated != null) {
+                                currentOrder = updated
+                            }
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = StatusError),
+                    shape = RoundedCornerShape(10.dp)
+                ) {
+                    Text("Confirm Cancellation", color = Color.White, fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showCancelDialog = false }) {
+                    Text("Keep Order", color = TextSecondary)
+                }
+            }
+        )
     }
 
     Scaffold(
@@ -92,7 +169,7 @@ fun OrderDetailScreen(
                     Spacer(modifier = Modifier.width(16.dp))
 
                     Text(
-                        text = "Order #${order.orderId.ifBlank { "BG" + order.id.takeLast(8) }}",
+                        text = "Order #${currentOrder.orderId.ifBlank { "BG" + currentOrder.id.takeLast(8) }}",
                         style = MaterialTheme.typography.titleMedium.copy(
                             fontWeight = FontWeight.Bold,
                             fontSize = 18.sp
@@ -108,16 +185,16 @@ fun OrderDetailScreen(
                 shadowElevation = 8.dp,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Row(
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
                         .navigationBarsPadding()
                         .padding(16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     Button(
                         onClick = {
-                            val msg = "Hi BabyyGurll! 🌸 I'm inquiring about my order #${order.orderId} (Total: ₹${order.total.toInt()}). Can you please share an update?"
+                            val msg = "Hi BabyyGurll! 🌸 I'm inquiring about my order #${currentOrder.orderId} (Total: ₹${currentOrder.total.toInt()}). Can you please share an update?"
                             val uri = Uri.parse("https://wa.me/916002839514?text=${Uri.encode(msg)}")
                             context.startActivity(Intent(Intent.ACTION_VIEW, uri))
                         },
@@ -128,9 +205,33 @@ fun OrderDetailScreen(
                         ),
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(50.dp)
+                            .height(48.dp)
                     ) {
                         Text("💬 Message Crafter on WhatsApp", fontWeight = FontWeight.Bold)
+                    }
+
+                    if (currentOrder.canCancel) {
+                        OutlinedButton(
+                            onClick = { showCancelDialog = true },
+                            shape = RoundedCornerShape(12.dp),
+                            border = BorderStroke(1.dp, StatusError),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(48.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Close,
+                                contentDescription = null,
+                                tint = StatusError,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = "Cancel Order",
+                                color = StatusError,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
                     }
                 }
             }
@@ -145,6 +246,45 @@ fun OrderDetailScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            // Cancelled Banner if applicable
+            if (currentOrder.isCancelled) {
+                Card(
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = StatusError.copy(alpha = 0.08f)),
+                    border = BorderStroke(1.dp, StatusError.copy(alpha = 0.3f)),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier.padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(36.dp)
+                                .background(StatusError, CircleShape),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(Icons.Default.Close, contentDescription = null, tint = Color.White, modifier = Modifier.size(20.dp))
+                        }
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column {
+                            Text(
+                                text = "Order Cancelled",
+                                fontWeight = FontWeight.Bold,
+                                color = StatusError,
+                                fontSize = 15.sp
+                            )
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                text = currentOrder.cancelReason ?: "Cancelled upon customer request. Full refund initiated.",
+                                fontSize = 12.sp,
+                                color = TextSecondary
+                            )
+                        }
+                    }
+                }
+            }
+
             // Live Fulfillment Stepper Card
             Card(
                 shape = RoundedCornerShape(16.dp),

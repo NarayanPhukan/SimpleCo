@@ -53,6 +53,20 @@ class OrderRepository(private val context: Context) {
             }
         }
 
+    suspend fun cancelOrder(orderId: String, reason: String = "Customer requested cancellation"): Result<Order> =
+        withContext(Dispatchers.IO) {
+            try {
+                val response = api.cancelOrder(orderId, mapOf("reason" to reason))
+                if (response.isSuccessful && response.body()?.data != null) {
+                    Result.success(response.body()!!.data!!)
+                } else {
+                    Result.failure(Exception(response.body()?.message ?: "Failed to cancel order"))
+                }
+            } catch (e: Exception) {
+                Result.failure(e)
+            }
+        }
+
     suspend fun createRazorpayOrder(amountInRupees: Double): Result<Map<String, Any>> =
         withContext(Dispatchers.IO) {
             try {

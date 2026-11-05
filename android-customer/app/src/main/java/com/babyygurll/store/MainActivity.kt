@@ -391,6 +391,13 @@ class MainActivity : ComponentActivity(), PaymentResultWithDataListener {
                                         navController.navigate(Screen.Home.route) {
                                             popUpTo(Screen.Home.route) { inclusive = true }
                                         }
+                                    },
+                                    onCancelOrder = {
+                                        viewModel.cancelOrder(ord.orderId, "Cancelled immediately after placing") {
+                                            navController.navigate(Screen.Home.route) {
+                                                popUpTo(Screen.Home.route) { inclusive = true }
+                                            }
+                                        }
                                     }
                                 )
                             } else {

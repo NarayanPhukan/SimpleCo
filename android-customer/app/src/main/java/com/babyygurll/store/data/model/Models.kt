@@ -155,13 +155,21 @@ data class Order(
     @SerializedName("timeline") val timeline: List<TimelineEvent> = emptyList(),
     @SerializedName("shiprocketOrderId") val shiprocketOrderId: String? = null,
     @SerializedName("shiprocketShipmentId") val shiprocketShipmentId: String? = null,
-    @SerializedName("shiprocketStatus") val shiprocketStatus: String? = null
+    @SerializedName("shiprocketStatus") val shiprocketStatus: String? = null,
+    @SerializedName("cancelReason") val cancelReason: String? = null,
+    @SerializedName("cancelledAt") val cancelledAt: String? = null
 ) {
     val id: String
         get() = orderId
 
     val status: String
         get() = statusCode.ifBlank { statusLabel }
+
+    val isCancelled: Boolean
+        get() = statusCode.equals("cancelled", ignoreCase = true)
+
+    val canCancel: Boolean
+        get() = !isCancelled && !statusCode.equals("delivered", ignoreCase = true)
 }
 
 data class OrderCreateRequest(

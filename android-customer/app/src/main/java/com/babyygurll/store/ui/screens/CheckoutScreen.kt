@@ -154,47 +154,59 @@ fun CheckoutScreen(
                         )
                     }
 
-                    Button(
-                        onClick = {
-                            val cleanPhone = phone.replace("[^0-9]".toRegex(), "")
-                            val cleanZip = zip.replace("[^0-9]".toRegex(), "")
-                            if (name.isBlank() || cleanPhone.length != 10 || city.isBlank() || cleanZip.length != 6) {
-                                formError = "Please complete full name, 10-digit mobile number, city and 6-digit PIN code."
-                                return@Button
-                            }
-                            formError = null
-                            val fullStreet = if (houseNo.isNotBlank()) "$houseNo, $street" else street
-                            val address = ShippingAddress(
-                                recipientName = name.trim(),
-                                phone = cleanPhone,
-                                street = fullStreet.trim(),
-                                city = city.trim(),
-                                state = state.trim(),
-                                zip = cleanZip
-                            )
-                            onStartPayment(address, grandTotal, selectedPaymentMethod)
-                        },
-                        shape = RoundedCornerShape(14.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = BrandPrimary,
-                            contentColor = Color.White
-                        ),
-                        modifier = Modifier
-                            .height(50.dp)
-                            .padding(start = 16.dp)
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                imageVector = Icons.Outlined.ShoppingBag,
-                                contentDescription = null,
-                                modifier = Modifier.size(18.dp)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = "Pay Securely",
-                                fontSize = 15.sp,
-                                fontWeight = FontWeight.Bold
-                            )
+                        OutlinedButton(
+                            onClick = onBack,
+                            shape = RoundedCornerShape(14.dp),
+                            border = BorderStroke(1.dp, SurfaceBorder),
+                            modifier = Modifier.height(50.dp)
+                        ) {
+                            Text("Cancel", color = TextSecondary, fontWeight = FontWeight.SemiBold)
+                        }
+
+                        Button(
+                            onClick = {
+                                val cleanPhone = phone.replace("[^0-9]".toRegex(), "")
+                                val cleanZip = zip.replace("[^0-9]".toRegex(), "")
+                                if (name.isBlank() || cleanPhone.length != 10 || city.isBlank() || cleanZip.length != 6) {
+                                    formError = "Please complete full name, 10-digit mobile number, city and 6-digit PIN code."
+                                    return@Button
+                                }
+                                formError = null
+                                val fullStreet = if (houseNo.isNotBlank()) "$houseNo, $street" else street
+                                val address = ShippingAddress(
+                                    recipientName = name.trim(),
+                                    phone = cleanPhone,
+                                    street = fullStreet.trim(),
+                                    city = city.trim(),
+                                    state = state.trim(),
+                                    zip = cleanZip
+                                )
+                                onStartPayment(address, grandTotal, selectedPaymentMethod)
+                            },
+                            shape = RoundedCornerShape(14.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = BrandPrimary,
+                                contentColor = Color.White
+                            ),
+                            modifier = Modifier.height(50.dp)
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    imageVector = Icons.Outlined.ShoppingBag,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = "Pay Securely",
+                                    fontSize = 15.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
                         }
                     }
                 }

@@ -28,10 +28,10 @@ const DEFAULT_CONFIG = {
     critical: false
   },
   customerAppVersion: {
-    latestVersionCode: 8,
-    latestVersionName: '1.0.7',
+    latestVersionCode: 9,
+    latestVersionName: '1.0.8',
     minRequiredVersionCode: 1,
-    releaseNotes: '• Live Razorpay online checkout with UPI intent app support\n• Quiet luxury boutique UI matching all 9 design screens\n• In-memory Base64 image decoding for instant product photo rendering\n• 4-step Forgot Password OTP verification flow\n• Saved Addresses manager with default checkout selection',
+    releaseNotes: '• Added Cancel Order button with confirmation dialog and refund processing\n• Added Cancel button during checkout and order confirmation\n• Cancelled orders tab in My Orders hub\n• Live Razorpay online checkout with UPI intent support',
     downloadUrl: 'https://raw.githubusercontent.com/NarayanPhukan/SimpleCo/main/android-customer/babyygurll-boutique.apk',
     releaseDate: '2026-11-06',
     critical: false

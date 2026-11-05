@@ -80,12 +80,12 @@ const storeSettingSchema = new mongoose.Schema({
     critical: { type: Boolean, default: false }
   },
   customerAppVersion: {
-    latestVersionCode: { type: Number, default: 8 },
-    latestVersionName: { type: String, default: '1.0.7' },
+    latestVersionCode: { type: Number, default: 9 },
+    latestVersionName: { type: String, default: '1.0.8' },
     minRequiredVersionCode: { type: Number, default: 1 },
     releaseNotes: {
       type: String,
-      default: '• Live Razorpay online checkout with UPI intent app support\n• Quiet luxury boutique UI matching all 9 design screens\n• In-memory Base64 image decoding for instant product photo rendering\n• 4-step Forgot Password OTP verification flow\n• Saved Addresses manager with default checkout selection'
+      default: '• Added Cancel Order button with confirmation dialog and refund processing\n• Added Cancel button during checkout and order confirmation\n• Cancelled orders tab in My Orders hub\n• Live Razorpay online checkout with UPI intent support'
     },
     downloadUrl: { type: String, default: 'https://raw.githubusercontent.com/NarayanPhukan/SimpleCo/main/android-customer/babyygurll-boutique.apk' },
     releaseDate: { type: String, default: '2026-11-06' },
