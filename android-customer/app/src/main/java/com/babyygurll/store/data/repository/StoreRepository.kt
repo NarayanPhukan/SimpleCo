@@ -2,9 +2,7 @@ package com.babyygurll.store.data.repository
 
 import android.content.Context
 import com.babyygurll.store.data.api.ApiClient
-import com.babyygurll.store.data.model.Coupon
-import com.babyygurll.store.data.model.Product
-import com.babyygurll.store.data.model.StoreSetting
+import com.babyygurll.store.data.model.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -53,6 +51,20 @@ class StoreRepository(private val context: Context) {
                 }
             } catch (e: Exception) {
                 Result.success(StoreSetting()) // Offline fallback
+            }
+        }
+
+    suspend fun getCustomerAppVersion(): Result<AppVersionInfo> =
+        withContext(Dispatchers.IO) {
+            try {
+                val response = api.getCustomerAppVersion()
+                if (response.isSuccessful && response.body()?.data != null) {
+                    Result.success(response.body()!!.data!!)
+                } else {
+                    Result.failure(Exception("Failed to get customer app version"))
+                }
+            } catch (e: Exception) {
+                Result.failure(e)
             }
         }
 

@@ -52,5 +52,36 @@ class OrderRepository(private val context: Context) {
                 Result.failure(e)
             }
         }
+
+    suspend fun createRazorpayOrder(amountInRupees: Double): Result<Map<String, Any>> =
+        withContext(Dispatchers.IO) {
+            try {
+                val amountInPaise = (amountInRupees * 100).toLong().coerceAtLeast(100L)
+                val response = api.createRazorpayOrder(mapOf(
+                    "amount" to amountInPaise,
+                    "currency" to "INR",
+                    "receipt" to "rcpt_${System.currentTimeMillis()}"
+                ))
+                if (response.isSuccessful && response.body() != null) {
+                    Result.success(response.body()!!)
+                } else {
+                    Result.failure(Exception("Failed to initialize payment order"))
+                }
+            } catch (e: Exception) {
+                Result.failure(e)
+            }
+        }
+
+    suspend fun getRazorpayKey(): String = withContext(Dispatchers.IO) {
+        try {
+            val response = api.getRazorpayKey()
+            if (response.isSuccessful) {
+                val key = response.body()?.get("key_id")?.toString()
+                    ?: response.body()?.get("key")?.toString()
+                if (!key.isNullOrBlank()) return@withContext key
+            }
+        } catch (_: Exception) {}
+        "rzp_live_TmiLSHkOVIFPyZ"
+    }
 }
 

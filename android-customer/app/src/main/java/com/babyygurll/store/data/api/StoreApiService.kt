@@ -21,6 +21,9 @@ interface StoreApiService {
     @GET("settings")
     suspend fun getStoreSettings(): Response<ApiResponse<StoreSetting>>
 
+    @GET("settings/app-version?app=customer")
+    suspend fun getCustomerAppVersion(): Response<ApiResponse<AppVersionInfo>>
+
     @GET("coupons")
     suspend fun getCoupons(): Response<ApiResponse<List<Coupon>>>
 
@@ -83,5 +86,13 @@ interface StoreApiService {
     suspend fun checkPincode(
         @Query("delivery_postcode") deliveryPostcode: String
     ): Response<ApiResponse<Map<String, Any>>>
+
+    @POST("payment/create-order")
+    suspend fun createRazorpayOrder(
+        @Body body: Map<String, @JvmSuppressWildcards Any>
+    ): Response<Map<String, Any>>
+
+    @GET("payment/razorpay-key")
+    suspend fun getRazorpayKey(): Response<Map<String, Any>>
 }
 

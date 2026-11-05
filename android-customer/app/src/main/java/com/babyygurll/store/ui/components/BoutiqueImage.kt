@@ -86,7 +86,7 @@ fun BoutiqueImage(
                     contentScale = contentScale
                 )
             }
-            resolved.isNotBlank() && (resolved.startsWith("http://") || resolved.startsWith("https://") || resolved.startsWith("file://") || resolved.startsWith("content://")) -> {
+            resolved.isNotBlank() -> {
                 AsyncImage(
                     model = ImageRequest.Builder(context)
                         .data(resolved)

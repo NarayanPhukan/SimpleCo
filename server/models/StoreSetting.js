@@ -80,12 +80,12 @@ const storeSettingSchema = new mongoose.Schema({
     critical: { type: Boolean, default: false }
   },
   customerAppVersion: {
-    latestVersionCode: { type: Number, default: 7 },
-    latestVersionName: { type: String, default: '1.0.6' },
+    latestVersionCode: { type: Number, default: 8 },
+    latestVersionName: { type: String, default: '1.0.7' },
     minRequiredVersionCode: { type: Number, default: 1 },
     releaseNotes: {
       type: String,
-      default: '• Complete quiet luxury design system matching boutique screenshots\n• Search screen with recent searches and numbered popular trends (01-05)\n• Saved Addresses delivery location manager with default selection & checkout tag\n• 4-step Forgot Password OTP verification & strong password creator flow\n• Redesigned Login and Create Account screens with yarn ball branding\n• Full Edit Profile screen with avatar, personal info & security management\n• Checkout Step 3 Payment Method, Order Confirmed, My Orders & Wishlist'
+      default: '• Live Razorpay online checkout with UPI intent app support\n• Quiet luxury boutique UI matching all 9 design screens\n• In-memory Base64 image decoding for instant product photo rendering\n• 4-step Forgot Password OTP verification flow\n• Saved Addresses manager with default checkout selection'
     },
     downloadUrl: { type: String, default: 'https://raw.githubusercontent.com/NarayanPhukan/SimpleCo/main/android-customer/babyygurll-boutique.apk' },
     releaseDate: { type: String, default: '2026-11-06' },

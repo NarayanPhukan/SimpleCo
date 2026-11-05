@@ -31,6 +31,8 @@ import com.babyygurll.store.data.model.ShippingAddress
 import com.babyygurll.store.ui.screens.*
 import com.babyygurll.store.ui.theme.*
 import com.babyygurll.store.ui.viewmodel.StoreViewModel
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.launch
 import com.razorpay.Checkout
 import com.razorpay.PaymentData
 import com.razorpay.PaymentResultWithDataListener
@@ -361,7 +363,7 @@ class MainActivity : ComponentActivity(), PaymentResultWithDataListener {
                             CheckoutScreen(
                                 viewModel = viewModel,
                                 onBack = { navController.popBackStack() },
-                                onStartPayment = { address, amount ->
+                                onStartPayment = { address, amount, method ->
                                     pendingShippingAddress = address
                                     onPaymentSuccessCallback = { createdOrder ->
                                         confirmedOrder = createdOrder
@@ -371,7 +373,7 @@ class MainActivity : ComponentActivity(), PaymentResultWithDataListener {
                                             popUpTo(Screen.Home.route) { inclusive = false }
                                         }
                                     }
-                                    startRazorpayCheckout(address, amount)
+                                    startRazorpayCheckout(address, amount, method)
                                 }
                             )
                         }
@@ -427,34 +429,59 @@ class MainActivity : ComponentActivity(), PaymentResultWithDataListener {
         }
     }
 
-    private fun startRazorpayCheckout(address: ShippingAddress, amountInRupees: Double) {
-        val checkout = Checkout()
-        // Default standard store key
-        checkout.setKeyID("rzp_test_YourTestKeyIdHere")
+    private fun startRazorpayCheckout(
+        address: ShippingAddress,
+        amountInRupees: Double,
+        paymentMethod: String = "UPI"
+    ) {
+        lifecycleScope.launch {
+            try {
+                Toast.makeText(this@MainActivity, "Connecting to Razorpay Secure...", Toast.LENGTH_SHORT).show()
 
-        try {
-            val options = JSONObject().apply {
-                put("name", "BabyyGurll Crochet Studio")
-                put("description", "Handcrafted Bespoke Crochet Pieces")
-                put("currency", "INR")
-                put("amount", (amountInRupees * 100).toLong())
-                put("send_sms_hash", true)
+                // 1. Fetch live credentials and backend order ID from server
+                val orderResult = viewModel.createRazorpayOrder(amountInRupees)
+                val orderData = orderResult.getOrNull()
+                val rzpOrderId = orderData?.get("order_id")?.toString()
+                    ?: orderData?.get("id")?.toString()
+                    ?: ""
+                val rzpKey = orderData?.get("key_id")?.toString()
+                    ?: viewModel.getRazorpayKey()
 
-                val prefill = JSONObject().apply {
-                    put("contact", address.phone)
-                    put("email", viewModel.currentUser.value?.email ?: "guest@babyygurll.in")
+                val checkout = Checkout()
+                checkout.setKeyID(rzpKey)
+
+                val options = JSONObject().apply {
+                    put("name", "BabyyGurll Boutique")
+                    put("description", "Handcrafted Artisanal Crochet Order")
+                    put("currency", "INR")
+                    put("amount", (amountInRupees * 100).toLong().coerceAtLeast(100L))
+                    if (rzpOrderId.isNotBlank()) {
+                        put("order_id", rzpOrderId)
+                    }
+                    put("send_sms_hash", true)
+
+                    val prefill = JSONObject().apply {
+                        put("contact", address.phone)
+                        put("email", viewModel.currentUser.value?.email ?: "guest@babyygurll.in")
+                    }
+                    put("prefill", prefill)
+
+                    val theme = JSONObject().apply {
+                        put("color", "#255DCE")
+                    }
+                    put("theme", theme)
+
+                    val retry = JSONObject().apply {
+                        put("enabled", true)
+                        put("max_count", 4)
+                    }
+                    put("retry", retry)
                 }
-                put("prefill", prefill)
 
-                val theme = JSONObject().apply {
-                    put("color", "#E85D75")
-                }
-                put("theme", theme)
+                checkout.open(this@MainActivity, options)
+            } catch (e: Exception) {
+                Toast.makeText(this@MainActivity, "Payment initiation error: ${e.message}", Toast.LENGTH_LONG).show()
             }
-
-            checkout.open(this, options)
-        } catch (e: Exception) {
-            Toast.makeText(this, "Payment error: ${e.message}", Toast.LENGTH_LONG).show()
         }
     }
 
@@ -474,7 +501,18 @@ class MainActivity : ComponentActivity(), PaymentResultWithDataListener {
     }
 
     override fun onPaymentError(code: Int, response: String?, paymentData: PaymentData?) {
-        Toast.makeText(this, "Payment cancelled or declined", Toast.LENGTH_SHORT).show()
+        val errorMsg = try {
+            if (!response.isNullOrBlank()) {
+                val json = JSONObject(response)
+                json.optJSONObject("error")?.optString("description") ?: response
+            } else {
+                "Payment was cancelled or could not be completed (Code $code)"
+            }
+        } catch (_: Exception) {
+            response ?: "Payment cancelled or declined"
+        }
+        com.babyygurll.store.data.diagnostics.ErrorLogManager.logWarning("RAZORPAY_PAYMENT_ERROR", "Code: $code, Response: $response")
+        Toast.makeText(this, errorMsg, Toast.LENGTH_LONG).show()
     }
 }
 

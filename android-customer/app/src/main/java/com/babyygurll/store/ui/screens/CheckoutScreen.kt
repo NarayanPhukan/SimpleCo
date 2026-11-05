@@ -41,7 +41,7 @@ val INDIAN_STATES = listOf(
 fun CheckoutScreen(
     viewModel: StoreViewModel,
     onBack: () -> Unit,
-    onStartPayment: (address: ShippingAddress, totalAmount: Double) -> Unit,
+    onStartPayment: (address: ShippingAddress, totalAmount: Double, paymentMethod: String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val initialAddr = remember { viewModel.savedAddress }
@@ -58,6 +58,7 @@ fun CheckoutScreen(
     var state by remember { mutableStateOf(initialAddr.state.ifBlank { "Delhi" }) }
     var zip by remember { mutableStateOf(initialAddr.zip) }
     var addressType by remember { mutableStateOf("Home") }
+    var selectedPaymentMethod by remember { mutableStateOf("UPI") }
 
     var stateExpanded by remember { mutableStateOf(false) }
     var formError by remember { mutableStateOf<String?>(null) }
@@ -171,7 +172,7 @@ fun CheckoutScreen(
                                 state = state.trim(),
                                 zip = cleanZip
                             )
-                            onStartPayment(address, grandTotal)
+                            onStartPayment(address, grandTotal, selectedPaymentMethod)
                         },
                         shape = RoundedCornerShape(14.dp),
                         colors = ButtonDefaults.buttonColors(
@@ -574,7 +575,6 @@ fun CheckoutScreen(
             }
 
             // Card 3: STEP 3 - Payment Method (Screenshot 1)
-            var selectedPaymentMethod by remember { mutableStateOf("UPI") }
             Card(
                 shape = RoundedCornerShape(18.dp),
                 colors = CardDefaults.cardColors(containerColor = Color.White),

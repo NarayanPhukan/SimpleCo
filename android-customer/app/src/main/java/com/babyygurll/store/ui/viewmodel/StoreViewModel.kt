@@ -147,13 +147,20 @@ class StoreViewModel(application: Application) : AndroidViewModel(application) {
                 _storeSetting.value = it
                 checkForUpdates(it)
             }
+            // Also query dedicated customer app version endpoint
+            storeRepo.getCustomerAppVersion().onSuccess { versionInfo ->
+                if (versionInfo.latestVersionCode > BuildConfig.VERSION_CODE) {
+                    _availableUpdate.value = versionInfo
+                }
+            }
         }
     }
 
     private fun checkForUpdates(setting: StoreSetting) {
-        val versionInfo = setting.customerAppVersion ?: setting.appVersion ?: return
-        val isCustomerApk = versionInfo.downloadUrl.contains("android-customer") || setting.customerAppVersion != null
-        if (isCustomerApk && versionInfo.latestVersionCode > BuildConfig.VERSION_CODE) {
+        val versionInfo = setting.customerAppVersion
+            ?: (if (setting.appVersion?.downloadUrl?.contains("android-customer") == true) setting.appVersion else null)
+            ?: return
+        if (versionInfo.latestVersionCode > BuildConfig.VERSION_CODE) {
             _availableUpdate.value = versionInfo
         }
     }
@@ -161,17 +168,30 @@ class StoreViewModel(application: Application) : AndroidViewModel(application) {
     fun checkForUpdatesManual() {
         viewModelScope.launch {
             _isLoading.value = true
-            storeRepo.getStoreSettings().onSuccess { setting ->
-                _storeSetting.value = setting
-                val versionInfo = setting.customerAppVersion ?: setting.appVersion
-                val isCustomerApk = versionInfo != null && (versionInfo.downloadUrl.contains("android-customer") || setting.customerAppVersion != null)
-                if (versionInfo != null && isCustomerApk && versionInfo.latestVersionCode > BuildConfig.VERSION_CODE) {
-                    _availableUpdate.value = versionInfo
-                } else {
-                    _eventMessage.emit("You're already on the latest version (v${BuildConfig.VERSION_NAME})! 🌸")
+            var foundUpdate: AppVersionInfo? = null
+
+            val directRes = storeRepo.getCustomerAppVersion()
+            directRes.onSuccess { versionInfo ->
+                if (versionInfo.latestVersionCode > BuildConfig.VERSION_CODE) {
+                    foundUpdate = versionInfo
                 }
-            }.onFailure { err ->
-                _eventMessage.emit("Unable to check for updates: ${err.message ?: "Network error"}")
+            }
+
+            if (foundUpdate == null) {
+                storeRepo.getStoreSettings().onSuccess { setting ->
+                    _storeSetting.value = setting
+                    val versionInfo = setting.customerAppVersion
+                        ?: (if (setting.appVersion?.downloadUrl?.contains("android-customer") == true) setting.appVersion else null)
+                    if (versionInfo != null && versionInfo.latestVersionCode > BuildConfig.VERSION_CODE) {
+                        foundUpdate = versionInfo
+                    }
+                }
+            }
+
+            if (foundUpdate != null) {
+                _availableUpdate.value = foundUpdate
+            } else {
+                _eventMessage.emit("You're already on the latest version (v${BuildConfig.VERSION_NAME})! 🌸")
             }
             _isLoading.value = false
         }
@@ -445,6 +465,14 @@ class StoreViewModel(application: Application) : AndroidViewModel(application) {
                 _eventMessage.emit(err.message ?: "Failed to place order")
             }
         }
+    }
+
+    suspend fun createRazorpayOrder(amountInRupees: Double): Result<Map<String, Any>> {
+        return orderRepo.createRazorpayOrder(amountInRupees)
+    }
+
+    suspend fun getRazorpayKey(): String {
+        return orderRepo.getRazorpayKey()
     }
 
     fun fetchCustomerOrders(email: String? = null) {

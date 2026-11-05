@@ -28,10 +28,10 @@ const DEFAULT_CONFIG = {
     critical: false
   },
   customerAppVersion: {
-    latestVersionCode: 7,
-    latestVersionName: '1.0.6',
+    latestVersionCode: 8,
+    latestVersionName: '1.0.7',
     minRequiredVersionCode: 1,
-    releaseNotes: '• Complete quiet luxury design system matching boutique screenshots\n• Search screen with recent searches and numbered popular trends (01-05)\n• Saved Addresses delivery location manager with default selection & checkout tag\n• 4-step Forgot Password OTP verification & strong password creator flow\n• Redesigned Login and Create Account screens with yarn ball branding\n• Full Edit Profile screen with avatar, personal info & security management\n• Checkout Step 3 Payment Method, Order Confirmed, My Orders & Wishlist',
+    releaseNotes: '• Live Razorpay online checkout with UPI intent app support\n• Quiet luxury boutique UI matching all 9 design screens\n• In-memory Base64 image decoding for instant product photo rendering\n• 4-step Forgot Password OTP verification flow\n• Saved Addresses manager with default checkout selection',
     downloadUrl: 'https://raw.githubusercontent.com/NarayanPhukan/SimpleCo/main/android-customer/babyygurll-boutique.apk',
     releaseDate: '2026-11-06',
     critical: false
@@ -178,26 +178,29 @@ exports.getAppVersion = async (req, res) => {
 exports.updateAppVersion = async (req, res) => {
   try {
     const { doc, isMongoose } = await resolveSettingsDoc();
+    const isCustomer = req.query.app === 'customer' || req.body.isCustomer === true || req.body.app === 'customer';
+    const targetKey = isCustomer ? 'customerAppVersion' : 'appVersion';
     if (isMongoose) {
-      doc.appVersion = {
-        ...doc.appVersion,
+      doc[targetKey] = {
+        ...(doc[targetKey] ? (doc[targetKey].toObject ? doc[targetKey].toObject() : doc[targetKey]) : DEFAULT_CONFIG[targetKey]),
         ...req.body
       };
+      doc.markModified(targetKey);
       await doc.save();
       return res.json({
         success: true,
-        message: 'App version release manifest updated',
-        data: doc.appVersion
+        message: `${targetKey} release manifest updated`,
+        data: doc[targetKey]
       });
     } else {
-      inMemorySettings.appVersion = {
-        ...inMemorySettings.appVersion,
+      inMemorySettings[targetKey] = {
+        ...inMemorySettings[targetKey],
         ...req.body
       };
       return res.json({
         success: true,
-        message: 'App version release manifest updated in memory',
-        data: inMemorySettings.appVersion
+        message: `${targetKey} release manifest updated in memory`,
+        data: inMemorySettings[targetKey]
       });
     }
   } catch (error) {
