@@ -297,6 +297,17 @@ class ShiprocketService {
 
       const isCod = String(orderDoc.paymentMethod || '').toLowerCase().includes('cod');
 
+      // Shiprocket calculates invoice total: Total = sub_total + shipping_charges - total_discount
+      // Therefore, sub_total MUST represent the merchandise items value ONLY (not grand total).
+      // Passing grand total as sub_total caused shipping to be billed twice!
+      const itemsMerchandiseTotal = itemsList.reduce(
+        (sum, it) => sum + (Math.max(1, Number(it.price || 1)) * Number(it.quantity || 1)),
+        0
+      );
+      const pureSubtotal = itemsMerchandiseTotal > 0
+        ? itemsMerchandiseTotal
+        : (orderDoc.subtotal ? Number(orderDoc.subtotal) : Math.max(1, Number(orderDoc.total || 0) - Number(orderDoc.shippingCost || 0)));
+
       const payload = {
         order_id: String(orderDoc.orderId),
         order_date: orderDateFormatted,
@@ -327,7 +338,7 @@ class ShiprocketService {
         giftwrap_charges: 0,
         transaction_charges: 0,
         total_discount: Number(orderDoc.discount || 0),
-        sub_total: Math.max(1, Number(orderDoc.total || 1)),
+        sub_total: pureSubtotal,
         length: 15,
         breadth: 15,
         height: 10,
