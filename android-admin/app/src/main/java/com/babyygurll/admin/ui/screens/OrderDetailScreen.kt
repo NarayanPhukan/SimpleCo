@@ -1,7 +1,11 @@
 package com.babyygurll.admin.ui.screens
 
 import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.net.Uri
+import android.util.Base64
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -16,6 +20,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -242,17 +248,50 @@ fun OrderDetailScreen(
                             .padding(12.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        val imageUrl = if (item.image?.startsWith("http") == true) item.image
-                        else "${serverUrl.trimEnd('/')}/${item.image?.trimStart('/')}"
+                        val base64Bitmap: Bitmap? = remember(item.image) {
+                            val img = item.image
+                            if (img != null && img.startsWith("data:image/") && img.contains(";base64,")) {
+                                try {
+                                    val base64Data = img.substringAfter(";base64,")
+                                    val bytes = Base64.decode(base64Data, Base64.DEFAULT)
+                                    BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+                                } catch (e: Exception) {
+                                    null
+                                }
+                            } else null
+                        }
 
-                        AsyncImage(
-                            model = imageUrl,
-                            contentDescription = item.name,
-                            modifier = Modifier
-                                .size(56.dp)
-                                .clip(RoundedCornerShape(8.dp))
-                                .background(BrandPrimaryLight)
-                        )
+                        val imageUrl = remember(item.image, serverUrl) {
+                            val img = item.image ?: ""
+                            when {
+                                img.isBlank() -> ""
+                                img.startsWith("data:") -> img
+                                img.startsWith("http://") || img.startsWith("https://") -> img
+                                else -> "${serverUrl.trimEnd('/')}/${img.trimStart('/')}"
+                            }
+                        }
+
+                        if (base64Bitmap != null) {
+                            Image(
+                                bitmap = base64Bitmap.asImageBitmap(),
+                                contentDescription = item.name,
+                                modifier = Modifier
+                                    .size(56.dp)
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(BrandPrimaryLight),
+                                contentScale = ContentScale.Crop
+                            )
+                        } else {
+                            AsyncImage(
+                                model = imageUrl,
+                                contentDescription = item.name,
+                                modifier = Modifier
+                                    .size(56.dp)
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(BrandPrimaryLight),
+                                contentScale = ContentScale.Crop
+                            )
+                        }
 
                         Spacer(modifier = Modifier.width(12.dp))
 

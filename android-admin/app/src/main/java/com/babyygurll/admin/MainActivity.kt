@@ -249,9 +249,11 @@ class MainActivity : ComponentActivity() {
                                     )
                                 ) { backStackEntry ->
                                     val productId = backStackEntry.arguments?.getString("id")
-                                    val existingProduct = if (productId != null) {
-                                        uiState.products.find { it.id == productId }
-                                    } else null
+                                    val existingProduct = remember(productId, uiState.products) {
+                                        if (!productId.isNullOrBlank()) {
+                                            uiState.products.find { it.id == productId || it.mongoId == productId }
+                                        } else null
+                                    }
 
                                     ProductEditScreen(
                                         product = existingProduct,

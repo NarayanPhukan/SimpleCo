@@ -1,5 +1,9 @@
 package com.babyygurll.admin.ui.screens
 
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.util.Base64
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -16,6 +20,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -225,17 +231,48 @@ fun ProductItemCard(
                 .padding(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            val imageUrl = if (product.image.startsWith("http")) product.image
-            else "${serverUrl.trimEnd('/')}/${product.image.trimStart('/')}"
+            val base64Bitmap: Bitmap? = remember(product.image) {
+                if (product.image.startsWith("data:image/") && product.image.contains(";base64,")) {
+                    try {
+                        val base64Data = product.image.substringAfter(";base64,")
+                        val bytes = Base64.decode(base64Data, Base64.DEFAULT)
+                        BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+                    } catch (e: Exception) {
+                        null
+                    }
+                } else null
+            }
 
-            AsyncImage(
-                model = imageUrl,
-                contentDescription = product.name,
-                modifier = Modifier
-                    .size(68.dp)
-                    .clip(RoundedCornerShape(10.dp))
-                    .background(BrandPrimaryLight)
-            )
+            val imageUrl = remember(product.image, serverUrl) {
+                when {
+                    product.image.isBlank() -> ""
+                    product.image.startsWith("data:") -> product.image
+                    product.image.startsWith("http://") || product.image.startsWith("https://") -> product.image
+                    else -> "${serverUrl.trimEnd('/')}/${product.image.trimStart('/')}"
+                }
+            }
+
+            if (base64Bitmap != null) {
+                Image(
+                    bitmap = base64Bitmap.asImageBitmap(),
+                    contentDescription = product.name,
+                    modifier = Modifier
+                        .size(68.dp)
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(BrandPrimaryLight),
+                    contentScale = ContentScale.Crop
+                )
+            } else {
+                AsyncImage(
+                    model = imageUrl,
+                    contentDescription = product.name,
+                    modifier = Modifier
+                        .size(68.dp)
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(BrandPrimaryLight),
+                    contentScale = ContentScale.Crop
+                )
+            }
 
             Spacer(modifier = Modifier.width(12.dp))
 

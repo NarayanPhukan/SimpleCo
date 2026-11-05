@@ -59,34 +59,56 @@ fun ProductEditScreen(
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
 
-    var name by remember { mutableStateOf(product?.name ?: "") }
-    var category by remember { mutableStateOf(product?.category ?: "plushies") }
-    var priceText by remember { mutableStateOf(product?.price?.takeIf { it > 0 }?.toInt()?.toString() ?: "") }
-    var origPriceText by remember { mutableStateOf(product?.originalPrice?.takeIf { it > 0 }?.toInt()?.toString() ?: "") }
-    var badge by remember { mutableStateOf(product?.badge ?: "Handcrafted") }
-    var leadTime by remember { mutableStateOf(product?.leadTime ?: "Ready to ship (1-2 days)") }
-    var description by remember { mutableStateOf(product?.description ?: "") }
-    var inStock by remember { mutableStateOf(product?.inStock ?: true) }
+    var name by remember(product?.id) { mutableStateOf(product?.name ?: "") }
+    var category by remember(product?.id) { mutableStateOf(product?.category ?: "plushies") }
+    var priceText by remember(product?.id) { mutableStateOf(product?.price?.takeIf { it > 0 }?.toInt()?.toString() ?: "") }
+    var origPriceText by remember(product?.id) { mutableStateOf(product?.originalPrice?.takeIf { it > 0 }?.toInt()?.toString() ?: "") }
+    var badge by remember(product?.id) { mutableStateOf(product?.badge ?: "Handcrafted") }
+    var leadTime by remember(product?.id) { mutableStateOf(product?.leadTime ?: "Ready to ship (1-2 days)") }
+    var description by remember(product?.id) { mutableStateOf(product?.description ?: "") }
+    var inStock by remember(product?.id) { mutableStateOf(product?.inStock ?: true) }
 
     // Multi-photo gallery state
-    val initialImages = remember(product) {
+    val initialImages = remember(product?.id, product?.images, product?.image) {
         if (product != null) {
-            if (product.images.isNotEmpty()) {
-                product.images
-            } else if (product.image.isNotBlank()) {
-                listOf(product.image)
-            } else {
-                emptyList()
+            when {
+                product.images.isNotEmpty() -> product.images
+                product.image.isNotBlank() -> listOf(product.image)
+                else -> emptyList()
             }
         } else {
             emptyList()
         }
     }
 
-    var imagesList by remember { mutableStateOf<List<String>>(initialImages) }
-    var localBitmapsList by remember { mutableStateOf<List<Bitmap?>>(List(initialImages.size) { null }) }
-    var activePreviewIndex by remember { mutableStateOf(0) }
+    var imagesList by remember(product?.id) { mutableStateOf<List<String>>(initialImages) }
+    var localBitmapsList by remember(product?.id) { mutableStateOf<List<Bitmap?>>(List(initialImages.size) { null }) }
+    var activePreviewIndex by remember(product?.id) { mutableStateOf(0) }
     var isProcessingImages by remember { mutableStateOf(false) }
+
+    // Sync product data if product arrives asynchronously or updates
+    LaunchedEffect(product) {
+        if (product != null) {
+            name = product.name
+            category = product.category
+            priceText = product.price.takeIf { it > 0 }?.toInt()?.toString() ?: ""
+            origPriceText = product.originalPrice?.takeIf { it > 0 }?.toInt()?.toString() ?: ""
+            badge = product.badge ?: "Handcrafted"
+            leadTime = product.leadTime
+            description = product.description
+            inStock = product.inStock
+
+            val imgs = when {
+                product.images.isNotEmpty() -> product.images
+                product.image.isNotBlank() -> listOf(product.image)
+                else -> emptyList()
+            }
+            if (imgs.isNotEmpty() && (imagesList.isEmpty() || imagesList != imgs)) {
+                imagesList = imgs
+                localBitmapsList = List(imgs.size) { null }
+            }
+        }
+    }
 
     // Active mode: 0 = Edit Details Form, 1 = Customer Point of View Preview
     var selectedTab by remember { mutableStateOf(0) }
@@ -496,49 +518,61 @@ fun ProductEditScreen(
                                             val isCover = index == 0
                                             val isSelected = activePreviewIndex == index
                                             val itemBitmap = localBitmapsList.getOrNull(index)
+                                            val parsedThumbBitmap: Bitmap? = remember(imgUrl, itemBitmap) {
+                                                if (itemBitmap != null) itemBitmap
+                                                else if (imgUrl.startsWith("data:image/") && imgUrl.contains(";base64,")) {
+                                                    try {
+                                                        val base64Data = imgUrl.substringAfter(";base64,")
+                                                        val bytes = Base64.decode(base64Data, Base64.DEFAULT)
+                                                        BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+                                                    } catch (e: Exception) {
+                                                        null
+                                                    }
+                                                } else null
+                                            }
                                             val resolvedThumb = remember(imgUrl, serverUrl) {
                                                 when {
                                                     imgUrl.isBlank() -> ""
                                                     imgUrl.startsWith("data:") -> imgUrl
                                                     imgUrl.startsWith("http://") || imgUrl.startsWith("https://") -> imgUrl
                                                     else -> "${serverUrl.trimEnd('/')}/${imgUrl.trimStart('/')}"
-                                                }
-                                            }
+                                                 }
+                                             }
 
-                                            Card(
-                                                modifier = Modifier
-                                                    .width(105.dp)
-                                                    .height(135.dp),
-                                                shape = RoundedCornerShape(12.dp),
-                                                colors = CardDefaults.cardColors(containerColor = Color.White),
-                                                border = BorderStroke(
-                                                    width = if (isSelected) 2.5.dp else 1.dp,
-                                                    color = if (isSelected) RoyalBlue else Color(0xFFE2E8F0)
-                                                ),
-                                                elevation = CardDefaults.cardElevation(defaultElevation = if (isSelected) 4.dp else 1.dp)
-                                            ) {
-                                                Column(modifier = Modifier.fillMaxSize()) {
-                                                    Box(
-                                                        modifier = Modifier
-                                                            .fillMaxWidth()
-                                                            .height(98.dp)
-                                                            .clickable { activePreviewIndex = index }
-                                                    ) {
-                                                        if (itemBitmap != null) {
-                                                            Image(
-                                                                bitmap = itemBitmap.asImageBitmap(),
-                                                                contentDescription = "Photo ${index + 1}",
-                                                                modifier = Modifier.fillMaxSize(),
-                                                                contentScale = ContentScale.Crop
-                                                            )
-                                                        } else {
-                                                            AsyncImage(
-                                                                model = resolvedThumb,
-                                                                contentDescription = "Photo ${index + 1}",
-                                                                modifier = Modifier.fillMaxSize(),
-                                                                contentScale = ContentScale.Crop
-                                                            )
-                                                        }
+                                             Card(
+                                                 modifier = Modifier
+                                                     .width(105.dp)
+                                                     .height(135.dp),
+                                                 shape = RoundedCornerShape(12.dp),
+                                                 colors = CardDefaults.cardColors(containerColor = Color.White),
+                                                 border = BorderStroke(
+                                                     width = if (isSelected) 2.5.dp else 1.dp,
+                                                     color = if (isSelected) RoyalBlue else Color(0xFFE2E8F0)
+                                                 ),
+                                                 elevation = CardDefaults.cardElevation(defaultElevation = if (isSelected) 4.dp else 1.dp)
+                                             ) {
+                                                 Column(modifier = Modifier.fillMaxSize()) {
+                                                     Box(
+                                                         modifier = Modifier
+                                                             .fillMaxWidth()
+                                                             .height(98.dp)
+                                                             .clickable { activePreviewIndex = index }
+                                                     ) {
+                                                         if (parsedThumbBitmap != null) {
+                                                             Image(
+                                                                 bitmap = parsedThumbBitmap.asImageBitmap(),
+                                                                 contentDescription = "Photo ${index + 1}",
+                                                                 modifier = Modifier.fillMaxSize(),
+                                                                 contentScale = ContentScale.Crop
+                                                             )
+                                                         } else {
+                                                             AsyncImage(
+                                                                 model = resolvedThumb,
+                                                                 contentDescription = "Photo ${index + 1}",
+                                                                 modifier = Modifier.fillMaxSize(),
+                                                                 contentScale = ContentScale.Crop
+                                                             )
+                                                         }
 
                                                         // Tag: Cover vs Index
                                                         Surface(
@@ -1138,6 +1172,18 @@ fun ProductEditScreen(
                                             imagesList.forEachIndexed { idx, url ->
                                                 val isSelectedAngle = activePreviewIndex == idx
                                                 val thumbBm = localBitmapsList.getOrNull(idx)
+                                                val parsedAngleBitmap: Bitmap? = remember(url, thumbBm) {
+                                                    if (thumbBm != null) thumbBm
+                                                    else if (url.startsWith("data:image/") && url.contains(";base64,")) {
+                                                        try {
+                                                            val base64Data = url.substringAfter(";base64,")
+                                                            val bytes = Base64.decode(base64Data, Base64.DEFAULT)
+                                                            BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+                                                        } catch (e: Exception) {
+                                                            null
+                                                        }
+                                                    } else null
+                                                }
                                                 val resUrl = remember(url, serverUrl) {
                                                     when {
                                                         url.isBlank() -> ""
@@ -1157,9 +1203,9 @@ fun ProductEditScreen(
                                                         .size(54.dp)
                                                         .clickable { activePreviewIndex = idx }
                                                 ) {
-                                                    if (thumbBm != null) {
+                                                    if (parsedAngleBitmap != null) {
                                                         Image(
-                                                            bitmap = thumbBm.asImageBitmap(),
+                                                            bitmap = parsedAngleBitmap.asImageBitmap(),
                                                             contentDescription = "Angle ${idx + 1}",
                                                             modifier = Modifier.fillMaxSize(),
                                                             contentScale = ContentScale.Crop
