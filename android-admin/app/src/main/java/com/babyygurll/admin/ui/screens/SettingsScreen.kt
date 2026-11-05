@@ -342,20 +342,34 @@ fun SettingsScreen(
 
                     // Error Logs Summary & Action Row
                     val totalErrors = uiState.clientErrors.size + (diag?.recentErrors?.size ?: 0)
+                    val isServerHealthy = diag?.serverStatus == "healthy"
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = if (totalErrors == 0) "No errors detected ✓" else "$totalErrors event logs captured",
+                            text = if (totalErrors == 0) {
+                                "All Systems Healthy ✓"
+                            } else if (isServerHealthy) {
+                                "Server Online • $totalErrors event logs"
+                            } else {
+                                "$totalErrors errors detected"
+                            },
                             style = MaterialTheme.typography.bodyMedium,
                             fontWeight = FontWeight.SemiBold,
-                            color = if (totalErrors == 0) Color(0xFF2E7D32) else CrimsonAccent
+                            color = if (totalErrors == 0 || isServerHealthy) Color(0xFF2E7D32) else CrimsonAccent
                         )
 
-                        TextButton(onClick = { showLogDetails = !showLogDetails }) {
-                            Text(if (showLogDetails) "Hide Logs" else "View Logs")
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            if (totalErrors > 0) {
+                                TextButton(onClick = { viewModel.clearAllLogs() }) {
+                                    Text("Clear", color = CharcoalGray.copy(alpha = 0.7f), fontSize = 12.sp)
+                                }
+                            }
+                            TextButton(onClick = { showLogDetails = !showLogDetails }) {
+                                Text(if (showLogDetails) "Hide Logs" else "View Logs")
+                            }
                         }
                     }
 

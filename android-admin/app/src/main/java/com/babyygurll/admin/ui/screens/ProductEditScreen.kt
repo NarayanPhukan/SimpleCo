@@ -250,8 +250,8 @@ fun ProductEditScreen(
         (((origPriceVal - priceVal) / origPriceVal) * 100).toInt()
     } else 0
 
-    // Strict validation: Minimum 4 photos required
-    val hasMinPhotos = imagesList.size >= 4
+    // Validation: Minimum 4 photos required for new creations; existing pieces can be updated with current photos
+    val hasMinPhotos = if (product != null) imagesList.isNotEmpty() else imagesList.size >= 4
     val isPublishEnabled = name.isNotBlank() && priceVal > 0 && hasMinPhotos && !isProcessingImages
 
     Scaffold(
@@ -888,15 +888,19 @@ fun ProductEditScreen(
                             Icon(Icons.Default.Check, contentDescription = null, tint = Color.White)
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                text = if (hasMinPhotos) "Publish Piece to Boutique (${imagesList.size} Photos) ✓" else "Add ${4 - imagesList.size} More Photo${if (4 - imagesList.size > 1) "s" else ""} to Launch",
+                                text = if (hasMinPhotos) {
+                                    if (product != null) "Save Changes ✓" else "Publish Piece to Boutique (${imagesList.size} Photos) ✓"
+                                } else {
+                                    "Add ${4 - imagesList.size} More Photo${if (4 - imagesList.size > 1) "s" else ""} to Launch"
+                                },
                                 fontWeight = FontWeight.Bold,
                                 color = Color.White
                             )
                         }
 
-                        if (!hasMinPhotos) {
+                        if (!hasMinPhotos && product == null) {
                             Text(
-                                text = "⚠️ A minimum of 4 photos is required to launch a product in the boutique.",
+                                text = "⚠️ A minimum of 4 photos is required to launch a new product in the boutique.",
                                 fontSize = 11.sp,
                                 color = CrimsonAccent,
                                 textAlign = TextAlign.Center,
@@ -1364,15 +1368,19 @@ fun ProductEditScreen(
                             Icon(Icons.Default.Check, contentDescription = null, tint = Color.White)
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                text = if (hasMinPhotos) "Everything Looks Great — Publish Now (${imagesList.size} Photos) ✓" else "Need ${4 - imagesList.size} More Photo${if (4 - imagesList.size > 1) "s" else ""} to Publish",
+                                text = if (hasMinPhotos) {
+                                    if (product != null) "Everything Looks Great — Save Changes ✓" else "Everything Looks Great — Publish Now (${imagesList.size} Photos) ✓"
+                                } else {
+                                    "Need ${4 - imagesList.size} More Photo${if (4 - imagesList.size > 1) "s" else ""} to Publish"
+                                },
                                 fontWeight = FontWeight.Bold,
                                 color = Color.White
                             )
                         }
 
-                        if (!hasMinPhotos) {
+                        if (!hasMinPhotos && product == null) {
                             Text(
-                                text = "⚠️ Minimum 4 product photos required to publish. Switch to 'Edit Details' tab to add more photos.",
+                                text = "⚠️ Minimum 4 product photos required to launch. Switch to 'Edit Details' tab to add more photos.",
                                 fontSize = 11.sp,
                                 color = CrimsonAccent,
                                 textAlign = TextAlign.Center,

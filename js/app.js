@@ -1315,10 +1315,13 @@ document.addEventListener("DOMContentLoaded", () => {
   // Sync products dynamically from cloud backend
   async function loadProductsFromCloud() {
     try {
-      const res = await fetch('/api/products');
+      const apiEndpoint = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+        ? '/api/products'
+        : 'https://simpleco.onrender.com/api/products';
+      const res = await fetch(apiEndpoint);
       if (res.ok) {
         const json = await res.json();
-        if (json.success && Array.isArray(json.data)) {
+        if (json.success && Array.isArray(json.data) && json.data.length > 0) {
           PRODUCTS_DATA.length = 0;
           PRODUCTS_DATA.push(...json.data);
           renderCatalog();

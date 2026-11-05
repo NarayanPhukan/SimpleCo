@@ -1,5 +1,11 @@
 // API Client connecting React Frontend to Express & MongoDB Backend
-const API_BASE = '/api';
+const CLOUD_API_BASE = 'https://simpleco.onrender.com/api';
+
+const isLocalhost = typeof window !== 'undefined' && 
+  (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+
+// When deployed on Vercel or preview, connect directly to Render cloud backend
+export const API_BASE = isLocalhost ? '/api' : (import.meta.env.VITE_API_URL || CLOUD_API_BASE);
 
 export const api = {
   // Products
