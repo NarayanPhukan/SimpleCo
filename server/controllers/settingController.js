@@ -66,6 +66,15 @@ async function resolveSettingsDoc() {
       let doc = await StoreSetting.findOne({ key: 'main_store_config' });
       if (!doc) {
         doc = await StoreSetting.create(DEFAULT_CONFIG);
+      } else {
+        let changed = false;
+        if (!doc.customerAppVersion || !doc.customerAppVersion.latestVersionCode) {
+          doc.customerAppVersion = DEFAULT_CONFIG.customerAppVersion;
+          changed = true;
+        }
+        if (changed) {
+          await doc.save();
+        }
       }
       return { doc, isMongoose: true };
     } catch (e) {
@@ -82,6 +91,11 @@ exports.getSettings = async (req, res) => {
     const { doc, isMongoose } = await resolveSettingsDoc();
     const safeSettings = isMongoose ? doc.toObject() : { ...doc };
     delete safeSettings.adminPassword;
+
+    // Guarantee customerAppVersion is always attached
+    if (!safeSettings.customerAppVersion || !safeSettings.customerAppVersion.latestVersionCode) {
+      safeSettings.customerAppVersion = DEFAULT_CONFIG.customerAppVersion;
+    }
 
     res.json({ success: true, data: safeSettings });
   } catch (error) {
@@ -144,7 +158,10 @@ exports.verifyAdmin = async (req, res) => {
 exports.getAppVersion = async (req, res) => {
   try {
     const { doc } = await resolveSettingsDoc();
-    const versionInfo = doc?.appVersion || DEFAULT_CONFIG.appVersion;
+    const isCustomer = req.query.app === 'customer';
+    const versionInfo = isCustomer
+      ? (doc?.customerAppVersion || DEFAULT_CONFIG.customerAppVersion)
+      : (doc?.appVersion || DEFAULT_CONFIG.appVersion);
 
     res.json({
       success: true,
