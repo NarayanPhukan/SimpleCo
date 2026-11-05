@@ -413,7 +413,8 @@ class AdminViewModel : ViewModel() {
     fun toggleProductStock(product: Product) {
         viewModelScope.launch {
             val nextStock = !product.inStock
-            val result = repository.updateProduct(product.id, mapOf("inStock" to nextStock))
+            val targetId = product.id.trim().ifBlank { product.mongoId?.trim() ?: "" }
+            val result = repository.updateProduct(targetId, mapOf("inStock" to nextStock))
             result.onSuccess {
                 _eventMessage.emit("${product.name} marked as ${if (nextStock) "In Stock" else "Sold Out"}")
                 fetchProducts()
@@ -425,12 +426,14 @@ class AdminViewModel : ViewModel() {
 
     fun saveProduct(req: ProductCreateRequest, existingId: String? = null, onDone: () -> Unit) {
         viewModelScope.launch {
-            val result = if (existingId != null) {
-                repository.updateProduct(existingId, mapOf(
+            val cleanExistingId = existingId?.trim()?.ifBlank { null }
+            val result = if (cleanExistingId != null) {
+                repository.updateProduct(cleanExistingId, mapOf(
                     "name" to req.name,
+                    "category" to req.category,
+                    "categoryName" to req.categoryName,
                     "price" to req.price,
                     "originalPrice" to req.originalPrice,
-                    "category" to req.category,
                     "image" to req.image,
                     "images" to req.images,
                     "badge" to req.badge,

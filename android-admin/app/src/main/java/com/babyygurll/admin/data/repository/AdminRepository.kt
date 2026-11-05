@@ -89,7 +89,13 @@ class AdminRepository(
             if (response.isSuccessful && body?.data != null) {
                 Result.success(body.data)
             } else {
-                Result.failure(Exception(body?.message ?: "Failed to update product"))
+                val errorMsg = try {
+                    response.errorBody()?.string()?.let { errJson ->
+                        val regex = "\"message\"\\s*:\\s*\"([^\"]+)\"".toRegex()
+                        regex.find(errJson)?.groupValues?.get(1) ?: errJson
+                    }
+                } catch (e: Exception) { null }
+                Result.failure(Exception(errorMsg ?: body?.message ?: "Failed to update product"))
             }
         } catch (e: Exception) {
             Result.failure(e)

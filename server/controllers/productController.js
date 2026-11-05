@@ -1,6 +1,20 @@
 const mongoose = require('mongoose');
 const Product = require('../models/Product');
 
+// Helper to construct robust query matching by slug ID or MongoDB _id
+const buildProductQuery = (rawId) => {
+  if (!rawId) return { id: '__none__' };
+  const paramId = decodeURIComponent(rawId).trim();
+  const conditions = [{ id: paramId }, { id: rawId }];
+  if (mongoose.Types.ObjectId.isValid(paramId)) {
+    try {
+      conditions.push({ _id: new mongoose.Types.ObjectId(paramId) });
+    } catch (e) {}
+    conditions.push({ _id: paramId });
+  }
+  return { $or: conditions };
+};
+
 // @desc    Get all products with filtering, search, sort
 // @route   GET /api/products
 exports.getProducts = async (req, res) => {
@@ -41,11 +55,7 @@ exports.getProducts = async (req, res) => {
 // @route   GET /api/products/:id
 exports.getProductById = async (req, res) => {
   try {
-    const paramId = req.params.id;
-    let query = { id: paramId };
-    if (mongoose.Types.ObjectId.isValid(paramId)) {
-      query = { $or: [{ id: paramId }, { _id: paramId }] };
-    }
+    const query = buildProductQuery(req.params.id);
     const product = await Product.findOne(query);
     if (!product) {
       return res.status(404).json({ success: false, message: 'Product not found' });
@@ -116,12 +126,7 @@ exports.createProduct = async (req, res) => {
 // @route   PUT /api/products/:id
 exports.updateProduct = async (req, res) => {
   try {
-    const paramId = req.params.id;
-    let query = { id: paramId };
-    if (mongoose.Types.ObjectId.isValid(paramId)) {
-      query = { $or: [{ id: paramId }, { _id: paramId }] };
-    }
-
+    const query = buildProductQuery(req.params.id);
     let product = await Product.findOne(query);
     if (!product) {
       return res.status(404).json({ success: false, message: 'Product not found' });
@@ -136,8 +141,12 @@ exports.updateProduct = async (req, res) => {
       }
     }
 
-    // Do not overwrite immutable MongoDB identifier
+    // Do not overwrite immutable MongoDB identifiers or version keys
     delete updates._id;
+    delete updates.__v;
+    if (product.id && updates.id === product.id) {
+      delete updates.id;
+    }
 
     const updated = await Product.findOneAndUpdate(query, { $set: updates }, { new: true });
     res.json({ success: true, data: updated || product });
@@ -150,12 +159,7 @@ exports.updateProduct = async (req, res) => {
 // @route   DELETE /api/products/:id
 exports.deleteProduct = async (req, res) => {
   try {
-    const paramId = req.params.id;
-    let query = { id: paramId };
-    if (mongoose.Types.ObjectId.isValid(paramId)) {
-      query = { $or: [{ id: paramId }, { _id: paramId }] };
-    }
-
+    const query = buildProductQuery(req.params.id);
     const deleted = await Product.findOneAndDelete(query);
     if (!deleted) {
       return res.status(404).json({ success: false, message: 'Product not found' });
@@ -169,7 +173,7 @@ exports.deleteProduct = async (req, res) => {
       { upsert: true }
     );
 
-    res.json({ success: true, message: 'Product deleted permanently', id: paramId });
+    res.json({ success: true, message: 'Product deleted permanently', id: req.params.id });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }

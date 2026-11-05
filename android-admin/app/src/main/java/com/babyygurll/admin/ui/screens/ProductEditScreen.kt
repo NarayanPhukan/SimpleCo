@@ -905,7 +905,8 @@ fun ProductEditScreen(
                                     description = description.trim(),
                                     inStock = inStock
                                 )
-                                onSave(req, product?.id)
+                                val effectiveId = product?.id?.trim()?.ifBlank { null } ?: product?.mongoId?.trim()?.ifBlank { null }
+                                onSave(req, effectiveId)
                             },
                             enabled = isPublishEnabled,
                             shape = RoundedCornerShape(12.dp),
@@ -1397,7 +1398,8 @@ fun ProductEditScreen(
                                     description = description.trim(),
                                     inStock = inStock
                                 )
-                                onSave(req, product?.id)
+                                val effectiveId = product?.id?.trim()?.ifBlank { null } ?: product?.mongoId?.trim()?.ifBlank { null }
+                                onSave(req, effectiveId)
                             },
                             enabled = isPublishEnabled,
                             shape = RoundedCornerShape(12.dp),

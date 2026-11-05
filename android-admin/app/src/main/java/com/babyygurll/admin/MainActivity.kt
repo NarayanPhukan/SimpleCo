@@ -260,7 +260,10 @@ class MainActivity : ComponentActivity() {
                                         serverUrl = uiState.serverUrl,
                                         onBack = { navController.popBackStack() },
                                         onSave = { req, id ->
-                                            viewModel.saveProduct(req, id) {
+                                            val cleanId = id?.trim()?.ifBlank { null }
+                                                ?: existingProduct?.id?.trim()?.ifBlank { null }
+                                                ?: existingProduct?.mongoId?.trim()?.ifBlank { null }
+                                            viewModel.saveProduct(req, cleanId) {
                                                 navController.popBackStack()
                                             }
                                         }
