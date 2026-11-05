@@ -214,9 +214,33 @@ export const Navbar = ({
                 }}
                 style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}
               >
-                <IconHeart size={16} />
+                <IconHeart size={16} fill={wishlist.length > 0 ? '#DE1110' : 'none'} stroke={wishlist.length > 0 ? '#DE1110' : 'currentColor'} />
                 <span>My Wishlist ({wishlist.length})</span>
               </a>
+            </li>
+            <li style={{ marginTop: '0.35rem', paddingTop: '0.6rem', borderTop: '1px solid var(--border-subtle)' }}>
+              <button
+                type="button"
+                className="mobile-drawer-theme-btn"
+                onClick={() => toggleTheme()}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.6rem',
+                  width: '100%',
+                  padding: '0.65rem 0.85rem',
+                  fontSize: '0.92rem',
+                  fontWeight: 600,
+                  color: 'var(--text-dark)',
+                  background: 'var(--bg-warm)',
+                  borderRadius: 'var(--radius-sm)',
+                  border: '1px solid var(--border-subtle)',
+                  cursor: 'pointer'
+                }}
+              >
+                {theme === 'candlelight' ? <IconSun size={18} /> : <IconMoon size={18} />}
+                <span>{theme === 'candlelight' ? 'Daylight Palette ☀️' : 'Cozy Candlelight Mode 🌙'}</span>
+              </button>
             </li>
           </ul>
         </div>

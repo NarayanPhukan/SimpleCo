@@ -22,14 +22,20 @@ export const ProductCard = ({ product, onQuickView, onShowToast }) => {
     setTimeout(() => setIsAdding(false), 800);
   };
 
-  const handleWishlist = () => {
+  const handleWishlist = (e) => {
+    e?.stopPropagation();
     const added = toggleWishlist(product.id);
     onShowToast(added ? `Saved ${product.name} to Wishlist` : `Removed from Wishlist`, '✓');
   };
 
   return (
     <article className="product-card">
-      <div className="card-media">
+      <div 
+        className="card-media"
+        onClick={() => onQuickView(product)}
+        style={{ cursor: 'pointer' }}
+        title={`View ${product.name}`}
+      >
         <div className="card-badge-group">
           {product.badge && (
             <span className="card-badge">{product.badge}</span>

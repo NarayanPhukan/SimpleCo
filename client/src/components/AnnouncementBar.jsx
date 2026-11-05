@@ -19,7 +19,7 @@ export const AnnouncementBar = () => {
         if (isMounted && res.data) {
           setAnnouncement({
             active: res.data.announcementActive !== false,
-            text: res.data.announcementText || 'Free delivery across India on orders over ₹999 • Handcrafted with 100% milk cotton yarn',
+            text: res.data.announcementText || 'Free delivery across India on all orders • Handcrafted with 100% milk cotton yarn',
             badge: res.data.announcementBadge || 'Code: BABYYGURLL for 15% OFF'
           });
         }

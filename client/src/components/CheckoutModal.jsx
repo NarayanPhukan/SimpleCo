@@ -714,7 +714,7 @@ export const CheckoutModal = ({
                           />
                         </div>
 
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.85rem' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.85rem' }}>
                           <div>
                             <label className="form-label" style={{ fontWeight: 600 }}>Mobile Number (10 Digits) *</label>
                             <input 

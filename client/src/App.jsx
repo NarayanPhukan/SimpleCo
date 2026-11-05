@@ -24,8 +24,18 @@ import { RecentlyViewedBar } from './components/RecentlyViewedBar';
 import { IconSearch, IconPackage, IconSparkles } from './components/Icons';
 
 export const App = () => {
-  const [products, setProducts] = useState([]);
-  const [loadingProducts, setLoadingProducts] = useState(true);
+  const [products, setProducts] = useState(() => {
+    try {
+      const cached = localStorage.getItem('bgc_cached_catalog');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (e) {}
+    return [];
+  });
+  const [loadingProducts, setLoadingProducts] = useState(false);
+  const [catalogError, setCatalogError] = useState(false);
   const [activeCategory, setActiveCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortOrder, setSortOrder] = useState('featured');
@@ -56,7 +66,7 @@ export const App = () => {
   // Fetch products from MongoDB Backend
   const loadProducts = async (silent = false) => {
     try {
-      if (!silent) setLoadingProducts(true);
+      if (!silent && products.length === 0) setLoadingProducts(true);
       const res = await api.getProducts({
         category: activeCategory,
         search: searchQuery,
@@ -64,10 +74,17 @@ export const App = () => {
       });
       const list = res.data || [];
       setProducts(list);
+      setCatalogError(false);
       if (!silent) setLoadingProducts(false);
 
-      // If empty on initial mount, retry once after 1.5 seconds in case backend was cold booting
-      if (list.length === 0 && !searchQuery) {
+      if (activeCategory === 'all' && !searchQuery && list.length > 0) {
+        try {
+          localStorage.setItem('bgc_cached_catalog', JSON.stringify(list));
+        } catch (e) {}
+      }
+
+      // If empty on initial mount, retry once after 2 seconds in case backend was cold booting
+      if (list.length === 0 && !searchQuery && activeCategory === 'all') {
         setTimeout(async () => {
           try {
             const retryRes = await api.getProducts({
@@ -77,15 +94,28 @@ export const App = () => {
             });
             if (retryRes?.data?.length > 0) {
               setProducts(retryRes.data);
+              setCatalogError(false);
+              try {
+                localStorage.setItem('bgc_cached_catalog', JSON.stringify(retryRes.data));
+              } catch (e) {}
             }
           } catch (e) {
             // Ignore retry error
           }
-        }, 1500);
+        }, 2000);
       }
     } catch (err) {
       console.warn('API fetch products error:', err.message);
-      if (!silent) setLoadingProducts(false);
+      if (!silent) {
+        setLoadingProducts(false);
+        setCatalogError(true);
+      }
+      // Auto-retry in 2.5s if catalog is currently empty
+      if (products.length === 0) {
+        setTimeout(() => {
+          loadProducts(true);
+        }, 2500);
+      }
     }
   };
 
@@ -93,11 +123,24 @@ export const App = () => {
     loadProducts();
   }, [activeCategory, searchQuery, sortOrder]);
 
-  // Real-time periodic dynamic sync loop (updates catalog every 8 seconds)
+  // Refresh catalog immediately when tab regains focus or custom event fires
+  useEffect(() => {
+    const handleFocus = () => {
+      loadProducts(true);
+    };
+    window.addEventListener('focus', handleFocus);
+    window.addEventListener('catalog_updated', handleFocus);
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+      window.removeEventListener('catalog_updated', handleFocus);
+    };
+  }, [activeCategory, searchQuery, sortOrder]);
+
+  // Real-time periodic dynamic sync loop (updates catalog every 6 seconds)
   useEffect(() => {
     const timer = setInterval(() => {
       loadProducts(true);
-    }, 8000);
+    }, 6000);
     return () => clearInterval(timer);
   }, [activeCategory, searchQuery, sortOrder]);
 
@@ -349,10 +392,29 @@ export const App = () => {
 
             {/* Products Grid */}
             <div className="products-grid">
-              {loadingProducts ? (
+              {loadingProducts && products.length === 0 ? (
                 <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '3.5rem 0' }}>
                   <div style={{ width: '36px', height: '36px', border: '3px solid #E2E8F0', borderTopColor: 'var(--primary)', borderRadius: '50%', margin: '0 auto', animation: 'spin 0.8s linear infinite' }}></div>
-                  <p style={{ marginTop: '0.85rem', color: 'var(--text-muted)', fontSize: '0.9rem' }}>Loading catalog...</p>
+                  <p style={{ marginTop: '0.85rem', color: 'var(--text-muted)', fontSize: '0.9rem' }}>Loading handcrafted catalog...</p>
+                </div>
+              ) : catalogError && products.length === 0 ? (
+                <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '3.5rem 1rem' }}>
+                  <div style={{ color: 'var(--primary)', marginBottom: '1rem', display: 'flex', justifyContent: 'center' }}>
+                    <IconPackage size={48} />
+                  </div>
+                  <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: '1.35rem', color: 'var(--text-dark)' }}>
+                    Connecting to Studio Catalog...
+                  </h3>
+                  <p style={{ color: 'var(--text-muted)', marginTop: '0.4rem', marginBottom: '1.25rem', fontSize: '0.9rem' }}>
+                    Waking up cloud server. Retrying automatically...
+                  </p>
+                  <button 
+                    className="btn btn-primary"
+                    onClick={() => loadProducts(false)}
+                    style={{ padding: '0.5rem 1.35rem', fontSize: '0.85rem' }}
+                  >
+                    ↻ Retry Now
+                  </button>
                 </div>
               ) : products.length === 0 ? (
                 <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '4rem 1rem' }}>
@@ -363,8 +425,17 @@ export const App = () => {
                     No products found
                   </h3>
                   <p style={{ color: 'var(--text-muted)', marginTop: '0.5rem' }}>
-                    Try searching for another keyword or view all categories.
+                    {searchQuery ? `No pieces found matching "${searchQuery}".` : 'Try selecting another category or view all.'}
                   </p>
+                  {(activeCategory !== 'all' || searchQuery) && (
+                    <button
+                      className="btn btn-outline"
+                      onClick={() => { setActiveCategory('all'); setSearchQuery(''); }}
+                      style={{ marginTop: '1.1rem', padding: '0.45rem 1.2rem', fontSize: '0.85rem' }}
+                    >
+                      View All Products
+                    </button>
+                  )}
                 </div>
               ) : (
                 products.map(product => (
