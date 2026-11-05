@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import { api } from '../services/api';
-import { IconPackage, IconUser, IconRefresh, IconArrowRight, IconCheck, IconTruck, IconSparkles, IconPrinter, IconGift } from './Icons';
+import { IconPackage, IconUser, IconRefresh, IconArrowRight, IconCheck, IconTruck, IconSparkles, IconPrinter, IconGift, IconEye, IconEyeOff, IconClose } from './Icons';
 import { PrintReceiptModal } from './PrintReceiptModal';
 
 export const AccountModal = ({ isOpen, onClose, onOpenAddressModal, onShowToast }) => {
@@ -29,6 +29,7 @@ export const AccountModal = ({ isOpen, onClose, onOpenAddressModal, onShowToast 
   // Login form state
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
   // Register form state
   const [regName, setRegName] = useState('');
@@ -223,30 +224,17 @@ export const AccountModal = ({ isOpen, onClose, onOpenAddressModal, onShowToast 
       {/* Top Sticky Header */}
       <header className="account-page-topbar">
         <div className="account-page-brand">
-          <div 
-            aria-hidden="true" 
-            style={{ 
-              width: 38, 
-              height: 38, 
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'center', 
-              background: 'var(--primary-light)', 
-              color: 'var(--primary)', 
-              borderRadius: '50%',
-              boxShadow: 'var(--shadow-xs)' 
-            }}
-          >
+          <div className="account-page-brand-icon" aria-hidden="true">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M12 3c-4.97 0-9 4.03-9 9 0 2.12.74 4.07 1.97 5.61L12 21l7.03-3.39A8.97 8.97 0 0 0 21 12c0-4.97-4.03-9-9-9z"></path>
               <path d="M12 7a5 5 0 0 0-5 5c0 1.93.98 3.63 2.47 4.63"></path>
             </svg>
           </div>
-          <div>
-            <span style={{ fontFamily: 'var(--font-serif)', fontSize: '1.25rem', fontWeight: 700, color: 'var(--text-dark)', letterSpacing: '-0.02em', display: 'block', lineHeight: 1.15 }}>
+          <div className="account-page-brand-text">
+            <span className="account-brand-title">
               BabyyGurll <span style={{ color: 'var(--primary)' }}>Crochet</span>
             </span>
-            <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)', fontWeight: 500 }}>Customer Account & Orders</span>
+            <span className="account-brand-subtitle">Customer Account & Orders</span>
           </div>
         </div>
 
@@ -255,10 +243,10 @@ export const AccountModal = ({ isOpen, onClose, onOpenAddressModal, onShowToast 
           onClick={onClose}
           aria-label="Back to Storefront"
         >
-          <span style={{ display: 'inline-flex', transform: 'rotate(180deg)' }}>
+          <span className="back-arrow-icon" style={{ display: 'inline-flex', transform: 'rotate(180deg)' }}>
             <IconArrowRight size={14} />
           </span>
-          <span>Back to Store</span>
+          <span className="back-text-label">Back to Store</span>
         </button>
       </header>
 
@@ -959,33 +947,39 @@ export const AccountModal = ({ isOpen, onClose, onOpenAddressModal, onShowToast 
         ) : (
           /* Authentication Screen (if not logged in) */
           <div className="auth-portal-card">
-            <div style={{ textAlign: 'center', marginBottom: '1.75rem' }}>
-              <div style={{ width: '56px', height: '56px', margin: '0 auto 1rem', background: 'var(--primary-light)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary)', boxShadow: 'var(--shadow-xs)' }}>
-                {authMode === 'forgot' ? <IconRefresh size={26} /> : <IconUser size={28} />}
+            <div className="auth-portal-header">
+              <div className="auth-portal-icon-bubble">
+                {authMode === 'forgot' ? <IconRefresh size={26} /> : <IconUser size={26} />}
               </div>
-              <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: '1.65rem', color: 'var(--text-dark)', marginBottom: '0.35rem' }}>
-                {authMode === 'forgot' ? 'Reset Account Password' : 'Customer Account Portal'}
+              <h3 className="auth-portal-title">
+                {authMode === 'forgot' ? 'Reset Account Password' : authMode === 'login' ? 'Welcome Back' : 'Create Customer Account'}
               </h3>
-              <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem', maxWidth: '360px', margin: '0 auto' }}>
+              <p className="auth-portal-subtitle">
                 {authMode === 'forgot'
-                  ? 'Enter your registered email address and create a new secure password to regain access.'
-                  : 'Sign in to manage your orders, track handmade crochet packages, and manage saved delivery addresses.'}
+                  ? 'Enter your registered email and choose a new secure password.'
+                  : authMode === 'login'
+                  ? 'Sign in to track orders, manage addresses, and view invoices.'
+                  : 'Join the BabyyGurll VIP Club for 10% off & exclusive order tracking.'}
               </p>
             </div>
 
             {authMode !== 'forgot' && (
-              <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.75rem', justifyContent: 'center', background: 'var(--bg-warm)', padding: '0.35rem', borderRadius: 'var(--radius-full)', border: '1px solid var(--border-subtle)' }}>
+              <div className="auth-tab-bar" role="tablist">
                 <button 
-                  className={`filter-tab ${authMode === 'login' ? 'active' : ''}`}
+                  type="button"
+                  role="tab"
+                  aria-selected={authMode === 'login'}
+                  className={`auth-tab-btn ${authMode === 'login' ? 'active' : ''}`}
                   onClick={() => setAuthMode('login')}
-                  style={{ flex: 1, padding: '0.5rem 1rem' }}
                 >
                   Sign In
                 </button>
                 <button 
-                  className={`filter-tab ${authMode === 'register' ? 'active' : ''}`}
+                  type="button"
+                  role="tab"
+                  aria-selected={authMode === 'register'}
+                  className={`auth-tab-btn ${authMode === 'register' ? 'active' : ''}`}
                   onClick={() => setAuthMode('register')}
-                  style={{ flex: 1, padding: '0.5rem 1rem' }}
                 >
                   Create Account
                 </button>
@@ -1001,6 +995,9 @@ export const AccountModal = ({ isOpen, onClose, onOpenAddressModal, onShowToast 
                     id="forgotEmail" 
                     className="form-input" 
                     autoComplete="email" 
+                    autoCapitalize="none"
+                    autoCorrect="off"
+                    spellCheck="false"
                     required 
                     placeholder="name@example.com"
                     value={forgotEmail}
@@ -1009,21 +1006,31 @@ export const AccountModal = ({ isOpen, onClose, onOpenAddressModal, onShowToast 
                 </div>
                 <div className="form-group">
                   <label className="form-label" htmlFor="forgotNewPass">New Password (min. 6 characters)</label>
-                  <input 
-                    type="password" 
-                    id="forgotNewPass" 
-                    className="form-input" 
-                    autoComplete="new-password" 
-                    required 
-                    placeholder="••••••••"
-                    value={forgotNewPassword}
-                    onChange={(e) => setForgotNewPassword(e.target.value)}
-                  />
+                  <div className="password-input-wrapper">
+                    <input 
+                      type={showPassword ? 'text' : 'password'} 
+                      id="forgotNewPass" 
+                      className="form-input" 
+                      autoComplete="new-password" 
+                      required 
+                      placeholder="••••••••"
+                      value={forgotNewPassword}
+                      onChange={(e) => setForgotNewPassword(e.target.value)}
+                    />
+                    <button 
+                      type="button" 
+                      className="password-toggle-btn"
+                      onClick={() => setShowPassword(!showPassword)}
+                      aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    >
+                      {showPassword ? <IconEyeOff size={18} /> : <IconEye size={18} />}
+                    </button>
+                  </div>
                 </div>
                 <div className="form-group">
                   <label className="form-label" htmlFor="forgotConfirmPass">Confirm New Password</label>
                   <input 
-                    type="password" 
+                    type={showPassword ? 'text' : 'password'} 
                     id="forgotConfirmPass" 
                     className="form-input" 
                     autoComplete="new-password" 
@@ -1037,7 +1044,7 @@ export const AccountModal = ({ isOpen, onClose, onOpenAddressModal, onShowToast 
                   type="submit" 
                   className="btn btn-primary" 
                   disabled={forgotLoading}
-                  style={{ marginTop: '0.75rem', width: '100%', padding: '0.85rem' }}
+                  style={{ marginTop: '0.5rem', width: '100%', padding: '0.85rem' }}
                 >
                   {forgotLoading ? 'Updating Password...' : 'Reset Password & Sign In'}
                 </button>
@@ -1047,7 +1054,7 @@ export const AccountModal = ({ isOpen, onClose, onOpenAddressModal, onShowToast 
                     className="auth-back-btn"
                     onClick={() => setAuthMode('login')}
                   >
-                    ← Back to Sign In
+                    &larr; Back to Sign In
                   </button>
                 </div>
               </form>
@@ -1060,6 +1067,9 @@ export const AccountModal = ({ isOpen, onClose, onOpenAddressModal, onShowToast 
                     id="accEmail" 
                     className="form-input" 
                     autoComplete="email" 
+                    autoCapitalize="none"
+                    autoCorrect="off"
+                    spellCheck="false"
                     required 
                     placeholder="name@example.com"
                     value={loginEmail}
@@ -1080,20 +1090,40 @@ export const AccountModal = ({ isOpen, onClose, onOpenAddressModal, onShowToast 
                       Forgot password?
                     </button>
                   </div>
-                  <input 
-                    type="password" 
-                    id="accPass" 
-                    className="form-input" 
-                    autoComplete="current-password" 
-                    required 
-                    placeholder="••••••••"
-                    value={loginPassword}
-                    onChange={(e) => setLoginPassword(e.target.value)}
-                  />
+                  <div className="password-input-wrapper">
+                    <input 
+                      type={showPassword ? 'text' : 'password'} 
+                      id="accPass" 
+                      className="form-input" 
+                      autoComplete="current-password" 
+                      required 
+                      placeholder="Enter password"
+                      value={loginPassword}
+                      onChange={(e) => setLoginPassword(e.target.value)}
+                    />
+                    <button 
+                      type="button" 
+                      className="password-toggle-btn"
+                      onClick={() => setShowPassword(!showPassword)}
+                      aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    >
+                      {showPassword ? <IconEyeOff size={18} /> : <IconEye size={18} />}
+                    </button>
+                  </div>
                 </div>
-                <button type="submit" className="btn btn-primary" style={{ marginTop: '0.75rem', width: '100%', padding: '0.85rem' }}>
+                <button type="submit" className="btn btn-primary" style={{ marginTop: '0.5rem', width: '100%', padding: '0.85rem' }}>
                   Sign In to Account
                 </button>
+                <div className="auth-switch-prompt">
+                  Don't have an account?{' '}
+                  <button 
+                    type="button" 
+                    className="auth-switch-link"
+                    onClick={() => setAuthMode('register')}
+                  >
+                    Create Account
+                  </button>
+                </div>
               </form>
             ) : (
               <form onSubmit={handleRegisterSubmit} className="form-grid">
@@ -1117,6 +1147,9 @@ export const AccountModal = ({ isOpen, onClose, onOpenAddressModal, onShowToast 
                     id="regEmail" 
                     className="form-input" 
                     autoComplete="email" 
+                    autoCapitalize="none"
+                    autoCorrect="off"
+                    spellCheck="false"
                     required 
                     placeholder="priya@example.com"
                     value={regEmail}
@@ -1124,34 +1157,60 @@ export const AccountModal = ({ isOpen, onClose, onOpenAddressModal, onShowToast 
                   />
                 </div>
                 <div className="form-group">
-                  <label className="form-label" htmlFor="regPhone">Mobile Number (India +91)</label>
-                  <input 
-                    type="tel" 
-                    id="regPhone" 
-                    className="form-input" 
-                    autoComplete="tel" 
-                    required 
-                    placeholder="+91 98765 43210"
-                    value={regPhone}
-                    onChange={(e) => setRegPhone(e.target.value)}
-                  />
+                  <label className="form-label" htmlFor="regPhone">Mobile Number (India)</label>
+                  <div className="phone-field-wrapper">
+                    <span className="phone-prefix">+91</span>
+                    <input 
+                      type="tel" 
+                      id="regPhone" 
+                      className="form-input phone-input" 
+                      autoComplete="tel" 
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      maxLength={10}
+                      required 
+                      placeholder="9876543210"
+                      value={regPhone}
+                      onChange={(e) => setRegPhone(e.target.value.replace(/[^0-9]/g, ''))}
+                    />
+                  </div>
                 </div>
                 <div className="form-group">
                   <label className="form-label" htmlFor="regPass">Create Password</label>
-                  <input 
-                    type="password" 
-                    id="regPass" 
-                    className="form-input" 
-                    autoComplete="new-password" 
-                    required 
-                    placeholder="••••••••"
-                    value={regPassword}
-                    onChange={(e) => setRegPassword(e.target.value)}
-                  />
+                  <div className="password-input-wrapper">
+                    <input 
+                      type={showPassword ? 'text' : 'password'} 
+                      id="regPass" 
+                      className="form-input" 
+                      autoComplete="new-password" 
+                      required 
+                      placeholder="Min. 6 characters"
+                      value={regPassword}
+                      onChange={(e) => setRegPassword(e.target.value)}
+                    />
+                    <button 
+                      type="button" 
+                      className="password-toggle-btn"
+                      onClick={() => setShowPassword(!showPassword)}
+                      aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    >
+                      {showPassword ? <IconEyeOff size={18} /> : <IconEye size={18} />}
+                    </button>
+                  </div>
                 </div>
-                <button type="submit" className="btn btn-primary" style={{ marginTop: '0.75rem', width: '100%', padding: '0.85rem' }}>
+                <button type="submit" className="btn btn-primary" style={{ marginTop: '0.5rem', width: '100%', padding: '0.85rem' }}>
                   Create Account & Join VIP Club
                 </button>
+                <div className="auth-switch-prompt">
+                  Already have an account?{' '}
+                  <button 
+                    type="button" 
+                    className="auth-switch-link"
+                    onClick={() => setAuthMode('login')}
+                  >
+                    Sign In
+                  </button>
+                </div>
               </form>
             )}
           </div>

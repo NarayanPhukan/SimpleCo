@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
-import { IconHeart, IconMoon, IconSun, IconSparkles } from './Icons';
+import { IconHeart, IconMoon, IconSun, IconSparkles, IconUser, IconClose, IconPackage, IconArrowRight } from './Icons';
 
 export const Navbar = ({ 
   onOpenAccount, 
@@ -15,6 +15,22 @@ export const Navbar = ({
   const { getTotals, wishlist, theme, toggleTheme } = useCart();
   const { itemCount } = getTotals();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // Lock body scroll while mobile drawer is open
+  useEffect(() => {
+    if (mobileMenuOpen) {
+      const prevOverflow = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+      const handleEsc = (e) => {
+        if (e.key === 'Escape') setMobileMenuOpen(false);
+      };
+      window.addEventListener('keydown', handleEsc);
+      return () => {
+        document.body.style.overflow = prevOverflow;
+        window.removeEventListener('keydown', handleEsc);
+      };
+    }
+  }, [mobileMenuOpen]);
 
   const handleNavCategory = (e, cat) => {
     e.preventDefault();
@@ -161,90 +177,182 @@ export const Navbar = ({
         </div>
       </div>
 
-      {/* Mobile Drawer Menu */}
-      {mobileMenuOpen && (
-        <div className="mobile-nav-drawer">
-          <ul className="mobile-nav-links">
-            <li>
-              <a href="#catalog" onClick={(e) => handleNavCategory(e, 'all')}>
-                Shop All
-              </a>
-            </li>
-            <li>
-              <a href="#catalog" onClick={(e) => handleNavCategory(e, 'plushies')}>
-                Amigurumi Plushies
-              </a>
-            </li>
-            <li>
-              <a href="#catalog" onClick={(e) => handleNavCategory(e, 'floral')}>
-                Floral & Home Decor
-              </a>
-            </li>
-            <li>
-              <a href="#catalog" onClick={(e) => handleNavCategory(e, 'bags')}>
-                Bags & Totes
-              </a>
-            </li>
-            <li>
-              <a href="#catalog" onClick={(e) => handleNavCategory(e, 'wearables')}>
-                Wearables & Cardigans
-              </a>
-            </li>
-            <li>
-              <a 
-                href="#studio" 
-                onClick={(e) => {
-                  e.preventDefault();
-                  setMobileMenuOpen(false);
-                  if (onOpenCustomStudio) onOpenCustomStudio();
-                }}
-                style={{ color: 'var(--primary)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.4rem' }}
-              >
-                <IconSparkles size={16} />
-                <span>Custom Studio & Bouquet Builder</span>
-              </a>
-            </li>
-            <li>
-              <a 
-                href="#wishlist" 
-                onClick={(e) => {
-                  e.preventDefault();
-                  setMobileMenuOpen(false);
-                  if (onOpenWishlist) onOpenWishlist();
-                }}
-                style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}
-              >
-                <IconHeart size={16} fill={wishlist.length > 0 ? '#DE1110' : 'none'} stroke={wishlist.length > 0 ? '#DE1110' : 'currentColor'} />
-                <span>My Wishlist ({wishlist.length})</span>
-              </a>
-            </li>
-            <li style={{ marginTop: '0.35rem', paddingTop: '0.6rem', borderTop: '1px solid var(--border-subtle)' }}>
-              <button
-                type="button"
-                className="mobile-drawer-theme-btn"
-                onClick={() => toggleTheme()}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.6rem',
-                  width: '100%',
-                  padding: '0.65rem 0.85rem',
-                  fontSize: '0.92rem',
-                  fontWeight: 600,
-                  color: 'var(--text-dark)',
-                  background: 'var(--bg-warm)',
-                  borderRadius: 'var(--radius-sm)',
-                  border: '1px solid var(--border-subtle)',
-                  cursor: 'pointer'
-                }}
-              >
-                {theme === 'candlelight' ? <IconSun size={18} /> : <IconMoon size={18} />}
-                <span>{theme === 'candlelight' ? 'Daylight Palette ☀️' : 'Cozy Candlelight Mode 🌙'}</span>
-              </button>
-            </li>
-          </ul>
+      {/* Off-Canvas Mobile Navigation Backdrop */}
+      <div 
+        className={`mobile-drawer-backdrop ${mobileMenuOpen ? 'open' : ''}`}
+        onClick={() => setMobileMenuOpen(false)}
+        aria-hidden="true"
+      />
+
+      {/* Off-Canvas Mobile Navigation Drawer */}
+      <aside 
+        className={`mobile-nav-drawer-panel ${mobileMenuOpen ? 'open' : ''}`}
+        aria-label="Mobile Navigation Menu"
+      >
+        {/* Drawer Header */}
+        <div className="mobile-drawer-header">
+          <div className="mobile-drawer-brand">
+            <div className="drawer-brand-icon-wrapper" aria-hidden="true">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="11" cy="13" r="8" />
+                <path d="M5.5 8.5C8 10 13 10.5 16.5 14" />
+                <path d="M7 16c2.5-.5 6.5.5 9.5 3" />
+                <path d="M8 6c2.5 1 5 4 6 7.5" />
+              </svg>
+            </div>
+            <div>
+              <span className="drawer-brand-title">BabyyGurll <span style={{ color: 'var(--primary)' }}>Crochet</span></span>
+              <span className="drawer-brand-subtitle">Artisanal Studio • India</span>
+            </div>
+          </div>
+          <button 
+            type="button" 
+            className="mobile-drawer-close-btn" 
+            onClick={() => setMobileMenuOpen(false)}
+            aria-label="Close navigation menu"
+          >
+            <IconClose size={20} />
+          </button>
         </div>
-      )}
+
+        <div className="mobile-drawer-body">
+          {/* User Account / Sign In Banner */}
+          {user?.isLoggedIn ? (
+            <div 
+              className="drawer-auth-card drawer-logged-in"
+              onClick={() => {
+                setMobileMenuOpen(false);
+                if (onOpenAccount) onOpenAccount();
+              }}
+              role="button"
+              tabIndex={0}
+            >
+              <div className="drawer-user-avatar">
+                {user.name ? user.name.charAt(0).toUpperCase() : 'U'}
+              </div>
+              <div className="drawer-user-info">
+                <div className="drawer-user-name">{user.name}</div>
+                <div className="drawer-user-sub">
+                  <span className="drawer-tier-pill">{user.memberTier || 'VIP Member'}</span>
+                  <span>My Orders & Addresses &rarr;</span>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div 
+              className="drawer-auth-card drawer-guest"
+              onClick={() => {
+                setMobileMenuOpen(false);
+                if (onOpenAccount) onOpenAccount();
+              }}
+              role="button"
+              tabIndex={0}
+            >
+              <div className="drawer-guest-icon">
+                <IconUser size={22} />
+              </div>
+              <div className="drawer-guest-info">
+                <div className="drawer-guest-title">Sign In / Create Account</div>
+                <div className="drawer-guest-sub">Track orders & earn VIP Points &rarr;</div>
+              </div>
+            </div>
+          )}
+
+          {/* Custom Studio Callout Pill */}
+          <div style={{ margin: '0.85rem 0' }}>
+            <button 
+              type="button"
+              className="drawer-studio-card-btn"
+              onClick={() => {
+                setMobileMenuOpen(false);
+                if (onOpenCustomStudio) onOpenCustomStudio();
+              }}
+            >
+              <span className="drawer-studio-icon">✨</span>
+              <div style={{ textAlign: 'left', flex: 1 }}>
+                <div style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--primary)' }}>Custom Studio & Bouquets</div>
+                <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>Build your bespoke crochet piece</div>
+              </div>
+              <IconArrowRight size={15} />
+            </button>
+          </div>
+
+          {/* Navigation Categories */}
+          <div className="drawer-section-label">Boutique Collections</div>
+          <nav className="mobile-drawer-nav">
+            <a href="#catalog" className="drawer-nav-item" onClick={(e) => handleNavCategory(e, 'all')}>
+              <span className="drawer-item-icon">✨</span>
+              <span>All Handcrafted Pieces</span>
+            </a>
+            <a href="#catalog" className="drawer-nav-item" onClick={(e) => handleNavCategory(e, 'plushies')}>
+              <span className="drawer-item-icon">🧸</span>
+              <span>Amigurumi Plushies</span>
+            </a>
+            <a href="#catalog" className="drawer-nav-item" onClick={(e) => handleNavCategory(e, 'floral')}>
+              <span className="drawer-item-icon">🌸</span>
+              <span>Floral & Home Decor</span>
+            </a>
+            <a href="#catalog" className="drawer-nav-item" onClick={(e) => handleNavCategory(e, 'bags')}>
+              <span className="drawer-item-icon">👜</span>
+              <span>Bags, Totes & Clutches</span>
+            </a>
+            <a href="#catalog" className="drawer-nav-item" onClick={(e) => handleNavCategory(e, 'wearables')}>
+              <span className="drawer-item-icon">🧶</span>
+              <span>Wearables & Cardigans</span>
+            </a>
+            <a href="#catalog" className="drawer-nav-item" onClick={(e) => handleNavCategory(e, 'accessories')}>
+              <span className="drawer-item-icon">🎀</span>
+              <span>Accessories & Scrunchies</span>
+            </a>
+          </nav>
+
+          {/* Quick Shortcuts */}
+          <div className="drawer-section-label">Quick Actions</div>
+          <div className="drawer-shortcuts-grid">
+            <button
+              type="button"
+              className="drawer-shortcut-chip"
+              onClick={() => {
+                setMobileMenuOpen(false);
+                if (onOpenWishlist) onOpenWishlist();
+              }}
+            >
+              <IconHeart size={16} fill={wishlist.length > 0 ? '#DE1110' : 'none'} stroke={wishlist.length > 0 ? '#DE1110' : 'currentColor'} />
+              <span>Wishlist ({wishlist.length})</span>
+            </button>
+
+            <button
+              type="button"
+              className="drawer-shortcut-chip"
+              onClick={() => {
+                setMobileMenuOpen(false);
+                if (onOpenAccount) onOpenAccount();
+              }}
+            >
+              <IconPackage size={16} />
+              <span>Track Orders</span>
+            </button>
+          </div>
+
+          {/* Theme Palette Switcher */}
+          <div className="drawer-theme-section">
+            <button
+              type="button"
+              className="drawer-theme-toggle-btn"
+              onClick={() => toggleTheme()}
+            >
+              {theme === 'candlelight' ? <IconSun size={18} /> : <IconMoon size={18} />}
+              <span>{theme === 'candlelight' ? 'Switch to Daylight Palette ☀️' : 'Cozy Candlelight Mode 🌙'}</span>
+            </button>
+          </div>
+
+          {/* Footer Quality Promise */}
+          <div className="drawer-footer-note">
+            Handcrafted with 100% Milk Cotton Yarn<br />
+            <span>Free Delivery Across India</span>
+          </div>
+        </div>
+      </aside>
     </header>
   );
 };

@@ -574,50 +574,30 @@ export const CheckoutModal = ({
                     </div>
 
                     {/* Navigation Tabs: Sign In vs Create Account */}
-                    <div style={{ display: 'flex', background: '#F1F5F9', padding: '4px', borderRadius: '12px', marginBottom: '1.75rem', maxWidth: '420px', margin: '0 auto 1.75rem auto' }}>
+                    <div className="auth-tab-bar" style={{ maxWidth: '420px', margin: '0 auto 1.75rem auto' }} role="tablist">
                       <button
                         type="button"
+                        role="tab"
+                        aria-selected={authTab === 'login'}
                         onClick={() => {
                           setAuthTab('login');
                           setAuthError('');
                           setAuthSuccess('');
                         }}
-                        style={{
-                          flex: 1,
-                          padding: '0.65rem 0.5rem',
-                          border: 'none',
-                          borderRadius: '9px',
-                          fontSize: '0.88rem',
-                          fontWeight: 700,
-                          cursor: 'pointer',
-                          background: authTab === 'login' ? '#FFFFFF' : 'transparent',
-                          color: authTab === 'login' ? 'var(--primary)' : '#64748B',
-                          boxShadow: authTab === 'login' ? '0 2px 6px rgba(0,0,0,0.06)' : 'none',
-                          transition: 'all 0.2s ease'
-                        }}
+                        className={`auth-tab-btn ${authTab === 'login' ? 'active' : ''}`}
                       >
                         Sign In
                       </button>
                       <button
                         type="button"
+                        role="tab"
+                        aria-selected={authTab === 'register'}
                         onClick={() => {
                           setAuthTab('register');
                           setAuthError('');
                           setAuthSuccess('');
                         }}
-                        style={{
-                          flex: 1,
-                          padding: '0.65rem 0.5rem',
-                          border: 'none',
-                          borderRadius: '9px',
-                          fontSize: '0.88rem',
-                          fontWeight: 700,
-                          cursor: 'pointer',
-                          background: authTab === 'register' ? '#FFFFFF' : 'transparent',
-                          color: authTab === 'register' ? 'var(--primary)' : '#64748B',
-                          boxShadow: authTab === 'register' ? '0 2px 6px rgba(0,0,0,0.06)' : 'none',
-                          transition: 'all 0.2s ease'
-                        }}
+                        className={`auth-tab-btn ${authTab === 'register' ? 'active' : ''}`}
                       >
                         Create Account
                       </button>
