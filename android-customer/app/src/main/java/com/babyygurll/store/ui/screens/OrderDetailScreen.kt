@@ -435,3 +435,15 @@ fun OrderDetailScreen(
     }
 }
 
+@Composable
+fun PriceSummaryRow(label: String, value: String, valueColor: Color = TextPrimary) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(text = label, fontSize = 14.sp, color = TextSecondary)
+        Text(text = value, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = valueColor)
+    }
+}
+

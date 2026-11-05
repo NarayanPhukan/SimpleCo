@@ -28,10 +28,10 @@ const DEFAULT_CONFIG = {
     critical: false
   },
   customerAppVersion: {
-    latestVersionCode: 4,
-    latestVersionName: '1.0.3',
+    latestVersionCode: 5,
+    latestVersionName: '1.0.4',
     minRequiredVersionCode: 1,
-    releaseNotes: '• Fixed product images rendering for all handcrafted crochet pieces (Base64 & URL)\n• Added Forgot Password with secure 6-digit email OTP verification\n• Refined luxury boutique aesthetics, warm ivory tones, and artisan navigation',
+    releaseNotes: '• Quiet luxury midnight navy & royal blue bespoke design overhaul\n• Redesigned Home with handcrafted hero showcase & category pills\n• 2x2 Specs and dual Add to Cart / Buy Now actions on Product Detail\n• Free delivery unlock banner & coupon cards in Shopping Bag\n• 3-step checkout with contact & delivery address validation\n• My Account boutique hub with orders, addresses & support',
     downloadUrl: 'https://raw.githubusercontent.com/NarayanPhukan/SimpleCo/main/android-customer/babyygurll-boutique.apk',
     releaseDate: '2026-11-05',
     critical: false

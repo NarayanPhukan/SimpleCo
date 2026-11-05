@@ -6,7 +6,11 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.compose.animation.*
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.Alignment
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
@@ -36,7 +40,7 @@ sealed class Screen(val route: String, val title: String, val activeIcon: ImageV
     object Home : Screen("home", "Home", Icons.Filled.Home, Icons.Outlined.Home)
     object Categories : Screen("categories", "Categories", Icons.Filled.GridView, Icons.Outlined.GridView)
     object Wishlist : Screen("wishlist", "Wishlist", Icons.Filled.Favorite, Icons.Outlined.FavoriteBorder)
-    object Cart : Screen("cart", "Bag", Icons.Filled.ShoppingBag, Icons.Outlined.ShoppingBag)
+    object Cart : Screen("cart", "Cart", Icons.Filled.ShoppingBag, Icons.Outlined.ShoppingBag)
     object Account : Screen("account", "Account", Icons.Filled.Person, Icons.Outlined.Person)
 
     object ProductDetail : Screen("product_detail", "Product Detail", Icons.Filled.Info, Icons.Outlined.Info)
@@ -110,59 +114,83 @@ class MainActivity : ComponentActivity(), PaymentResultWithDataListener {
                 Scaffold(
                     bottomBar = {
                         if (showBottomBar) {
-                            NavigationBar(
-                                containerColor = Color.White,
-                                tonalElevation = 8.dp
+                            Surface(
+                                color = Color.White,
+                                border = BorderStroke(1.dp, SurfaceBorder)
                             ) {
-                                BOTTOM_NAV_ITEMS.forEach { screen ->
-                                    val isSelected = currentRoute == screen.route
-                                    NavigationBarItem(
-                                        selected = isSelected,
-                                        onClick = {
-                                            navController.navigate(screen.route) {
-                                                popUpTo(navController.graph.findStartDestination().id) {
-                                                    saveState = true
+                                NavigationBar(
+                                    containerColor = Color.White,
+                                    tonalElevation = 0.dp,
+                                    modifier = Modifier.height(68.dp)
+                                ) {
+                                    BOTTOM_NAV_ITEMS.forEach { screen ->
+                                        val isSelected = currentRoute == screen.route
+                                        NavigationBarItem(
+                                            selected = isSelected,
+                                            onClick = {
+                                                navController.navigate(screen.route) {
+                                                    popUpTo(navController.graph.findStartDestination().id) {
+                                                        saveState = true
+                                                    }
+                                                    launchSingleTop = true
+                                                    restoreState = true
                                                 }
-                                                launchSingleTop = true
-                                                restoreState = true
-                                            }
-                                        },
-                                        icon = {
-                                            BadgedBox(
-                                                badge = {
-                                                    if (screen == Screen.Cart && cartBadgeCount > 0) {
-                                                        Badge(
-                                                            containerColor = BrandPrimary,
-                                                            contentColor = Color.White
-                                                        ) {
-                                                            Text(
-                                                                text = if (cartBadgeCount > 99) "99+" else "$cartBadgeCount",
-                                                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp)
-                                                            )
+                                            },
+                                            icon = {
+                                                Box(
+                                                    modifier = if (isSelected) {
+                                                        Modifier
+                                                            .border(1.5.dp, BrandDarkNavy, RoundedCornerShape(8.dp))
+                                                            .padding(horizontal = 12.dp, vertical = 4.dp)
+                                                    } else {
+                                                        Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
+                                                    },
+                                                    contentAlignment = Alignment.Center
+                                                ) {
+                                                    BadgedBox(
+                                                        badge = {
+                                                            if (screen == Screen.Cart && cartBadgeCount > 0) {
+                                                                Badge(
+                                                                    containerColor = BrandPrimary,
+                                                                    contentColor = Color.White,
+                                                                    modifier = Modifier.offset(x = 6.dp, y = (-4).dp)
+                                                                ) {
+                                                                    Text(
+                                                                        text = if (cartBadgeCount > 99) "99+" else "$cartBadgeCount",
+                                                                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp)
+                                                                    )
+                                                                }
+                                                            }
                                                         }
+                                                    ) {
+                                                        Icon(
+                                                            imageVector = screen.inactiveIcon,
+                                                            contentDescription = screen.title,
+                                                            tint = if (isSelected) BrandDarkNavy else TextMuted,
+                                                            modifier = Modifier.size(22.dp)
+                                                        )
                                                     }
                                                 }
-                                            ) {
-                                                Icon(
-                                                    imageVector = if (isSelected) screen.activeIcon else screen.inactiveIcon,
-                                                    contentDescription = screen.title,
-                                                    tint = if (isSelected) BrandPrimary else TextMuted
+                                            },
+                                            label = {
+                                                Text(
+                                                    text = screen.title,
+                                                    style = MaterialTheme.typography.labelSmall.copy(
+                                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                                        fontSize = 11.sp
+                                                    ),
+                                                    color = if (isSelected) BrandDarkNavy else TextMuted
                                                 )
-                                            }
-                                        },
-                                        label = {
-                                            Text(
-                                                text = screen.title,
-                                                style = MaterialTheme.typography.labelSmall.copy(
-                                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
-                                                ),
-                                                color = if (isSelected) BrandPrimary else TextMuted
+                                            },
+                                            colors = NavigationBarItemDefaults.colors(
+                                                indicatorColor = Color.Transparent,
+                                                selectedIconColor = BrandDarkNavy,
+                                                selectedTextColor = BrandDarkNavy,
+                                                unselectedIconColor = TextMuted,
+                                                unselectedTextColor = TextMuted
                                             )
-                                        },
-                                        colors = NavigationBarItemDefaults.colors(
-                                            indicatorColor = BrandLightPink
                                         )
-                                    )
+                                    }
                                 }
                             }
                         }
@@ -179,6 +207,12 @@ class MainActivity : ComponentActivity(), PaymentResultWithDataListener {
                                 onProductClick = { product ->
                                     selectedProductForDetail = product
                                     navController.navigate(Screen.ProductDetail.route)
+                                },
+                                onNavigateToShop = {
+                                    navController.navigate(Screen.Categories.route)
+                                },
+                                onNavigateToBag = {
+                                    navController.navigate(Screen.Cart.route)
                                 }
                             )
                         }
@@ -186,10 +220,12 @@ class MainActivity : ComponentActivity(), PaymentResultWithDataListener {
                         composable(Screen.Categories.route) {
                             CategoriesScreen(
                                 viewModel = viewModel,
-                                onCategorySelected = {
-                                    navController.navigate(Screen.Home.route) {
-                                        popUpTo(Screen.Home.route) { inclusive = false }
-                                    }
+                                onProductClick = { product ->
+                                    selectedProductForDetail = product
+                                    navController.navigate(Screen.ProductDetail.route)
+                                },
+                                onNavigateToBag = {
+                                    navController.navigate(Screen.Cart.route)
                                 }
                             )
                         }
@@ -203,6 +239,9 @@ class MainActivity : ComponentActivity(), PaymentResultWithDataListener {
                                 },
                                 onExploreClick = {
                                     navController.navigate(Screen.Home.route)
+                                },
+                                onNavigateToBag = {
+                                    navController.navigate(Screen.Cart.route)
                                 }
                             )
                         }
@@ -224,6 +263,9 @@ class MainActivity : ComponentActivity(), PaymentResultWithDataListener {
                                 viewModel = viewModel,
                                 onNavigateToOrders = {
                                     navController.navigate(Screen.Orders.route)
+                                },
+                                onNavigateToWishlist = {
+                                    navController.navigate(Screen.Wishlist.route)
                                 }
                             )
                         }

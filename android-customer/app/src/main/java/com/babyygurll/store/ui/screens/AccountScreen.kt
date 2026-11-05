@@ -2,44 +2,47 @@ package com.babyygurll.store.ui.screens
 
 import android.content.Intent
 import android.net.Uri
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.automirrored.outlined.ExitToApp
+import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.babyygurll.store.BuildConfig
 import com.babyygurll.store.ui.theme.*
 import com.babyygurll.store.ui.viewmodel.StoreViewModel
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AccountScreen(
     viewModel: StoreViewModel,
     onNavigateToOrders: () -> Unit,
+    onNavigateToWishlist: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
     val currentUser by viewModel.currentUser.collectAsState()
+    val wishlistIds by viewModel.wishlistIds.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
 
     var isRegisterMode by remember { mutableStateOf(false) }
-
     var loginEmail by remember { mutableStateOf("") }
     var loginPassword by remember { mutableStateOf("") }
 
@@ -67,32 +70,24 @@ fun AccountScreen(
         topBar = {
             Surface(
                 color = Color.White,
-                shadowElevation = 2.dp
+                border = BorderStroke(1.dp, SurfaceBorder)
             ) {
-                TopAppBar(
-                    title = {
-                        Column {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text(
-                                    text = if (currentUser != null) "My Account" else "BabyyGurll Boutique",
-                                    style = MaterialTheme.typography.titleLarge.copy(
-                                        fontWeight = FontWeight.Bold,
-                                        fontFamily = FontFamily.Serif
-                                    ),
-                                    color = TextPrimary
-                                )
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text("🌸", fontSize = 18.sp)
-                            }
-                            Text(
-                                text = if (currentUser != null) "Artisanal Member Profile" else "Sign in for orders, wishlist & discounts",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = TextMuted
-                            )
-                        }
-                    },
-                    colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
-                )
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .statusBarsPadding()
+                        .padding(horizontal = 16.dp, vertical = 14.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "My Account",
+                        style = MaterialTheme.typography.titleMedium.copy(
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 19.sp
+                        ),
+                        color = BrandDarkNavy
+                    )
+                }
             }
         }
     ) { innerPadding ->
@@ -100,120 +95,96 @@ fun AccountScreen(
             modifier = modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .background(BrandCream)
+                .background(BrandBackground)
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             if (currentUser != null) {
-                // Logged In User Profile Card
+                // Logged In: Dark Navy Profile Card (Screenshot 4)
                 val user = currentUser!!
                 Card(
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color.White),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+                    shape = RoundedCornerShape(20.dp),
+                    colors = CardDefaults.cardColors(containerColor = BrandDarkNavy),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Column(
-                        modifier = Modifier.padding(20.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(20.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Box(
-                            modifier = Modifier
-                                .size(72.dp)
-                                .clip(CircleShape)
-                                .background(BrandPrimary),
-                            contentAlignment = Alignment.Center
+                        // Blue Avatar with Initials
+                        Surface(
+                            color = BrandPrimary,
+                            shape = CircleShape,
+                            modifier = Modifier.size(56.dp)
                         ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                val initials = user.name.split(" ")
+                                    .take(2)
+                                    .mapNotNull { it.firstOrNull()?.uppercase() }
+                                    .joinToString("")
+                                    .ifBlank { "AS" }
+                                Text(
+                                    text = initials,
+                                    color = Color.White,
+                                    fontSize = 18.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.width(16.dp))
+
+                        Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = user.name.take(1).uppercase().ifBlank { "B" },
-                                color = Color.White,
-                                style = MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.Bold)
+                                text = user.name,
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White
+                            )
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                text = user.email,
+                                fontSize = 13.sp,
+                                color = Color(0xFFCBD5E1)
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = "MEMBER SINCE 2024",
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold,
+                                letterSpacing = 0.8.sp,
+                                color = Color(0xFF93C5FD)
                             )
                         }
 
-                        Spacer(modifier = Modifier.height(12.dp))
-
-                        Text(
-                            text = user.name,
-                            style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
-                            color = TextPrimary
-                        )
-
-                        Text(
-                            text = user.email,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = TextSecondary
-                        )
-
-                        if (!user.phone.isNullOrBlank()) {
-                            Text(
-                                text = "📱 ${user.phone}",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = TextMuted
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.height(16.dp))
-                        HorizontalDivider(color = SurfaceBorder)
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        // Quick Navigation Items
-                        OutlinedButton(
-                            onClick = onNavigateToOrders,
-                            shape = RoundedCornerShape(12.dp),
-                            modifier = Modifier.fillMaxWidth()
+                        // Edit icon button
+                        Surface(
+                            color = Color.Transparent,
+                            shape = RoundedCornerShape(8.dp),
+                            border = BorderStroke(1.dp, Color(0xFF3B82F6).copy(alpha = 0.6f)),
+                            modifier = Modifier.size(36.dp)
                         ) {
-                            Icon(Icons.Default.ShoppingBag, contentDescription = null, tint = BrandPrimary)
-                            Spacer(modifier = Modifier.width(10.dp))
-                            Text("View My Orders", fontWeight = FontWeight.Bold)
-                        }
-
-                        Spacer(modifier = Modifier.height(10.dp))
-
-                        OutlinedButton(
-                            onClick = {
-                                val uri = Uri.parse("https://wa.me/916002839514?text=Hi%20BabyyGurll!%20🌸%20I%20have%20a%20question%20about%20my%20order%20or%20a%20custom%20piece.")
-                                context.startActivity(Intent(Intent.ACTION_VIEW, uri))
-                            },
-                            shape = RoundedCornerShape(12.dp),
-                            colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFF25D366)),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text("💬 WhatsApp Crafter Concierge", fontWeight = FontWeight.Bold)
-                        }
-
-                        Spacer(modifier = Modifier.height(10.dp))
-
-                        OutlinedButton(
-                            onClick = { viewModel.checkForUpdatesManual() },
-                            shape = RoundedCornerShape(12.dp),
-                            colors = ButtonDefaults.outlinedButtonColors(contentColor = BrandSecondary),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Icon(Icons.Default.Refresh, contentDescription = null, tint = BrandSecondary, modifier = Modifier.size(18.dp))
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text("Check for Updates Now", fontWeight = FontWeight.Bold)
-                        }
-
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        TextButton(
-                            onClick = { viewModel.logout() },
-                            colors = ButtonDefaults.textButtonColors(contentColor = StatusError)
-                        ) {
-                            Icon(Icons.Default.ExitToApp, contentDescription = null, modifier = Modifier.size(18.dp))
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text("Sign Out of Boutique", fontWeight = FontWeight.Bold)
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    imageVector = Icons.Outlined.Edit,
+                                    contentDescription = "Edit Profile",
+                                    tint = Color.White,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
                         }
                     }
                 }
             } else {
-                // Auth Card: Login / Register
+                // Not Logged In: Sign In / Create Account Card
                 Card(
-                    shape = RoundedCornerShape(16.dp),
+                    shape = RoundedCornerShape(20.dp),
                     colors = CardDefaults.cardColors(containerColor = Color.White),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+                    border = BorderStroke(1.dp, SurfaceBorder),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(modifier = Modifier.padding(20.dp)) {
@@ -225,7 +196,7 @@ fun AccountScreen(
                                 onClick = { isRegisterMode = false; formError = null },
                                 shape = RoundedCornerShape(10.dp),
                                 colors = ButtonDefaults.buttonColors(
-                                    containerColor = if (!isRegisterMode) BrandPrimary else BrandCream,
+                                    containerColor = if (!isRegisterMode) BrandDarkNavy else Color(0xFFF1F5F9),
                                     contentColor = if (!isRegisterMode) Color.White else TextPrimary
                                 ),
                                 modifier = Modifier.weight(1f)
@@ -237,7 +208,7 @@ fun AccountScreen(
                                 onClick = { isRegisterMode = true; formError = null },
                                 shape = RoundedCornerShape(10.dp),
                                 colors = ButtonDefaults.buttonColors(
-                                    containerColor = if (isRegisterMode) BrandPrimary else BrandCream,
+                                    containerColor = if (isRegisterMode) BrandDarkNavy else Color(0xFFF1F5F9),
                                     contentColor = if (isRegisterMode) Color.White else TextPrimary
                                 ),
                                 modifier = Modifier.weight(1f)
@@ -259,14 +230,13 @@ fun AccountScreen(
                                 Text(
                                     text = formError!!,
                                     color = StatusError,
-                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontSize = 13.sp,
                                     modifier = Modifier.padding(10.dp)
                                 )
                             }
                         }
 
                         if (!isRegisterMode) {
-                            // Login Form
                             OutlinedTextField(
                                 value = loginEmail,
                                 onValueChange = { loginEmail = it; formError = null },
@@ -317,7 +287,7 @@ fun AccountScreen(
                                     viewModel.login(loginEmail, loginPassword, onError = { formError = it })
                                 },
                                 enabled = !isLoading,
-                                shape = RoundedCornerShape(10.dp),
+                                shape = RoundedCornerShape(12.dp),
                                 colors = ButtonDefaults.buttonColors(containerColor = BrandPrimary),
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -326,85 +296,59 @@ fun AccountScreen(
                                 if (isLoading) {
                                     CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
                                 } else {
-                                    Text("Sign In", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                                    Text("Sign In", fontWeight = FontWeight.Bold, fontSize = 15.sp)
                                 }
                             }
                         } else {
-                            // Register Form
                             OutlinedTextField(
                                 value = regName,
                                 onValueChange = { regName = it; formError = null },
                                 label = { Text("Full Name *") },
-                                placeholder = { Text("Priyanshu Sharma") },
                                 singleLine = true,
                                 shape = RoundedCornerShape(10.dp),
                                 modifier = Modifier.fillMaxWidth()
                             )
-
-                            Spacer(modifier = Modifier.height(10.dp))
-
+                            Spacer(modifier = Modifier.height(8.dp))
                             OutlinedTextField(
                                 value = regEmail,
                                 onValueChange = { regEmail = it; formError = null },
                                 label = { Text("Email Address *") },
-                                placeholder = { Text("your.email@example.com") },
                                 singleLine = true,
                                 shape = RoundedCornerShape(10.dp),
                                 modifier = Modifier.fillMaxWidth()
                             )
-
-                            Spacer(modifier = Modifier.height(10.dp))
-
-                            OutlinedTextField(
-                                value = regPhone,
-                                onValueChange = { regPhone = it; formError = null },
-                                label = { Text("Mobile Number (10 Digits) *") },
-                                placeholder = { Text("9876543210") },
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
-                                singleLine = true,
-                                shape = RoundedCornerShape(10.dp),
-                                modifier = Modifier.fillMaxWidth()
-                            )
-
-                            Spacer(modifier = Modifier.height(10.dp))
-
+                            Spacer(modifier = Modifier.height(8.dp))
                             OutlinedTextField(
                                 value = regPassword,
                                 onValueChange = { regPassword = it; formError = null },
-                                label = { Text("Password (Min 6 Characters) *") },
+                                label = { Text("Create Password *") },
                                 visualTransformation = PasswordVisualTransformation(),
                                 singleLine = true,
                                 shape = RoundedCornerShape(10.dp),
                                 modifier = Modifier.fillMaxWidth()
                             )
-
-                            Spacer(modifier = Modifier.height(16.dp))
+                            Spacer(modifier = Modifier.height(8.dp))
+                            OutlinedTextField(
+                                value = regPhone,
+                                onValueChange = { regPhone = it },
+                                label = { Text("Mobile Number (Optional)") },
+                                singleLine = true,
+                                shape = RoundedCornerShape(10.dp),
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                            Spacer(modifier = Modifier.height(14.dp))
 
                             Button(
                                 onClick = {
-                                    if (regName.isBlank()) {
-                                        formError = "Please enter your name"
+                                    if (regName.isBlank() || regEmail.isBlank() || regPassword.isBlank()) {
+                                        formError = "Please enter name, email and password"
                                         return@Button
                                     }
-                                    if (regEmail.isBlank()) {
-                                        formError = "Please enter your email"
-                                        return@Button
-                                    }
-                                    val cleanPhone = regPhone.replace("[^0-9]".toRegex(), "")
-                                    if (cleanPhone.length < 10) {
-                                        formError = "Please enter a valid 10-digit mobile number"
-                                        return@Button
-                                    }
-                                    if (regPassword.length < 6) {
-                                        formError = "Password must be at least 6 characters"
-                                        return@Button
-                                    }
-
                                     formError = null
-                                    viewModel.register(regName, regEmail, regPassword, cleanPhone, onError = { formError = it })
+                                    viewModel.register(regName, regEmail, regPassword, regPhone, onError = { formError = it })
                                 },
                                 enabled = !isLoading,
-                                shape = RoundedCornerShape(10.dp),
+                                shape = RoundedCornerShape(12.dp),
                                 colors = ButtonDefaults.buttonColors(containerColor = BrandPrimary),
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -413,160 +357,291 @@ fun AccountScreen(
                                 if (isLoading) {
                                     CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
                                 } else {
-                                    Text("Create Account", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                                    Text("Create Account", fontWeight = FontWeight.Bold, fontSize = 15.sp)
                                 }
                             }
                         }
                     }
                 }
+            }
 
-                // Why create an account card
+            // Section 1: "YOUR BOUTIQUE" (Screenshot 4)
+            Column(modifier = Modifier.fillMaxWidth()) {
+                Text(
+                    text = "YOUR BOUTIQUE",
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = TextMuted,
+                    letterSpacing = 1.sp,
+                    modifier = Modifier.padding(start = 4.dp, bottom = 8.dp)
+                )
+
                 Card(
-                    shape = RoundedCornerShape(16.dp),
+                    shape = RoundedCornerShape(18.dp),
                     colors = CardDefaults.cardColors(containerColor = Color.White),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+                    border = BorderStroke(1.dp, SurfaceBorder),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Text(
-                            text = "Boutique Perks",
-                            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-                            color = TextPrimary
+                    Column {
+                        AccountMenuRow(
+                            icon = Icons.Outlined.Inventory2,
+                            title = "My Orders",
+                            subtitle = "Track, return or buy again",
+                            onClick = onNavigateToOrders
                         )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        PerkItem("🌸", "Save wishlist pieces across devices")
-                        PerkItem("📦", "Live Shiprocket order tracking & past invoices")
-                        PerkItem("🎁", "Instant 15% discount on your first order with code BABYYGURLL")
+                        HorizontalDivider(color = SurfaceBorder, thickness = 1.dp)
+                        AccountMenuRow(
+                            icon = Icons.Outlined.LocationOn,
+                            title = "Saved Addresses",
+                            subtitle = "Doorstep delivery addresses",
+                            onClick = {}
+                        )
+                        HorizontalDivider(color = SurfaceBorder, thickness = 1.dp)
+                        AccountMenuRow(
+                            icon = Icons.Outlined.FavoriteBorder,
+                            title = "Wishlist",
+                            subtitle = "${wishlistIds.size} pieces saved for later",
+                            onClick = onNavigateToWishlist
+                        )
+                        HorizontalDivider(color = SurfaceBorder, thickness = 1.dp)
+                        AccountMenuRow(
+                            icon = Icons.Outlined.ConfirmationNumber,
+                            title = "Coupons",
+                            subtitle = "3 offers waiting for you",
+                            onClick = {}
+                        )
+                    }
+                }
+            }
 
-                        Spacer(modifier = Modifier.height(14.dp))
+            // Section 2: "HELP & SUPPORT" (Screenshot 4)
+            Column(modifier = Modifier.fillMaxWidth()) {
+                Text(
+                    text = "HELP & SUPPORT",
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = TextMuted,
+                    letterSpacing = 1.sp,
+                    modifier = Modifier.padding(start = 4.dp, bottom = 8.dp)
+                )
+
+                Card(
+                    shape = RoundedCornerShape(18.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    border = BorderStroke(1.dp, SurfaceBorder),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column {
+                        AccountMenuRow(
+                            icon = Icons.Outlined.HelpOutline,
+                            title = "Customer Support",
+                            subtitle = "We're happy to help",
+                            onClick = {
+                                val intent = Intent(Intent.ACTION_SENDTO).apply {
+                                    data = Uri.parse("mailto:hello@babyygurll.in")
+                                    putExtra(Intent.EXTRA_SUBJECT, "Customer Inquiry - BabyyGurll")
+                                }
+                                context.startActivity(intent)
+                            }
+                        )
+                        HorizontalDivider(color = SurfaceBorder, thickness = 1.dp)
+                        AccountMenuRow(
+                            icon = Icons.Outlined.Chat,
+                            title = "WhatsApp Contact",
+                            subtitle = "Chat directly with our crafter",
+                            trailingBadge = "ONLINE",
+                            onClick = {
+                                val uri = Uri.parse("https://wa.me/916002839514?text=Hi%20BabyyGurll!%20🌸%20I%20have%20a%20question%20about%20an%20order%20or%20piece.")
+                                context.startActivity(Intent(Intent.ACTION_VIEW, uri))
+                            }
+                        )
+                        HorizontalDivider(color = SurfaceBorder, thickness = 1.dp)
+                        AccountMenuRow(
+                            icon = Icons.Outlined.Security,
+                            title = "Privacy Policy",
+                            subtitle = "Your privacy matters to us",
+                            onClick = {}
+                        )
+                    }
+                }
+            }
+
+            // App Updates & Diagnostics Section
+            Card(
+                shape = RoundedCornerShape(18.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                border = BorderStroke(1.dp, SurfaceBorder),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            Text(
+                                text = "BabyyGurll Boutique",
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = BrandDarkNavy
+                            )
+                            Text(
+                                text = "v${BuildConfig.VERSION_NAME} (Build ${BuildConfig.VERSION_CODE})",
+                                fontSize = 12.sp,
+                                color = TextMuted
+                            )
+                        }
+
+                        Surface(
+                            color = Color(0xFFEFF6FF),
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Text(
+                                text = "Official APK",
+                                color = BrandPrimary,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        OutlinedButton(
+                            onClick = { viewModel.checkForUpdatesManual() },
+                            shape = RoundedCornerShape(10.dp),
+                            border = BorderStroke(1.dp, BrandPrimary),
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Icon(Icons.Default.Refresh, contentDescription = null, tint = BrandPrimary, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Check Updates", fontSize = 12.sp, color = BrandPrimary, fontWeight = FontWeight.Bold)
+                        }
 
                         OutlinedButton(
                             onClick = { viewModel.triggerManualErrorReport() },
                             shape = RoundedCornerShape(10.dp),
-                            colors = ButtonDefaults.outlinedButtonColors(contentColor = TextSecondary),
-                            modifier = Modifier.fillMaxWidth()
+                            border = BorderStroke(1.dp, SurfaceBorder),
+                            modifier = Modifier.weight(1f)
                         ) {
-                            Text("🛠️ App Diagnostics & Error Logs", fontWeight = FontWeight.Medium, fontSize = 13.sp)
+                            Icon(Icons.Outlined.BugReport, contentDescription = null, tint = TextSecondary, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Diagnostics", fontSize = 12.sp, color = TextSecondary, fontWeight = FontWeight.Medium)
                         }
+                    }
+                }
+            }
+
+            // Log out Button (Screenshot 4)
+            if (currentUser != null) {
+                Surface(
+                    color = Color.White,
+                    shape = RoundedCornerShape(14.dp),
+                    border = BorderStroke(1.dp, SurfaceBorder),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { viewModel.logout() }
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 14.dp),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Outlined.ExitToApp,
+                            contentDescription = "Log out",
+                            tint = BrandDarkNavy,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Log out",
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = BrandDarkNavy
+                        )
                     }
                 }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
-
-            // Dedicated App Version & Live Update Section
-            AppUpdateSection(viewModel = viewModel, isLoading = isLoading)
-
-            Spacer(modifier = Modifier.height(20.dp))
         }
     }
 }
 
 @Composable
-fun AppUpdateSection(
-    viewModel: StoreViewModel,
-    isLoading: Boolean,
-    modifier: Modifier = Modifier
+fun AccountMenuRow(
+    icon: ImageVector,
+    title: String,
+    subtitle: String,
+    trailingBadge: String? = null,
+    onClick: () -> Unit
 ) {
-    Card(
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-        modifier = modifier.fillMaxWidth()
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Surface(
-                        color = BrandLightPink,
-                        shape = RoundedCornerShape(10.dp),
-                        modifier = Modifier.size(40.dp)
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Text("🌸", fontSize = 20.sp)
-                        }
-                    }
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Column {
-                        Text(
-                            text = "BabyyGurll Boutique",
-                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                            color = TextPrimary
-                        )
-                        Text(
-                            text = "v${com.babyygurll.store.BuildConfig.VERSION_NAME} (Build ${com.babyygurll.store.BuildConfig.VERSION_CODE})",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = TextMuted
-                        )
-                    }
-                }
-
-                Surface(
-                    color = BrandCream,
-                    shape = RoundedCornerShape(8.dp)
-                ) {
-                    Text(
-                        text = "Official APK",
-                        color = BrandSecondary,
-                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(14.dp))
-
-            Button(
-                onClick = { viewModel.checkForUpdatesManual() },
-                enabled = !isLoading,
-                shape = RoundedCornerShape(10.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = BrandPrimary),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(46.dp)
-            ) {
-                if (isLoading) {
-                    CircularProgressIndicator(color = Color.White, modifier = Modifier.size(18.dp))
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Checking Server...", fontWeight = FontWeight.Bold)
-                } else {
-                    Icon(Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Check for Updates Now", fontWeight = FontWeight.Bold)
-                }
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            OutlinedButton(
-                onClick = { viewModel.triggerManualErrorReport() },
-                shape = RoundedCornerShape(10.dp),
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = TextSecondary),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(44.dp)
-            ) {
-                Icon(Icons.Default.BugReport, contentDescription = null, modifier = Modifier.size(16.dp))
-                Spacer(modifier = Modifier.width(6.dp))
-                Text("App Diagnostics & Error Logs", fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
-            }
-        }
-    }
-}
-
-@Composable
-fun PerkItem(icon: String, text: String) {
     Row(
-        modifier = Modifier.padding(vertical = 4.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() }
+            .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(icon, fontSize = 16.sp)
-        Spacer(modifier = Modifier.width(10.dp))
-        Text(text, style = MaterialTheme.typography.bodyMedium, color = TextSecondary)
+        Surface(
+            color = Color(0xFFEFF6FF),
+            shape = RoundedCornerShape(10.dp),
+            modifier = Modifier.size(40.dp)
+        ) {
+            Box(contentAlignment = Alignment.Center) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = BrandPrimary,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.width(14.dp))
+
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = title,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Bold,
+                color = BrandDarkNavy
+            )
+            Spacer(modifier = Modifier.height(2.dp))
+            Text(
+                text = subtitle,
+                fontSize = 12.sp,
+                color = TextSecondary
+            )
+        }
+
+        if (trailingBadge != null) {
+            Surface(
+                color = Color(0xFFE0EDFF),
+                shape = RoundedCornerShape(6.dp),
+                modifier = Modifier.padding(end = 8.dp)
+            ) {
+                Text(
+                    text = trailingBadge,
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = BrandPrimary,
+                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                )
+            }
+        }
+
+        Icon(
+            imageVector = Icons.Default.ChevronRight,
+            contentDescription = null,
+            tint = TextMuted,
+            modifier = Modifier.size(18.dp)
+        )
     }
 }
-

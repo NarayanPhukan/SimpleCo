@@ -1,104 +1,151 @@
 package com.babyygurll.store.ui.screens
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.babyygurll.store.data.model.Product
+import com.babyygurll.store.ui.components.BoutiqueHeader
 import com.babyygurll.store.ui.theme.*
 import com.babyygurll.store.ui.viewmodel.StoreViewModel
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WishlistScreen(
     viewModel: StoreViewModel,
     onProductClick: (Product) -> Unit,
     onExploreClick: () -> Unit,
+    onNavigateToBag: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val allProducts by viewModel.products.collectAsState()
     val wishlistIds by viewModel.wishlistIds.collectAsState()
+    val cartItems by viewModel.cartItems.collectAsState()
+    val cartCount = remember(cartItems) { cartItems.sumOf { it.quantity } }
 
     val wishlistedProducts = remember(allProducts, wishlistIds) {
         allProducts.filter { wishlistIds.contains(it.effectiveId) }
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            text = "My Wishlist",
-                            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-                            color = TextPrimary
-                        )
-                        if (wishlistedProducts.isNotEmpty()) {
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Surface(
-                                color = BrandPrimary,
-                                shape = RoundedCornerShape(12.dp)
-                            ) {
-                                Text(
-                                    text = "${wishlistedProducts.size}",
-                                    color = Color.White,
-                                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
-                                )
-                            }
-                        }
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
-            )
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .background(BrandBackground)
+    ) {
+        BoutiqueHeader(
+            cartBadgeCount = cartCount,
+            onBagClick = onNavigateToBag
+        )
+
+        Surface(
+            color = Color.White,
+            border = BorderStroke(1.dp, SurfaceBorder)
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 14.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    text = "My Wishlist",
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 18.sp
+                    ),
+                    color = BrandDarkNavy
+                )
+
+                Text(
+                    text = "${wishlistedProducts.size} saved",
+                    fontSize = 13.sp,
+                    color = TextSecondary,
+                    fontWeight = FontWeight.Medium
+                )
+            }
         }
-    ) { innerPadding ->
+
         if (wishlistedProducts.isEmpty()) {
             Box(
-                modifier = modifier
+                modifier = Modifier
                     .fillMaxSize()
-                    .padding(innerPadding)
-                    .background(BrandCream),
+                    .background(Color.White),
                 contentAlignment = Alignment.Center
             ) {
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier.padding(32.dp)
                 ) {
-                    Text("♥", fontSize = 56.sp, color = BrandPrimary)
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Surface(
+                        color = Color(0xFFEFF6FF),
+                        shape = CircleShape,
+                        modifier = Modifier.size(80.dp)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                imageVector = Icons.Outlined.FavoriteBorder,
+                                contentDescription = null,
+                                tint = BrandPrimary,
+                                modifier = Modifier.size(36.dp)
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(20.dp))
+
                     Text(
                         text = "Your wishlist is empty",
-                        style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
-                        color = TextPrimary
+                        style = MaterialTheme.typography.headlineSmall.copy(
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 22.sp
+                        ),
+                        color = BrandDarkNavy
                     )
-                    Spacer(modifier = Modifier.height(6.dp))
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
                     Text(
-                        text = "Tap the heart icon on any piece you love to save it here for later!",
-                        style = MaterialTheme.typography.bodyMedium,
+                        text = "Tap the heart on any piece you love to save it here for later.",
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            fontSize = 14.sp,
+                            lineHeight = 20.sp
+                        ),
                         color = TextSecondary,
-                        modifier = Modifier.padding(horizontal = 16.dp)
+                        textAlign = TextAlign.Center
                     )
-                    Spacer(modifier = Modifier.height(20.dp))
+
+                    Spacer(modifier = Modifier.height(24.dp))
+
                     Button(
                         onClick = onExploreClick,
-                        shape = RoundedCornerShape(12.dp),
+                        shape = RoundedCornerShape(14.dp),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = BrandPrimary,
                             contentColor = Color.White
-                        )
+                        ),
+                        modifier = Modifier.height(48.dp)
                     ) {
-                        Text("Discover Pieces", fontWeight = FontWeight.Bold)
+                        Text(
+                            text = "Explore the collection",
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(horizontal = 16.dp)
+                        )
                     }
                 }
             }
@@ -108,22 +155,19 @@ fun WishlistScreen(
                 contentPadding = PaddingValues(16.dp),
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
-                modifier = modifier
+                modifier = Modifier
                     .fillMaxSize()
-                    .padding(innerPadding)
-                    .background(BrandCream)
+                    .background(BrandBackground)
             ) {
                 items(wishlistedProducts, key = { it.effectiveId }) { product ->
-                    ProductCard(
+                    ProductGridCard(
                         product = product,
                         isWishlisted = true,
                         onProductClick = { onProductClick(product) },
-                        onWishlistClick = { viewModel.toggleWishlist(product) },
-                        onAddToCart = { viewModel.addToCart(product) }
+                        onWishlistClick = { viewModel.toggleWishlist(product) }
                     )
                 }
             }
         }
     }
 }
-

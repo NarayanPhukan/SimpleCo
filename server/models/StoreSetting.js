@@ -80,12 +80,12 @@ const storeSettingSchema = new mongoose.Schema({
     critical: { type: Boolean, default: false }
   },
   customerAppVersion: {
-    latestVersionCode: { type: Number, default: 4 },
-    latestVersionName: { type: String, default: '1.0.3' },
+    latestVersionCode: { type: Number, default: 5 },
+    latestVersionName: { type: String, default: '1.0.4' },
     minRequiredVersionCode: { type: Number, default: 1 },
     releaseNotes: {
       type: String,
-      default: '• Fixed product images rendering for all handcrafted crochet pieces (Base64 & URL)\n• Added Forgot Password with secure 6-digit email OTP verification\n• Refined luxury boutique aesthetics, warm ivory tones, and artisan navigation'
+      default: '• Quiet luxury midnight navy & royal blue bespoke design overhaul\n• Redesigned Home with handcrafted hero showcase & category pills\n• 2x2 Specs and dual Add to Cart / Buy Now actions on Product Detail\n• Free delivery unlock banner & coupon cards in Shopping Bag\n• 3-step checkout with contact & delivery address validation\n• My Account boutique hub with orders, addresses & support'
     },
     downloadUrl: { type: String, default: 'https://raw.githubusercontent.com/NarayanPhukan/SimpleCo/main/android-customer/babyygurll-boutique.apk' },
     releaseDate: { type: String, default: '2026-11-05' },

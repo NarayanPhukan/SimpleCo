@@ -14,20 +14,20 @@ import androidx.core.view.WindowCompat
 private val LightColorScheme = lightColorScheme(
     primary = BrandPrimary,
     onPrimary = Color.White,
-    primaryContainer = BrandLightPink,
+    primaryContainer = BrandLightBlue,
     onPrimaryContainer = BrandPrimary,
     secondary = BrandSecondary,
     onSecondary = Color.White,
-    secondaryContainer = Color(0xFFE8EEF9),
+    secondaryContainer = BrandLightBlue,
     onSecondaryContainer = BrandSecondary,
     tertiary = BrandAccent,
-    background = BrandCream,
+    background = BrandBackground,
     surface = Color.White,
     onBackground = TextPrimary,
     onSurface = TextPrimary,
-    surfaceVariant = Color(0xFFF8FAFC),
+    surfaceVariant = Color(0xFFF1F5F9),
     onSurfaceVariant = TextSecondary,
-    outline = SurfaceBorderActive
+    outline = SurfaceBorder
 )
 
 @Composable
