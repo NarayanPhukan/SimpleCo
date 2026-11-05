@@ -57,6 +57,7 @@ fun SettingsScreen(
     var supportEmail by remember { mutableStateOf(uiState.settings.supportEmail) }
     var supportPhone by remember { mutableStateOf(uiState.settings.supportPhone) }
     var studioAddress by remember { mutableStateOf(uiState.settings.studioAddress) }
+    var adminRazorpayAccountId by remember { mutableStateOf(uiState.settings.adminRazorpayAccountId) }
 
     // Test pincode state
     var testPincode by remember { mutableStateOf("") }
@@ -74,6 +75,7 @@ fun SettingsScreen(
         supportEmail = uiState.settings.supportEmail
         supportPhone = uiState.settings.supportPhone
         studioAddress = uiState.settings.studioAddress
+        adminRazorpayAccountId = uiState.settings.adminRazorpayAccountId
     }
 
     Scaffold(
@@ -734,6 +736,89 @@ fun SettingsScreen(
                 }
             }
 
+            // Section 8: Automated Admin Payouts (Razorpay Route)
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            ) {
+                Column(
+                    modifier = Modifier.padding(18.dp),
+                    verticalArrangement = Arrangement.spacedBy(14.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Outlined.AccountBalance, contentDescription = null, tint = RoyalBlue)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Automated Admin Payouts",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MidnightNavy
+                            )
+                        }
+
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            color = if (adminRazorpayAccountId.trim().startsWith("acc_")) Color(0xFFE8F5E9) else Color(0xFFFFF3E0)
+                        ) {
+                            Text(
+                                text = if (adminRazorpayAccountId.trim().startsWith("acc_")) "✓ Auto-Route Active" else "Not Linked",
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = if (adminRazorpayAccountId.trim().startsWith("acc_")) Color(0xFF2E7D32) else Color(0xFFE65100),
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                            )
+                        }
+                    }
+
+                    Text(
+                        text = "With Razorpay Route, 100% of customer order money automatically routes directly to the Admin's bank account.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = CharcoalGray.copy(alpha = 0.7f)
+                    )
+
+                    OutlinedTextField(
+                        value = adminRazorpayAccountId,
+                        onValueChange = { adminRazorpayAccountId = it },
+                        label = { Text("Admin Linked Account ID (acc_...)") },
+                        placeholder = { Text("e.g. acc_N1234567890abc") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    Surface(
+                        shape = RoundedCornerShape(10.dp),
+                        color = Color(0xFFF1F5F9),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(12.dp),
+                            verticalAlignment = Alignment.Top
+                        ) {
+                            Icon(
+                                Icons.Default.Info,
+                                contentDescription = null,
+                                tint = RoyalBlue,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Setup Guide: Open Razorpay Dashboard → Route → Linked Accounts → Add Account with the Admin's Bank Account Number & IFSC. Copy the generated 'acc_...' ID and paste it here.",
+                                fontSize = 11.sp,
+                                color = MidnightNavy,
+                                lineHeight = 16.sp
+                            )
+                        }
+                    }
+                }
+            }
+
             // Save Action Button
             Button(
                 onClick = {
@@ -748,7 +833,8 @@ fun SettingsScreen(
                         expressShippingFee = expressShippingFee.toDoubleOrNull() ?: 149.0,
                         supportEmail = supportEmail.trim(),
                         supportPhone = supportPhone.trim(),
-                        studioAddress = studioAddress.trim()
+                        studioAddress = studioAddress.trim(),
+                        adminRazorpayAccountId = adminRazorpayAccountId.trim()
                     )
                     viewModel.saveSettings(updated)
                 },

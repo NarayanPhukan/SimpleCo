@@ -17,6 +17,7 @@ const DEFAULT_CONFIG = {
   supportPhone: '+91 98200 12345',
   studioAddress: 'Bandra West, Mumbai, Maharashtra 400050',
   adminPassword: 'admin123',
+  adminRazorpayAccountId: '',
   appVersion: {
     latestVersionCode: 4,
     latestVersionName: '1.2.1',

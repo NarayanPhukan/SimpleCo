@@ -11,6 +11,7 @@ const shippingRoutes = require('./routes/shippingRoutes');
 const paymentRoutes = require('./routes/paymentRoutes');
 const couponRoutes = require('./routes/couponRoutes');
 const settingRoutes = require('./routes/settingRoutes');
+const payuRoutes = require('./routes/payuRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -36,6 +37,7 @@ app.use('/api/orders', orderRoutes);
 app.use('/api/shipping', shippingRoutes);
 app.use('/api/coupons', couponRoutes);
 app.use('/api/settings', settingRoutes);
+app.use('/api/payu', payuRoutes);
 app.use('/api', paymentRoutes);
 app.use('/api/payment', paymentRoutes);
 

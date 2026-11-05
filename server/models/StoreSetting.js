@@ -59,6 +59,10 @@ const storeSettingSchema = new mongoose.Schema({
     type: String,
     default: 'admin123'
   },
+  adminRazorpayAccountId: {
+    type: String,
+    default: ''
+  },
   hasInitializedCoupons: {
     type: Boolean,
     default: false

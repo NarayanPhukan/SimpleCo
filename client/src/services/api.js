@@ -370,6 +370,20 @@ export const api = {
     return res.json();
   },
 
+  // PayU Hosted Checkout API
+  async initiatePayUPayment(payload) {
+    const res = await fetch(`${API_BASE}/payu/initiate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || 'Failed to initiate PayU payment');
+    }
+    return res.json();
+  },
+
   // Razorpay Standard Web Checkout API
   async createRazorpayOrder(payload) {
     const res = await fetch(`${API_BASE}/create-order`, {

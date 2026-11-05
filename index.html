@@ -777,34 +777,29 @@
 
       <!-- Step 3: Payment Method & Place Order -->
       <div class="checkout-step-content" id="checkoutStep3" style="display: none;">
-        <h3 style="font-family: var(--font-serif); font-size: 1.35rem; margin-bottom: 0.5rem;">Payment Information</h3>
-        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.25rem;">Encrypted & secure simulated checkout.</p>
+        <h3 style="font-family: var(--font-serif); font-size: 1.35rem; margin-bottom: 0.5rem;">Secure Payment</h3>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.25rem;">Encrypted & live checkout powered by PayU Payments.</p>
 
-        <!-- Card Visual -->
-        <div class="mock-card-visual">
-          <div class="card-chip"></div>
-          <div class="card-num-preview">•••• •••• •••• ••••</div>
-          <div class="card-meta-preview">
-            <span id="cardHolderPreview">CARDHOLDER NAME</span>
-            <span>MM / YY</span>
-          </div>
-        </div>
-
-        <div class="form-grid" style="margin-bottom: 1.5rem;">
-          <div class="form-group">
-            <label class="form-label" for="cardNumInput">Card Number</label>
-            <input type="text" class="form-input" id="cardNumInput" placeholder="•••• •••• •••• ••••" value="">
-          </div>
-          <div class="form-row">
-            <div class="form-group">
-              <label class="form-label" for="cardExpInput">Expiry Date</label>
-              <input type="text" class="form-input" id="cardExpInput" placeholder="MM/YY" value="">
+        <!-- PayU Live Gateway Card -->
+        <div style="background: linear-gradient(135deg, #F0FDF4 0%, #FFFFFF 100%); border: 1.5px solid #86EFAC; border-radius: var(--radius-md); padding: 1.25rem; margin-bottom: 1.5rem; box-shadow: 0 2px 8px rgba(34,197,94,0.08);">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.6rem;">
+            <div style="display: flex; align-items: center; gap: 0.6rem;">
+              <span style="font-size: 1.6rem;">🔒</span>
+              <div>
+                <strong style="color: #166534; font-size: 1rem; display: block;">PayU Payment Gateway</strong>
+                <span style="font-size: 0.8rem; color: #15803D;">UPI, Cards & NetBanking</span>
+              </div>
             </div>
-            <div class="form-group">
-              <label class="form-label" for="cardCvcInput">CVC Security</label>
-              <input type="text" class="form-input" id="cardCvcInput" placeholder="123" value="">
-            </div>
+            <span style="background: #DCFCE7; color: #166534; font-size: 0.75rem; font-weight: 700; padding: 0.25rem 0.65rem; border-radius: 999px;">Live Gateway</span>
           </div>
+          <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.8rem;">
+            <span style="background: #FFFFFF; border: 1px solid #D1D5DB; border-radius: 6px; padding: 0.25rem 0.5rem; font-size: 0.75rem; font-weight: 600; color: #374151;">GPay / PhonePe / Paytm</span>
+            <span style="background: #FFFFFF; border: 1px solid #D1D5DB; border-radius: 6px; padding: 0.25rem 0.5rem; font-size: 0.75rem; font-weight: 600; color: #374151;">Credit / Debit Card</span>
+            <span style="background: #FFFFFF; border: 1px solid #D1D5DB; border-radius: 6px; padding: 0.25rem 0.5rem; font-size: 0.75rem; font-weight: 600; color: #374151;">NetBanking</span>
+          </div>
+          <p style="font-size: 0.78rem; color: #6B7280; margin-top: 0.8rem; margin-bottom: 0;">
+            100% secure 256-bit encryption. Settlements deposit directly into the artisan studio bank account.
+          </p>
         </div>
 
         <div style="background: #FFFDFE; border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 1rem; margin-bottom: 1.5rem;">
@@ -817,7 +812,7 @@
         <div style="display: flex; justify-content: space-between; align-items: center;">
           <button class="btn btn-secondary" id="btnBackToStep2">⬅️ Back</button>
           <button class="btn btn-primary" id="btnPlaceOrderFinal" style="padding: 0.95rem 2rem;">
-            Place Order & Stitch Magic 🌸
+            Pay with PayU & Place Order 🌸
           </button>
         </div>
       </div>

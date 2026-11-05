@@ -151,7 +151,8 @@ data class StoreSettings(
     @SerializedName("expressShippingFee") val expressShippingFee: Double = 149.0,
     @SerializedName("supportEmail") val supportEmail: String = "hello@babyygurll.in",
     @SerializedName("supportPhone") val supportPhone: String = "",
-    @SerializedName("studioAddress") val studioAddress: String = ""
+    @SerializedName("studioAddress") val studioAddress: String = "",
+    @SerializedName("adminRazorpayAccountId") val adminRazorpayAccountId: String = ""
 )
 
 data class VerifyAdminRequest(

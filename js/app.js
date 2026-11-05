@@ -1113,55 +1113,105 @@ document.addEventListener("DOMContentLoaded", () => {
   el.btnNextToStep3.addEventListener("click", () => setCheckoutStep(3));
   el.btnBackToStep2.addEventListener("click", () => setCheckoutStep(2));
 
-  // Place Order Final Action
-  el.btnPlaceOrderFinal.addEventListener("click", () => {
+  // Place Order Final Action (Powered by PayU)
+  el.btnPlaceOrderFinal.addEventListener("click", async () => {
     const selectedAddr = store.getAddresses().find(a => a.id === state.checkoutSelectedAddressId) || store.getDefaultAddress();
     const totals = store.getCartTotals();
     const cartItems = store.getCart();
 
+    el.btnPlaceOrderFinal.disabled = true;
+    el.btnPlaceOrderFinal.textContent = "Connecting to PayU... 🔒";
+
     const newOrder = store.createOrder({
       shippingAddress: selectedAddr,
-      paymentMethod: "Visa ending in •••• 4242",
+      paymentMethod: "PayU Online Payment",
       items: cartItems,
       totals: totals
     });
 
-    // Dynamically post order to live cloud backend
-    fetch('/api/orders', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        shippingAddress: {
-          recipientName: selectedAddr.recipientName || selectedAddr.name || 'Valued Customer',
-          phone: selectedAddr.phone || '+91 98200 12345',
-          street: selectedAddr.addressLine1 || selectedAddr.street || 'Studio Address',
-          city: selectedAddr.city || 'Mumbai',
-          state: selectedAddr.state || 'Maharashtra',
-          zip: selectedAddr.pincode || selectedAddr.zip || '400050',
-          country: 'India'
-        },
-        paymentMethod: "Visa ending in •••• 4242",
-        items: cartItems.map(ci => {
-          const prod = (typeof PRODUCTS_DATA !== 'undefined' ? PRODUCTS_DATA.find(p => p.id === ci.productId) : null) || {};
-          return {
-            id: ci.productId,
-            name: prod.name || 'Crochet Piece',
-            color: (ci.selectedColor && ci.selectedColor.name) || 'Pastel Harmony',
-            quantity: ci.quantity || 1,
-            price: prod.price || 999,
-            image: prod.image || '/assets/images/strawberry-cow.jpg'
-          };
-        }),
-        totals: {
-          subtotal: totals.subtotal,
-          discount: totals.discount || 0,
-          shipping: totals.shipping || 0,
-          tax: totals.tax || 0,
-          total: totals.total
-        }
-      })
-    }).catch(err => console.warn('Could not post order to cloud backend:', err));
+    // 1. Post order to live cloud backend
+    try {
+      await fetch('/api/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          shippingAddress: {
+            recipientName: selectedAddr.recipientName || selectedAddr.name || 'Valued Customer',
+            phone: selectedAddr.phone || '+91 98200 12345',
+            street: selectedAddr.addressLine1 || selectedAddr.street || 'Studio Address',
+            city: selectedAddr.city || 'Mumbai',
+            state: selectedAddr.state || 'Maharashtra',
+            zip: selectedAddr.pincode || selectedAddr.zip || '400050',
+            country: 'India'
+          },
+          paymentMethod: "PayU Online Payment",
+          items: cartItems.map(ci => {
+            const prod = (typeof PRODUCTS_DATA !== 'undefined' ? PRODUCTS_DATA.find(p => p.id === ci.productId) : null) || {};
+            return {
+              id: ci.productId,
+              name: prod.name || 'Crochet Piece',
+              color: (ci.selectedColor && ci.selectedColor.name) || 'Pastel Harmony',
+              quantity: ci.quantity || 1,
+              price: prod.price || 999,
+              image: prod.image || '/assets/images/strawberry-cow.jpg'
+            };
+          }),
+          totals: {
+            subtotal: totals.subtotal,
+            discount: totals.discount || 0,
+            shipping: totals.shipping || 0,
+            tax: totals.tax || 0,
+            total: totals.total
+          }
+        })
+      });
+    } catch (err) {
+      console.warn('Could not post order to cloud backend:', err);
+    }
 
+    // 2. Initiate PayU Payment Gateway Checkout
+    try {
+      const cleanPhone = (selectedAddr.phone || '9820012345').replace(/\D/g, '').slice(-10) || '9820012345';
+      const cleanName = (selectedAddr.recipientName || selectedAddr.name || 'Customer').trim();
+      const cleanEmail = (selectedAddr.email || 'customer@babyygurll.in').trim();
+
+      const payuRes = await fetch('/api/payu/initiate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          amount: totals.total,
+          productinfo: `BabyyGurll Crochet Order #${newOrder.orderId}`,
+          firstname: cleanName.split(' ')[0] || 'Customer',
+          email: cleanEmail,
+          phone: cleanPhone,
+          orderId: newOrder.orderId
+        })
+      });
+
+      const payuData = await payuRes.json();
+      if (payuData.success && payuData.action && payuData.params) {
+        // Create invisible form and POST directly to PayU secure payment page
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = payuData.action;
+        for (const [k, v] of Object.entries(payuData.params)) {
+          const input = document.createElement('input');
+          input.type = 'hidden';
+          input.name = k;
+          input.value = v;
+          form.appendChild(input);
+        }
+        document.body.appendChild(form);
+        form.submit();
+        return;
+      }
+    } catch (payuErr) {
+      console.warn('PayU payment initiation error:', payuErr);
+    }
+
+    // Fallback if gateway initiation fails
+    el.btnPlaceOrderFinal.disabled = false;
+    el.btnPlaceOrderFinal.textContent = "Place Order & Stitch Magic 🌸";
     state.checkoutSelectedOrderId = newOrder.orderId;
     el.newPlacedOrderId.textContent = `Order #${newOrder.orderId}`;
     updateCartUI();
@@ -1279,4 +1329,23 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
   loadProductsFromCloud();
+
+  // PayU Return Redirect Handler (payment=success / payment=failed)
+  const urlParams = new URLSearchParams(window.location.search);
+  const paymentStatus = urlParams.get("payment");
+  if (paymentStatus === "success") {
+    const paidOrderId = urlParams.get("orderId");
+    store.clearCart();
+    updateCartUI();
+    showToast(`Payment successful! Order #${paidOrderId} confirmed & in studio! 🌸`, "🎉");
+    triggerConfetti();
+    if (paidOrderId) {
+      renderTrackingOrder(paidOrderId);
+    }
+    window.history.replaceState({}, document.title, window.location.pathname);
+  } else if (paymentStatus === "failed") {
+    const errorMsg = urlParams.get("msg") || "Payment could not be completed.";
+    showToast(`Payment Failed: ${errorMsg}`, "⚠️");
+    window.history.replaceState({}, document.title, window.location.pathname);
+  }
 });

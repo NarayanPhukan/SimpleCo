@@ -48,6 +48,32 @@ exports.createOrder = async (req, res) => {
       receipt: receipt || `rcpt_${Date.now()}`
     };
 
+    // Automated Route transfer: If Admin's Linked Account ID is configured,
+    // automatically route 100% of the funds directly to the Admin's bank account.
+    let adminAccountId = process.env.ADMIN_RAZORPAY_ACCOUNT_ID;
+    if (!adminAccountId || !adminAccountId.trim().startsWith('acc_')) {
+      try {
+        const StoreSetting = require('../models/StoreSetting');
+        const settingDoc = await StoreSetting.findOne({ key: 'main_store_config' });
+        if (settingDoc?.adminRazorpayAccountId?.trim().startsWith('acc_')) {
+          adminAccountId = settingDoc.adminRazorpayAccountId.trim();
+        }
+      } catch (e) {
+        // Fallback to env
+      }
+    }
+
+    if (adminAccountId && adminAccountId.trim().startsWith('acc_')) {
+      options.transfers = [
+        {
+          account: adminAccountId.trim(),
+          amount: numericAmount,
+          currency: currency.toUpperCase(),
+          on_hold: 0 // Settles automatically to Admin's bank account
+        }
+      ];
+    }
+
     const order = await razorpay.orders.create(options);
 
     return res.status(200).json({
