@@ -148,6 +148,24 @@ export const Navbar = ({
             )}
           </button>
 
+          {/* Download App Shortcut */}
+          <a
+            href="/download/app"
+            download="babyygurll-boutique.apk"
+            className="nav-icon-btn nav-app-btn"
+            title="Download BabyyGurll Android App (.apk)"
+            aria-label="Download BabyyGurll Android App"
+            style={{
+              textDecoration: 'none',
+              fontSize: '1rem',
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}
+          >
+            <span role="img" aria-label="Mobile App">📱</span>
+          </a>
+
           {/* Cart Logo Button */}
           <button 
             className="nav-icon-btn nav-cart-btn" 
@@ -275,6 +293,28 @@ export const Navbar = ({
               </div>
               <IconArrowRight size={15} />
             </button>
+          </div>
+
+          {/* Download Android App Mobile Card */}
+          <div style={{ margin: '0 0 0.85rem 0' }}>
+            <a 
+              href="/download/app"
+              download="babyygurll-boutique.apk"
+              className="drawer-studio-card-btn"
+              style={{
+                textDecoration: 'none',
+                background: 'linear-gradient(135deg, rgba(2, 24, 97, 0.05) 0%, rgba(232, 93, 117, 0.1) 100%)',
+                border: '1px solid var(--primary)'
+              }}
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              <span className="drawer-studio-icon" style={{ fontSize: '1.25rem' }}>📱</span>
+              <div style={{ textAlign: 'left', flex: 1 }}>
+                <div style={{ fontWeight: 700, fontSize: '0.88rem', color: 'var(--primary)' }}>Download Android App</div>
+                <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>Direct checkout & live parcel tracking</div>
+              </div>
+              <span style={{ fontWeight: 'bold', color: 'var(--primary)', fontSize: '0.8rem', background: 'rgba(232,93,117,0.15)', padding: '3px 8px', borderRadius: '6px' }}>APK</span>
+            </a>
           </div>
 
           {/* Navigation Categories */}

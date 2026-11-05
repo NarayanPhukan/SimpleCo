@@ -85,6 +85,7 @@ export const Footer = ({ onOpenAccount, onScrollToTrack, onSelectCategory, onOpe
             <h4>Collector Care</h4>
             <ul className="footer-links">
               <li><a href="#orderTracking" onClick={(e) => { e.preventDefault(); onScrollToTrack(); }}>Track Your Parcel</a></li>
+              <li><a href="/download/app" download="babyygurll-boutique.apk" style={{ color: '#FFB6C1', fontWeight: 600 }}>📱 Download Android App</a></li>
               <li><a href="#account" onClick={(e) => { e.preventDefault(); onOpenAccount(); }}>Stitch Club Yarn Points</a></li>
               <li><a href="#account" onClick={(e) => { e.preventDefault(); onOpenAccount(); }}>Saved Addresses & Orders</a></li>
               <li><a href="#reviews">Verified Collector Reviews</a></li>

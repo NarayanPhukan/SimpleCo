@@ -7,7 +7,7 @@
     "server": "node --watch server/server.js",
     "client": "npm run dev --prefix client",
     "dev": "concurrently \"npm run server\" \"npm run client\"",
-    "build": "npm install --prefix client && npm run build --prefix client",
+    "build": "mkdir -p client/public && (cp -f android-customer/babyygurll-boutique.apk client/public/ 2>/dev/null || true) && npm install --prefix client && npm run build --prefix client",
     "start": "node server/server.js"
   },
   "dependencies": {

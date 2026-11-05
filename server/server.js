@@ -63,6 +63,30 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+// Direct Customer App APK Download Route
+app.get('/download/app', (req, res) => {
+  const fs = require('fs');
+  const publicApk = path.join(__dirname, '../client/public/babyygurll-boutique.apk');
+  const repoApk = path.join(__dirname, '../android-customer/babyygurll-boutique.apk');
+  if (fs.existsSync(publicApk)) {
+    return res.download(publicApk, 'babyygurll-boutique.apk');
+  }
+  if (fs.existsSync(repoApk)) {
+    return res.download(repoApk, 'babyygurll-boutique.apk');
+  }
+  res.redirect('https://raw.githubusercontent.com/NarayanPhukan/SimpleCo/main/android-customer/babyygurll-boutique.apk');
+});
+
+// Direct Admin App APK Download Route
+app.get('/download/admin', (req, res) => {
+  const fs = require('fs');
+  const adminApk = path.join(__dirname, '../android-admin/babyygurll-admin.apk');
+  if (fs.existsSync(adminApk)) {
+    return res.download(adminApk, 'babyygurll-admin.apk');
+  }
+  res.redirect('https://raw.githubusercontent.com/NarayanPhukan/SimpleCo/main/android-admin/babyygurll-admin.apk');
+});
+
 // Root API Welcome / Status
 app.get('/', (req, res) => {
   const fs = require('fs');
