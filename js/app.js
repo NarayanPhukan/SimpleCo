@@ -62,6 +62,7 @@ document.addEventListener("DOMContentLoaded", () => {
     qvSpecs: document.getElementById("qvSpecs"),
     qvColorOptions: document.getElementById("qvColorOptions"),
     qvCustomNote: document.getElementById("qvCustomNote"),
+    qvGalleryStrip: document.getElementById("qvGalleryStrip"),
     qvAddToCartBtn: document.getElementById("qvAddToCartBtn"),
 
     // Account Modal
@@ -351,6 +352,21 @@ document.addEventListener("DOMContentLoaded", () => {
 
     el.qvImage.src = prod.image;
     el.qvImage.alt = prod.name;
+
+    // Multi-photo gallery thumbnail strip
+    const images = Array.isArray(prod.images) && prod.images.length > 0 ? prod.images : (prod.image ? [prod.image] : []);
+    if (el.qvGalleryStrip) {
+      if (images.length > 1) {
+        el.qvGalleryStrip.innerHTML = images.map((imgSrc, idx) => `
+          <button class="qv-thumb-btn ${idx === 0 ? 'active' : ''}" data-index="${idx}" aria-label="View photo ${idx + 1}">
+            <img src="${imgSrc}" alt="${prod.name} thumbnail ${idx + 1}">
+          </button>
+        `).join('');
+      } else {
+        el.qvGalleryStrip.innerHTML = '';
+      }
+    }
+
     el.qvBadge.textContent = prod.badge;
     el.qvTitle.textContent = prod.name;
     el.qvPrice.textContent = store.formatPrice(prod.price);
@@ -383,6 +399,22 @@ document.addEventListener("DOMContentLoaded", () => {
     btn.classList.add("selected");
     state.selectedColor = btn.dataset.color;
   });
+
+  if (el.qvGalleryStrip) {
+    el.qvGalleryStrip.addEventListener("click", (e) => {
+      const btn = e.target.closest(".qv-thumb-btn");
+      if (!btn || !state.quickViewProduct) return;
+      const idx = parseInt(btn.dataset.index, 10);
+      const images = Array.isArray(state.quickViewProduct.images) && state.quickViewProduct.images.length > 0
+        ? state.quickViewProduct.images
+        : [state.quickViewProduct.image];
+      if (images[idx]) {
+        el.qvImage.src = images[idx];
+        el.qvGalleryStrip.querySelectorAll(".qv-thumb-btn").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+      }
+    });
+  }
 
   el.qvAddToCartBtn.addEventListener("click", () => {
     if (!state.quickViewProduct) return;

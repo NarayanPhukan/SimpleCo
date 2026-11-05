@@ -66,6 +66,7 @@ exports.createProduct = async (req, res) => {
       price,
       originalPrice,
       image,
+      images,
       badge,
       description,
       leadTime,
@@ -78,6 +79,11 @@ exports.createProduct = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Name and price are required' });
     }
 
+    const imagesList = Array.isArray(images) && images.length > 0 
+      ? images 
+      : (image ? [image] : []);
+    const primaryImage = (imagesList.length > 0 ? imagesList[0] : image) || '/assets/images/strawberry-cow.jpg';
+
     const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '') + '-' + Math.floor(100 + Math.random() * 900);
 
     const newProduct = await Product.create({
@@ -87,7 +93,8 @@ exports.createProduct = async (req, res) => {
       categoryName: categoryName || (category ? category.charAt(0).toUpperCase() + category.slice(1) : 'Handcrafted Accessories'),
       price: Number(price),
       originalPrice: originalPrice ? Number(originalPrice) : Math.round(Number(price) * 1.3),
-      image: image || '/assets/images/strawberry-cow.jpg',
+      image: primaryImage,
+      images: imagesList.length > 0 ? imagesList : [primaryImage],
       badge: badge || 'Handcrafted',
       rating: 5.0,
       reviewsCount: 1,
@@ -122,6 +129,11 @@ exports.updateProduct = async (req, res) => {
     const updates = { ...req.body };
     if (updates.price) updates.price = Number(updates.price);
     if (updates.originalPrice) updates.originalPrice = Number(updates.originalPrice);
+    if (updates.images && Array.isArray(updates.images) && updates.images.length > 0) {
+      if (!updates.image) {
+        updates.image = updates.images[0];
+      }
+    }
 
     if (product.save) {
       Object.assign(product, updates);

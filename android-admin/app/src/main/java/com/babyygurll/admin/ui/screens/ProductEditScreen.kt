@@ -7,6 +7,7 @@ import android.util.Base64
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.*
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -32,6 +33,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -39,6 +41,9 @@ import coil.compose.AsyncImage
 import com.babyygurll.admin.data.model.Product
 import com.babyygurll.admin.data.model.ProductCreateRequest
 import com.babyygurll.admin.ui.theme.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
 import java.io.InputStream
 import kotlin.math.min
@@ -52,16 +57,36 @@ fun ProductEditScreen(
     onSave: (ProductCreateRequest, String?) -> Unit
 ) {
     val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
 
     var name by remember { mutableStateOf(product?.name ?: "") }
     var category by remember { mutableStateOf(product?.category ?: "plushies") }
-    var priceText by remember { mutableStateOf(product?.price?.toInt()?.toString() ?: "") }
-    var origPriceText by remember { mutableStateOf(product?.originalPrice?.toInt()?.toString() ?: "") }
+    var priceText by remember { mutableStateOf(product?.price?.takeIf { it > 0 }?.toInt()?.toString() ?: "") }
+    var origPriceText by remember { mutableStateOf(product?.originalPrice?.takeIf { it > 0 }?.toInt()?.toString() ?: "") }
     var badge by remember { mutableStateOf(product?.badge ?: "Handcrafted") }
-    var imageUrl by remember { mutableStateOf(product?.image ?: "/assets/images/strawberry-cow.jpg") }
     var leadTime by remember { mutableStateOf(product?.leadTime ?: "Ready to ship (1-2 days)") }
     var description by remember { mutableStateOf(product?.description ?: "") }
     var inStock by remember { mutableStateOf(product?.inStock ?: true) }
+
+    // Multi-photo gallery state
+    val initialImages = remember(product) {
+        if (product != null) {
+            if (product.images.isNotEmpty()) {
+                product.images
+            } else if (product.image.isNotBlank()) {
+                listOf(product.image)
+            } else {
+                emptyList()
+            }
+        } else {
+            emptyList()
+        }
+    }
+
+    var imagesList by remember { mutableStateOf<List<String>>(initialImages) }
+    var localBitmapsList by remember { mutableStateOf<List<Bitmap?>>(List(initialImages.size) { null }) }
+    var activePreviewIndex by remember { mutableStateOf(0) }
+    var isProcessingImages by remember { mutableStateOf(false) }
 
     // Active mode: 0 = Edit Details Form, 1 = Customer Point of View Preview
     var selectedTab by remember { mutableStateOf(0) }
@@ -85,55 +110,121 @@ fun ProductEditScreen(
         "Berry Keychain" to "/assets/images/strawberry-keychain.jpg"
     )
 
-    // In-memory decoded bitmap for immediate, reliable local preview
-    var localBitmap by remember { mutableStateOf<Bitmap?>(null) }
-
-    // Local Device Photo Picker Launcher
+    // Local Device Multi-Photo Picker Launcher
     val photoPickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
-    ) { uri: Uri? ->
-        uri?.let {
-            try {
-                val contentResolver = context.contentResolver
-                val inputStream: InputStream? = contentResolver.openInputStream(it)
-                val originalBitmap = BitmapFactory.decodeStream(inputStream)
-                inputStream?.close()
+        contract = ActivityResultContracts.GetMultipleContents()
+    ) { uris: List<Uri> ->
+        if (uris.isNotEmpty()) {
+            coroutineScope.launch(Dispatchers.IO) {
+                isProcessingImages = true
+                val newImages = mutableListOf<String>()
+                val newBitmaps = mutableListOf<Bitmap>()
 
-                if (originalBitmap != null) {
-                    val maxDim = 800
-                    val width = originalBitmap.width
-                    val height = originalBitmap.height
-                    val scale = if (width > maxDim || height > maxDim) {
-                        min(maxDim.toFloat() / width, maxDim.toFloat() / height)
-                    } else 1.0f
+                for (uri in uris) {
+                    try {
+                        val inputStream: InputStream? = context.contentResolver.openInputStream(uri)
+                        val originalBitmap = BitmapFactory.decodeStream(inputStream)
+                        inputStream?.close()
 
-                    val scaledBitmap = if (scale < 1.0f) {
-                        Bitmap.createScaledBitmap(
-                            originalBitmap,
-                            (width * scale).toInt(),
-                            (height * scale).toInt(),
-                            true
-                        )
-                    } else originalBitmap
+                        if (originalBitmap != null) {
+                            val maxDim = 800
+                            val width = originalBitmap.width
+                            val height = originalBitmap.height
+                            val scale = if (width > maxDim || height > maxDim) {
+                                min(maxDim.toFloat() / width, maxDim.toFloat() / height)
+                            } else 1.0f
 
-                    val outputStream = ByteArrayOutputStream()
-                    scaledBitmap.compress(Bitmap.CompressFormat.JPEG, 80, outputStream)
-                    val byteArray = outputStream.toByteArray()
-                    val base64String = Base64.encodeToString(byteArray, Base64.NO_WRAP)
-                    localBitmap = scaledBitmap
-                    imageUrl = "data:image/jpeg;base64,$base64String"
+                            val scaledBitmap = if (scale < 1.0f) {
+                                Bitmap.createScaledBitmap(
+                                    originalBitmap,
+                                    (width * scale).toInt(),
+                                    (height * scale).toInt(),
+                                    true
+                                )
+                            } else originalBitmap
+
+                            val outputStream = ByteArrayOutputStream()
+                            scaledBitmap.compress(Bitmap.CompressFormat.JPEG, 80, outputStream)
+                            val byteArray = outputStream.toByteArray()
+                            val base64String = Base64.encodeToString(byteArray, Base64.NO_WRAP)
+
+                            newBitmaps.add(scaledBitmap)
+                            newImages.add("data:image/jpeg;base64,$base64String")
+                        }
+                    } catch (e: Exception) {
+                        // Skip unreadable files
+                    }
                 }
-            } catch (e: Exception) {
-                // Keep existing image on error
+
+                withContext(Dispatchers.Main) {
+                    imagesList = imagesList + newImages
+                    localBitmapsList = localBitmapsList + newBitmaps
+                    isProcessingImages = false
+                }
             }
         }
     }
 
-    // Decode base64 data if editing an existing product whose image was stored as data URI
-    val parsedBase64Bitmap: Bitmap? = remember(imageUrl) {
-        if (localBitmap == null && imageUrl.startsWith("data:image/") && imageUrl.contains(";base64,")) {
+    // Photo Management Callbacks
+    val removeImageAt: (Int) -> Unit = { index ->
+        if (index in imagesList.indices) {
+            val updatedImages = imagesList.toMutableList().apply { removeAt(index) }
+            val updatedBitmaps = localBitmapsList.toMutableList().apply {
+                if (index < size) removeAt(index)
+            }
+            imagesList = updatedImages
+            localBitmapsList = updatedBitmaps
+            if (activePreviewIndex >= updatedImages.size) {
+                activePreviewIndex = (updatedImages.size - 1).coerceAtLeast(0)
+            }
+        }
+    }
+
+    val makeCover: (Int) -> Unit = { index ->
+        if (index in 1 until imagesList.size) {
+            val targetImg = imagesList[index]
+            val targetBitmap = localBitmapsList.getOrNull(index)
+
+            val updatedImages = imagesList.toMutableList().apply {
+                removeAt(index)
+                add(0, targetImg)
+            }
+            val updatedBitmaps = localBitmapsList.toMutableList().apply {
+                if (index < size) {
+                    removeAt(index)
+                    add(0, targetBitmap)
+                }
+            }
+            imagesList = updatedImages
+            localBitmapsList = updatedBitmaps
+            activePreviewIndex = 0
+        }
+    }
+
+    val addPresetPhoto: (String) -> Unit = { presetUrl ->
+        imagesList = imagesList + presetUrl
+        localBitmapsList = localBitmapsList + listOf<Bitmap?>(null)
+    }
+
+    val addAllSamplePresets: () -> Unit = {
+        val sampleSet = listOf(
+            "/assets/images/strawberry-cow.jpg",
+            "/assets/images/tulip-bouquet.jpg",
+            "/assets/images/granny-bag.jpg",
+            "/assets/images/crochet-cardigan.jpg"
+        )
+        imagesList = imagesList + sampleSet
+        localBitmapsList = localBitmapsList + List(sampleSet.size) { null }
+    }
+
+    // Active image resolver for Customer POV preview
+    val activeImgUrl = imagesList.getOrNull(activePreviewIndex) ?: ""
+    val activeLocalBitmap = localBitmapsList.getOrNull(activePreviewIndex)
+
+    val parsedActiveBase64Bitmap: Bitmap? = remember(activeImgUrl) {
+        if (activeLocalBitmap == null && activeImgUrl.startsWith("data:image/") && activeImgUrl.contains(";base64,")) {
             try {
-                val base64Data = imageUrl.substringAfter(";base64,")
+                val base64Data = activeImgUrl.substringAfter(";base64,")
                 val bytes = Base64.decode(base64Data, Base64.DEFAULT)
                 BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
             } catch (e: Exception) {
@@ -142,14 +233,14 @@ fun ProductEditScreen(
         } else null
     }
 
-    val activeBitmap = localBitmap ?: parsedBase64Bitmap
+    val activeDisplayBitmap = activeLocalBitmap ?: parsedActiveBase64Bitmap
 
-    val resolvedImageUrl = remember(imageUrl, serverUrl) {
+    val resolvedActiveUrl = remember(activeImgUrl, serverUrl) {
         when {
-            imageUrl.isBlank() -> ""
-            imageUrl.startsWith("data:") -> imageUrl
-            imageUrl.startsWith("http://") || imageUrl.startsWith("https://") -> imageUrl
-            else -> "${serverUrl.trimEnd('/')}/${imageUrl.trimStart('/')}"
+            activeImgUrl.isBlank() -> ""
+            activeImgUrl.startsWith("data:") -> activeImgUrl
+            activeImgUrl.startsWith("http://") || activeImgUrl.startsWith("https://") -> activeImgUrl
+            else -> "${serverUrl.trimEnd('/')}/${activeImgUrl.trimStart('/')}"
         }
     }
 
@@ -158,6 +249,10 @@ fun ProductEditScreen(
     val discountPercent = if (origPriceVal != null && origPriceVal > priceVal && priceVal > 0) {
         (((origPriceVal - priceVal) / origPriceVal) * 100).toInt()
     } else 0
+
+    // Strict validation: Minimum 4 photos required
+    val hasMinPhotos = imagesList.size >= 4
+    val isPublishEnabled = name.isNotBlank() && priceVal > 0 && hasMinPhotos && !isProcessingImages
 
     Scaffold(
         topBar = {
@@ -185,7 +280,7 @@ fun ProductEditScreen(
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            // Segmented Tab Switcher: [ Edit Details ] | [ Customer View Preview ]
+            // Segmented Tab Switcher: [ Edit Details ] | [ Customer Preview ]
             Surface(
                 color = Color.White,
                 shadowElevation = 2.dp,
@@ -203,7 +298,10 @@ fun ProductEditScreen(
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(16.dp))
                                 Spacer(modifier = Modifier.width(6.dp))
-                                Text("Edit Details", fontWeight = if (selectedTab == 0) FontWeight.Bold else FontWeight.Normal)
+                                Text(
+                                    text = "Edit Details",
+                                    fontWeight = if (selectedTab == 0) FontWeight.Bold else FontWeight.Normal
+                                )
                             }
                         }
                     )
@@ -214,7 +312,10 @@ fun ProductEditScreen(
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Icon(Icons.Default.Visibility, contentDescription = null, modifier = Modifier.size(16.dp))
                                 Spacer(modifier = Modifier.width(6.dp))
-                                Text("Customer Preview", fontWeight = if (selectedTab == 1) FontWeight.Bold else FontWeight.Normal)
+                                Text(
+                                    text = "Customer Preview",
+                                    fontWeight = if (selectedTab == 1) FontWeight.Bold else FontWeight.Normal
+                                )
                             }
                         }
                     )
@@ -233,7 +334,7 @@ fun ProductEditScreen(
                         Spacer(modifier = Modifier.height(4.dp))
                     }
 
-                    // Product Photography & Device Selection
+                    // Product Photography Card (Multi-Photo, Minimum 4)
                     item {
                         Card(
                             modifier = Modifier.fillMaxWidth(),
@@ -244,103 +345,359 @@ fun ProductEditScreen(
                                 modifier = Modifier.padding(16.dp),
                                 verticalArrangement = Arrangement.spacedBy(12.dp)
                             ) {
-                                Text(
-                                    text = "Product Photography",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    color = TextPrimary
-                                )
-
+                                // Header with photo count requirement badge
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    // Image Thumbnail
-                                    Box(
-                                        modifier = Modifier
-                                            .size(80.dp)
-                                            .clip(RoundedCornerShape(12.dp))
-                                            .background(BrandPrimaryLight)
-                                            .border(1.dp, BrandPrimary.copy(alpha = 0.3f), RoundedCornerShape(12.dp))
-                                            .clickable { photoPickerLauncher.launch("image/*") },
-                                        contentAlignment = Alignment.Center
+                                    Text(
+                                        text = "Product Photography",
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        color = TextPrimary
+                                    )
+
+                                    Surface(
+                                        color = if (hasMinPhotos) Color(0xFFE8F5E9) else Color(0xFFFFF3E0),
+                                        shape = RoundedCornerShape(8.dp),
+                                        border = BorderStroke(
+                                            1.dp,
+                                            if (hasMinPhotos) Color(0xFF81C784) else Color(0xFFFFB74D)
+                                        )
                                     ) {
-                                        when {
-                                            activeBitmap != null -> {
-                                                Image(
-                                                    bitmap = activeBitmap.asImageBitmap(),
-                                                    contentDescription = "Selected photo",
-                                                    modifier = Modifier.fillMaxSize(),
-                                                    contentScale = ContentScale.Crop
-                                                )
-                                            }
-                                            resolvedImageUrl.isNotBlank() -> {
-                                                AsyncImage(
-                                                    model = resolvedImageUrl,
-                                                    contentDescription = "Selected photo",
-                                                    modifier = Modifier.fillMaxSize(),
-                                                    contentScale = ContentScale.Crop
-                                                )
-                                            }
-                                            else -> {
-                                                Column(
-                                                    horizontalAlignment = Alignment.CenterHorizontally,
-                                                    verticalArrangement = Arrangement.Center
-                                                ) {
-                                                    Icon(
-                                                        imageVector = Icons.Default.AddPhotoAlternate,
-                                                        contentDescription = "Select photo",
-                                                        tint = BrandPrimary,
-                                                        modifier = Modifier.size(26.dp)
-                                                    )
-                                                    Spacer(modifier = Modifier.height(2.dp))
-                                                    Text(
-                                                        text = "Add Photo",
-                                                        fontSize = 9.sp,
-                                                        fontWeight = FontWeight.Bold,
-                                                        color = BrandPrimary
-                                                    )
-                                                }
-                                            }
-                                        }
-                                    }
-
-                                    Column(modifier = Modifier.weight(1f)) {
-                                        Button(
-                                            onClick = { photoPickerLauncher.launch("image/*") },
-                                            colors = ButtonDefaults.buttonColors(
-                                                containerColor = RoyalBlue,
-                                                contentColor = Color.White
-                                            ),
-                                            shape = RoundedCornerShape(10.dp),
-                                            modifier = Modifier.fillMaxWidth()
-                                        ) {
-                                            Icon(
-                                                Icons.Default.AddPhotoAlternate,
-                                                contentDescription = null,
-                                                modifier = Modifier.size(18.dp),
-                                                tint = Color.White
-                                            )
-                                            Spacer(modifier = Modifier.width(8.dp))
-                                            Text(
-                                                text = "Choose from Device",
-                                                fontWeight = FontWeight.Bold,
-                                                fontSize = 13.sp,
-                                                color = Color.White
-                                            )
-                                        }
-
                                         Text(
-                                            text = if (imageUrl.startsWith("data:")) "✓ Custom device photo selected" else "Select from gallery or pick a preset",
-                                            style = MaterialTheme.typography.labelSmall,
-                                            color = if (imageUrl.startsWith("data:")) Color(0xFF2E7D32) else CharcoalGray.copy(alpha = 0.6f),
-                                            modifier = Modifier.padding(top = 4.dp, start = 2.dp)
+                                            text = if (hasMinPhotos) "✓ ${imagesList.size} Photos (Ready)" else "${imagesList.size}/4 Required",
+                                            fontSize = 11.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = if (hasMinPhotos) Color(0xFF2E7D32) else Color(0xFFE65100),
+                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                                         )
                                     }
                                 }
 
-                                Text("Or Choose Studio Preset:", style = MaterialTheme.typography.labelSmall)
+                                // Minimum 4 Warning / Success Banner
+                                if (!hasMinPhotos) {
+                                    Surface(
+                                        color = Color(0xFFFFF8E1),
+                                        shape = RoundedCornerShape(10.dp),
+                                        border = BorderStroke(1.dp, Color(0xFFFFD54F)),
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        Row(
+                                            modifier = Modifier.padding(10.dp),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Icon(
+                                                Icons.Default.Warning,
+                                                contentDescription = null,
+                                                tint = Color(0xFFF57F17),
+                                                modifier = Modifier.size(20.dp)
+                                            )
+                                            Spacer(modifier = Modifier.width(8.dp))
+                                            Column {
+                                                Text(
+                                                    text = "Minimum 4 Product Photos Required",
+                                                    fontSize = 12.sp,
+                                                    fontWeight = FontWeight.Bold,
+                                                    color = Color(0xFFBF360C)
+                                                )
+                                                Text(
+                                                    text = "Please add ${4 - imagesList.size} more photo${if (4 - imagesList.size > 1) "s" else ""} from different angles to showcase your handcrafted piece.",
+                                                    fontSize = 11.sp,
+                                                    color = Color(0xFF4E342E)
+                                                )
+                                            }
+                                        }
+                                    }
+                                } else {
+                                    Surface(
+                                        color = Color(0xFFE8F5E9),
+                                        shape = RoundedCornerShape(10.dp),
+                                        border = BorderStroke(1.dp, Color(0xFF81C784)),
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        Row(
+                                            modifier = Modifier.padding(10.dp),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Icon(
+                                                Icons.Default.CheckCircle,
+                                                contentDescription = null,
+                                                tint = Color(0xFF2E7D32),
+                                                modifier = Modifier.size(20.dp)
+                                            )
+                                            Spacer(modifier = Modifier.width(8.dp))
+                                            Text(
+                                                text = "✓ Ready: ${imagesList.size} photos selected. First photo will be your boutique cover.",
+                                                fontSize = 11.sp,
+                                                fontWeight = FontWeight.Medium,
+                                                color = Color(0xFF1B5E20)
+                                            )
+                                        }
+                                    }
+                                }
+
+                                // Primary Button: Pick from Local Device
+                                Button(
+                                    onClick = { photoPickerLauncher.launch("image/*") },
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = RoyalBlue,
+                                        contentColor = Color.White
+                                    ),
+                                    shape = RoundedCornerShape(12.dp),
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Icon(
+                                        Icons.Default.AddPhotoAlternate,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(20.dp),
+                                        tint = Color.White
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        text = if (imagesList.isEmpty()) "Choose Photos from Device (Min 4)" else "+ Add More Photos from Device",
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 13.sp,
+                                        color = Color.White
+                                    )
+                                }
+
+                                if (isProcessingImages) {
+                                    Column(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalAlignment = Alignment.CenterHorizontally
+                                    ) {
+                                        LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                                        Spacer(modifier = Modifier.height(4.dp))
+                                        Text(
+                                            text = "Optimizing and encoding photos...",
+                                            fontSize = 11.sp,
+                                            color = CharcoalGray.copy(alpha = 0.7f)
+                                        )
+                                    }
+                                }
+
+                                // Photo Management Strip / Gallery
+                                if (imagesList.isNotEmpty()) {
+                                    Text(
+                                        text = "Selected Photos (${imagesList.size}) — Tap to preview, #1 is boutique Cover:",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = CharcoalGray
+                                    )
+
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .horizontalScroll(rememberScrollState()),
+                                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                    ) {
+                                        imagesList.forEachIndexed { index, imgUrl ->
+                                            val isCover = index == 0
+                                            val isSelected = activePreviewIndex == index
+                                            val itemBitmap = localBitmapsList.getOrNull(index)
+                                            val resolvedThumb = remember(imgUrl, serverUrl) {
+                                                when {
+                                                    imgUrl.isBlank() -> ""
+                                                    imgUrl.startsWith("data:") -> imgUrl
+                                                    imgUrl.startsWith("http://") || imgUrl.startsWith("https://") -> imgUrl
+                                                    else -> "${serverUrl.trimEnd('/')}/${imgUrl.trimStart('/')}"
+                                                }
+                                            }
+
+                                            Card(
+                                                modifier = Modifier
+                                                    .width(105.dp)
+                                                    .height(135.dp),
+                                                shape = RoundedCornerShape(12.dp),
+                                                colors = CardDefaults.cardColors(containerColor = Color.White),
+                                                border = BorderStroke(
+                                                    width = if (isSelected) 2.5.dp else 1.dp,
+                                                    color = if (isSelected) RoyalBlue else Color(0xFFE2E8F0)
+                                                ),
+                                                elevation = CardDefaults.cardElevation(defaultElevation = if (isSelected) 4.dp else 1.dp)
+                                            ) {
+                                                Column(modifier = Modifier.fillMaxSize()) {
+                                                    Box(
+                                                        modifier = Modifier
+                                                            .fillMaxWidth()
+                                                            .height(98.dp)
+                                                            .clickable { activePreviewIndex = index }
+                                                    ) {
+                                                        if (itemBitmap != null) {
+                                                            Image(
+                                                                bitmap = itemBitmap.asImageBitmap(),
+                                                                contentDescription = "Photo ${index + 1}",
+                                                                modifier = Modifier.fillMaxSize(),
+                                                                contentScale = ContentScale.Crop
+                                                            )
+                                                        } else {
+                                                            AsyncImage(
+                                                                model = resolvedThumb,
+                                                                contentDescription = "Photo ${index + 1}",
+                                                                modifier = Modifier.fillMaxSize(),
+                                                                contentScale = ContentScale.Crop
+                                                            )
+                                                        }
+
+                                                        // Tag: Cover vs Index
+                                                        Surface(
+                                                            color = if (isCover) BrandPrimary else Color.Black.copy(alpha = 0.65f),
+                                                            shape = RoundedCornerShape(bottomEnd = 8.dp),
+                                                            modifier = Modifier.align(Alignment.TopStart)
+                                                        ) {
+                                                            Text(
+                                                                text = if (isCover) "★ COVER" else "#${index + 1}",
+                                                                fontSize = 9.sp,
+                                                                fontWeight = FontWeight.Bold,
+                                                                color = Color.White,
+                                                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                                            )
+                                                        }
+
+                                                        // Delete Button
+                                                        IconButton(
+                                                            onClick = { removeImageAt(index) },
+                                                            modifier = Modifier
+                                                                .size(24.dp)
+                                                                .align(Alignment.TopEnd)
+                                                                .padding(2.dp)
+                                                                .background(Color.White.copy(alpha = 0.9f), CircleShape)
+                                                        ) {
+                                                            Icon(
+                                                                Icons.Default.Close,
+                                                                contentDescription = "Remove photo",
+                                                                tint = CrimsonAccent,
+                                                                modifier = Modifier.size(14.dp)
+                                                            )
+                                                        }
+                                                    }
+
+                                                    // Bottom Action Slot
+                                                    if (isCover) {
+                                                        Box(
+                                                            modifier = Modifier
+                                                                .fillMaxSize()
+                                                                .background(Color(0xFFE8F5E9)),
+                                                            contentAlignment = Alignment.Center
+                                                        ) {
+                                                            Text(
+                                                                text = "Main Cover",
+                                                                fontSize = 10.sp,
+                                                                fontWeight = FontWeight.Bold,
+                                                                color = Color(0xFF2E7D32)
+                                                            )
+                                                        }
+                                                    } else {
+                                                        Box(
+                                                            modifier = Modifier
+                                                                .fillMaxSize()
+                                                                .background(BrandPrimaryLight.copy(alpha = 0.4f))
+                                                                .clickable { makeCover(index) },
+                                                            contentAlignment = Alignment.Center
+                                                        ) {
+                                                            Text(
+                                                                text = "Make Cover",
+                                                                fontSize = 10.sp,
+                                                                fontWeight = FontWeight.Bold,
+                                                                color = RoyalBlue
+                                                            )
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+
+                                        // Dashed "+ Add More" card slot
+                                        Box(
+                                            modifier = Modifier
+                                                .width(105.dp)
+                                                .height(135.dp)
+                                                .clip(RoundedCornerShape(12.dp))
+                                                .background(BrandPrimaryLight.copy(alpha = 0.25f))
+                                                .border(
+                                                    1.5.dp,
+                                                    RoyalBlue.copy(alpha = 0.4f),
+                                                    RoundedCornerShape(12.dp)
+                                                )
+                                                .clickable { photoPickerLauncher.launch("image/*") },
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Column(
+                                                horizontalAlignment = Alignment.CenterHorizontally,
+                                                verticalArrangement = Arrangement.Center
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Default.AddPhotoAlternate,
+                                                    contentDescription = "Add More",
+                                                    tint = RoyalBlue,
+                                                    modifier = Modifier.size(26.dp)
+                                                )
+                                                Spacer(modifier = Modifier.height(4.dp))
+                                                Text(
+                                                    text = "+ Add More",
+                                                    fontSize = 11.sp,
+                                                    fontWeight = FontWeight.Bold,
+                                                    color = RoyalBlue
+                                                )
+                                                Text(
+                                                    text = "from device",
+                                                    fontSize = 9.sp,
+                                                    color = CharcoalGray.copy(alpha = 0.7f)
+                                                )
+                                            }
+                                        }
+                                    }
+                                } else {
+                                    // Empty state helper box
+                                    Surface(
+                                        shape = RoundedCornerShape(12.dp),
+                                        color = Color(0xFFFAFAFA),
+                                        border = BorderStroke(1.dp, Color(0xFFEEEEEE)),
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        Column(
+                                            modifier = Modifier.padding(16.dp),
+                                            horizontalAlignment = Alignment.CenterHorizontally
+                                        ) {
+                                            Icon(
+                                                Icons.Default.Collections,
+                                                contentDescription = null,
+                                                tint = CharcoalGray.copy(alpha = 0.4f),
+                                                modifier = Modifier.size(36.dp)
+                                            )
+                                            Spacer(modifier = Modifier.height(6.dp))
+                                            Text(
+                                                text = "No photos added yet",
+                                                fontWeight = FontWeight.Bold,
+                                                fontSize = 13.sp,
+                                                color = CharcoalGray
+                                            )
+                                            Text(
+                                                text = "Tap 'Choose Photos from Device' above or select studio presets below. Minimum 4 required to publish.",
+                                                fontSize = 11.sp,
+                                                color = CharcoalGray.copy(alpha = 0.7f),
+                                                textAlign = TextAlign.Center,
+                                                modifier = Modifier.padding(horizontal = 8.dp)
+                                            )
+                                        }
+                                    }
+                                }
+
+                                // Quick Studio Presets
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text("Or Add Studio Presets (+):", style = MaterialTheme.typography.labelSmall)
+                                    TextButton(
+                                        onClick = { addAllSamplePresets() },
+                                        contentPadding = PaddingValues(horizontal = 6.dp, vertical = 2.dp)
+                                    ) {
+                                        Text("+ Add 4 Sample Photos", fontSize = 11.sp, color = RoyalBlue)
+                                    }
+                                }
 
                                 Row(
                                     modifier = Modifier
@@ -350,15 +707,10 @@ fun ProductEditScreen(
                                 ) {
                                     photoPresets.forEach { (title, url) ->
                                         FilterChip(
-                                            selected = imageUrl == url,
-                                            onClick = {
-                                                localBitmap = null
-                                                imageUrl = url
-                                            },
-                                            label = { Text(title) },
+                                            selected = false,
+                                            onClick = { addPresetPhoto(url) },
+                                            label = { Text("+ $title") },
                                             colors = FilterChipDefaults.filterChipColors(
-                                                selectedContainerColor = RoyalBlue,
-                                                selectedLabelColor = Color.White,
                                                 containerColor = Color.White,
                                                 labelColor = CharcoalGray
                                             )
@@ -496,22 +848,24 @@ fun ProductEditScreen(
                         ) {
                             Icon(Icons.Default.Visibility, contentDescription = null, modifier = Modifier.size(18.dp))
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text("Preview Customer Point of View 👁️", fontWeight = FontWeight.SemiBold)
+                            Text("Preview Customer Point of View (${imagesList.size} Photos) 👁️", fontWeight = FontWeight.SemiBold)
                         }
                     }
 
-                    // Save Button
+                    // Save / Publish Button
                     item {
                         Button(
                             onClick = {
                                 val catObj = categories.find { it.first == category }
+                                val primaryImage = imagesList.firstOrNull() ?: "/assets/images/strawberry-cow.jpg"
                                 val req = ProductCreateRequest(
                                     name = name.trim(),
                                     category = category,
                                     categoryName = catObj?.second,
                                     price = priceVal,
                                     originalPrice = origPriceVal,
-                                    image = imageUrl.trim(),
+                                    image = primaryImage,
+                                    images = imagesList,
                                     badge = badge.trim().ifBlank { null },
                                     leadTime = leadTime.trim().ifBlank { null },
                                     description = description.trim(),
@@ -519,11 +873,13 @@ fun ProductEditScreen(
                                 )
                                 onSave(req, product?.id)
                             },
-                            enabled = name.isNotBlank() && priceVal > 0,
+                            enabled = isPublishEnabled,
                             shape = RoundedCornerShape(12.dp),
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = BrandPrimary,
-                                contentColor = Color.White
+                                contentColor = Color.White,
+                                disabledContainerColor = Color(0xFFCCCCCC),
+                                disabledContentColor = Color(0xFF666666)
                             ),
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -531,7 +887,23 @@ fun ProductEditScreen(
                         ) {
                             Icon(Icons.Default.Check, contentDescription = null, tint = Color.White)
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text("Publish Piece to Boutique", fontWeight = FontWeight.Bold, color = Color.White)
+                            Text(
+                                text = if (hasMinPhotos) "Publish Piece to Boutique (${imagesList.size} Photos) ✓" else "Add ${4 - imagesList.size} More Photo${if (4 - imagesList.size > 1) "s" else ""} to Launch",
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White
+                            )
+                        }
+
+                        if (!hasMinPhotos) {
+                            Text(
+                                text = "⚠️ A minimum of 4 photos is required to launch a product in the boutique.",
+                                fontSize = 11.sp,
+                                color = CrimsonAccent,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 4.dp)
+                            )
                         }
 
                         Spacer(modifier = Modifier.height(24.dp))
@@ -567,7 +939,7 @@ fun ProductEditScreen(
                                         color = BrandSecondary
                                     )
                                     Text(
-                                        text = "This is exactly how buyers see your item in the online boutique.",
+                                        text = "Experience your multi-photo gallery exactly as buyers see it in the online store.",
                                         style = MaterialTheme.typography.bodySmall,
                                         color = CharcoalGray
                                     )
@@ -585,7 +957,7 @@ fun ProductEditScreen(
                             elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
                         ) {
                             Column(modifier = Modifier.fillMaxWidth()) {
-                                // Product Image with Badge & Wishlist
+                                // Product Hero Image Showcase
                                 Box(
                                     modifier = Modifier
                                         .fillMaxWidth()
@@ -594,17 +966,17 @@ fun ProductEditScreen(
                                     contentAlignment = Alignment.Center
                                 ) {
                                     when {
-                                        activeBitmap != null -> {
+                                        activeDisplayBitmap != null -> {
                                             Image(
-                                                bitmap = activeBitmap.asImageBitmap(),
+                                                bitmap = activeDisplayBitmap.asImageBitmap(),
                                                 contentDescription = name,
                                                 contentScale = ContentScale.Crop,
                                                 modifier = Modifier.fillMaxSize()
                                             )
                                         }
-                                        resolvedImageUrl.isNotBlank() -> {
+                                        resolvedActiveUrl.isNotBlank() -> {
                                             AsyncImage(
-                                                model = resolvedImageUrl,
+                                                model = resolvedActiveUrl,
                                                 contentDescription = name,
                                                 contentScale = ContentScale.Crop,
                                                 modifier = Modifier.fillMaxSize()
@@ -639,10 +1011,10 @@ fun ProductEditScreen(
                                                 )
                                                 Spacer(modifier = Modifier.height(4.dp))
                                                 Text(
-                                                    text = "Select a photo from device or choose a preset to preview the live customer card.",
+                                                    text = "Select at least 4 photos from device to preview customer angles.",
                                                     style = MaterialTheme.typography.bodySmall,
                                                     color = CharcoalGray.copy(alpha = 0.7f),
-                                                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                                                    textAlign = TextAlign.Center,
                                                     modifier = Modifier.padding(horizontal = 16.dp)
                                                 )
                                             }
@@ -666,13 +1038,41 @@ fun ProductEditScreen(
                                         }
                                     }
 
-                                    // Heart / Wishlist in Top-Right
+                                    // Multi-photo count indicator in Top-Right
+                                    if (imagesList.isNotEmpty()) {
+                                        Surface(
+                                            shape = RoundedCornerShape(bottomStart = 10.dp),
+                                            color = Color.Black.copy(alpha = 0.65f),
+                                            modifier = Modifier.align(Alignment.TopEnd)
+                                        ) {
+                                            Row(
+                                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                Icon(
+                                                    Icons.Default.PhotoCamera,
+                                                    contentDescription = null,
+                                                    tint = Color.White,
+                                                    modifier = Modifier.size(12.dp)
+                                                )
+                                                Spacer(modifier = Modifier.width(4.dp))
+                                                Text(
+                                                    text = "${activePreviewIndex + 1} / ${imagesList.size}",
+                                                    color = Color.White,
+                                                    fontWeight = FontWeight.Bold,
+                                                    fontSize = 11.sp
+                                                )
+                                            }
+                                        }
+                                    }
+
+                                    // Wishlist icon (Customer UI imitation)
                                     Surface(
                                         shape = CircleShape,
                                         color = Color.White.copy(alpha = 0.9f),
                                         shadowElevation = 2.dp,
                                         modifier = Modifier
-                                            .align(Alignment.TopEnd)
+                                            .align(Alignment.BottomEnd)
                                             .padding(12.dp)
                                             .size(36.dp)
                                     ) {
@@ -704,6 +1104,70 @@ fun ProductEditScreen(
                                                         color = CrimsonAccent,
                                                         modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)
                                                     )
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+
+                                // Interactive Customer Multi-Photo Thumbnail Strip
+                                if (imagesList.isNotEmpty()) {
+                                    Column(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .background(Color(0xFFF1F5F9))
+                                            .padding(vertical = 8.dp, horizontal = 12.dp)
+                                    ) {
+                                        Text(
+                                            text = "Customer Gallery Views (tap thumbnail to switch angle):",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = CharcoalGray.copy(alpha = 0.8f),
+                                            modifier = Modifier.padding(bottom = 6.dp)
+                                        )
+
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .horizontalScroll(rememberScrollState()),
+                                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                        ) {
+                                            imagesList.forEachIndexed { idx, url ->
+                                                val isSelectedAngle = activePreviewIndex == idx
+                                                val thumbBm = localBitmapsList.getOrNull(idx)
+                                                val resUrl = remember(url, serverUrl) {
+                                                    when {
+                                                        url.isBlank() -> ""
+                                                        url.startsWith("data:") -> url
+                                                        url.startsWith("http://") || url.startsWith("https://") -> url
+                                                        else -> "${serverUrl.trimEnd('/')}/${url.trimStart('/')}"
+                                                    }
+                                                }
+
+                                                Surface(
+                                                    shape = RoundedCornerShape(8.dp),
+                                                    border = BorderStroke(
+                                                        width = if (isSelectedAngle) 2.5.dp else 1.dp,
+                                                        color = if (isSelectedAngle) RoyalBlue else Color(0xFFCBD5E1)
+                                                    ),
+                                                    modifier = Modifier
+                                                        .size(54.dp)
+                                                        .clickable { activePreviewIndex = idx }
+                                                ) {
+                                                    if (thumbBm != null) {
+                                                        Image(
+                                                            bitmap = thumbBm.asImageBitmap(),
+                                                            contentDescription = "Angle ${idx + 1}",
+                                                            modifier = Modifier.fillMaxSize(),
+                                                            contentScale = ContentScale.Crop
+                                                        )
+                                                    } else {
+                                                        AsyncImage(
+                                                            model = resUrl,
+                                                            contentDescription = "Angle ${idx + 1}",
+                                                            modifier = Modifier.fillMaxSize(),
+                                                            contentScale = ContentScale.Crop
+                                                        )
+                                                    }
                                                 }
                                             }
                                         }
@@ -869,13 +1333,15 @@ fun ProductEditScreen(
                         Button(
                             onClick = {
                                 val catObj = categories.find { it.first == category }
+                                val primaryImage = imagesList.firstOrNull() ?: "/assets/images/strawberry-cow.jpg"
                                 val req = ProductCreateRequest(
                                     name = name.trim(),
                                     category = category,
                                     categoryName = catObj?.second,
                                     price = priceVal,
                                     originalPrice = origPriceVal,
-                                    image = imageUrl.trim(),
+                                    image = primaryImage,
+                                    images = imagesList,
                                     badge = badge.trim().ifBlank { null },
                                     leadTime = leadTime.trim().ifBlank { null },
                                     description = description.trim(),
@@ -883,11 +1349,13 @@ fun ProductEditScreen(
                                 )
                                 onSave(req, product?.id)
                             },
-                            enabled = name.isNotBlank() && priceVal > 0,
+                            enabled = isPublishEnabled,
                             shape = RoundedCornerShape(12.dp),
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = BrandSecondary,
-                                contentColor = Color.White
+                                contentColor = Color.White,
+                                disabledContainerColor = Color(0xFFCCCCCC),
+                                disabledContentColor = Color(0xFF666666)
                             ),
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -895,7 +1363,23 @@ fun ProductEditScreen(
                         ) {
                             Icon(Icons.Default.Check, contentDescription = null, tint = Color.White)
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text("Everything Looks Great — Publish Now", fontWeight = FontWeight.Bold, color = Color.White)
+                            Text(
+                                text = if (hasMinPhotos) "Everything Looks Great — Publish Now (${imagesList.size} Photos) ✓" else "Need ${4 - imagesList.size} More Photo${if (4 - imagesList.size > 1) "s" else ""} to Publish",
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White
+                            )
+                        }
+
+                        if (!hasMinPhotos) {
+                            Text(
+                                text = "⚠️ Minimum 4 product photos required to publish. Switch to 'Edit Details' tab to add more photos.",
+                                fontSize = 11.sp,
+                                color = CrimsonAccent,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 4.dp)
+                            )
                         }
 
                         Spacer(modifier = Modifier.height(24.dp))

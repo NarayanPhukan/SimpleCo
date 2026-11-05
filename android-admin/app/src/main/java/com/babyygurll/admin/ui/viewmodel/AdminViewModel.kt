@@ -432,6 +432,7 @@ class AdminViewModel : ViewModel() {
                     "originalPrice" to req.originalPrice,
                     "category" to req.category,
                     "image" to req.image,
+                    "images" to req.images,
                     "badge" to req.badge,
                     "leadTime" to req.leadTime,
                     "description" to req.description,

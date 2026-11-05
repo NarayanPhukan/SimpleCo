@@ -14,6 +14,7 @@ const productSchema = new mongoose.Schema({
   price: { type: Number, required: true },
   originalPrice: { type: Number },
   image: { type: String, required: true },
+  images: [{ type: String }],
   badge: { type: String, default: 'Handcrafted' },
   rating: { type: Number, default: 5.0 },
   reviewsCount: { type: Number, default: 0 },
