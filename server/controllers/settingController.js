@@ -19,12 +19,12 @@ const DEFAULT_CONFIG = {
   adminPassword: 'admin123',
   adminRazorpayAccountId: '',
   appVersion: {
-    latestVersionCode: 4,
-    latestVersionName: '1.2.1',
+    latestVersionCode: 6,
+    latestVersionName: '1.3.1',
     minRequiredVersionCode: 1,
-    releaseNotes: '• Dynamic version detection (no repeated update prompts after installing)\n• Direct local photo selection with Coil DataUriFetcher\n• Instant in-memory and Base64 image preview for new & edited pieces\n• Customer POV live card preview before publishing\n• High-contrast UI: crisp white text across all blue buttons & chips\n• Real-time cloud-synced dynamic fulfillment dashboard',
+    releaseNotes: '• Fixed missing photos on piece edit: existing pictures load instantly\n• In-memory Base64 image rendering in catalog list preview\n• Fixed product update failure reference error\n• Free delivery across India on all orders (₹0 shipping fee)\n• Exclusive Razorpay integration & COD removed for safe dispatch',
     downloadUrl: 'https://raw.githubusercontent.com/NarayanPhukan/SimpleCo/main/android-admin/babyygurll-admin.apk',
-    releaseDate: '2026-10-31',
+    releaseDate: '2026-11-05',
     critical: false
   }
 };

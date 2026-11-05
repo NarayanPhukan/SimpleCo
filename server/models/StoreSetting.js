@@ -68,15 +68,15 @@ const storeSettingSchema = new mongoose.Schema({
     default: false
   },
   appVersion: {
-    latestVersionCode: { type: Number, default: 4 },
-    latestVersionName: { type: String, default: '1.2.1' },
+    latestVersionCode: { type: Number, default: 6 },
+    latestVersionName: { type: String, default: '1.3.1' },
     minRequiredVersionCode: { type: Number, default: 1 },
     releaseNotes: {
       type: String,
-      default: '• Dynamic version detection (no repeated update prompts after installing)\n• Direct local photo selection with Coil DataUriFetcher\n• Instant in-memory and Base64 image preview for new & edited pieces\n• Customer POV live card preview before publishing\n• High-contrast UI: crisp white text across all blue buttons & chips\n• Real-time cloud-synced dynamic fulfillment dashboard'
+      default: '• Fixed missing photos on piece edit: existing pictures load instantly\n• In-memory Base64 image rendering in catalog list preview\n• Fixed product update failure reference error\n• Free delivery across India on all orders (₹0 shipping fee)\n• Exclusive Razorpay integration & COD removed for safe dispatch'
     },
     downloadUrl: { type: String, default: 'https://raw.githubusercontent.com/NarayanPhukan/SimpleCo/main/android-admin/babyygurll-admin.apk' },
-    releaseDate: { type: String, default: '2026-10-31' },
+    releaseDate: { type: String, default: '2026-11-05' },
     critical: { type: Boolean, default: false }
   }
 }, {
