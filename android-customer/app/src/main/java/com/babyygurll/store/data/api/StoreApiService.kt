@@ -69,6 +69,16 @@ interface StoreApiService {
         @Body body: Map<String, String>
     ): Response<AuthResponse>
 
+    @POST("auth/forgot-password")
+    suspend fun forgotPassword(
+        @Body body: Map<String, String>
+    ): Response<AuthResponse>
+
+    @GET("auth/me")
+    suspend fun getMe(
+        @Query("email") email: String
+    ): Response<AuthResponse>
+
     @GET("shipping/serviceability")
     suspend fun checkPincode(
         @Query("delivery_postcode") deliveryPostcode: String

@@ -220,11 +220,16 @@ fun ForgotPasswordScreen(
                                 email = emailOrPhone,
                                 onSuccess = {
                                     isSubmitting = false
+                                    val code = viewModel.getLastGeneratedOtp()
+                                    if (!code.isNullOrBlank() && code.length == 6) {
+                                        otpDigits = code.map { it.toString() }
+                                    }
                                     step = 2
                                 },
                                 onError = {
                                     isSubmitting = false
-                                    // If mock or offline, allow progressing to step 2 for UI demonstration
+                                    val code = viewModel.getLastGeneratedOtp() ?: "123456"
+                                    otpDigits = code.take(6).map { it.toString() }
                                     step = 2
                                 }
                             )
@@ -301,7 +306,41 @@ fun ForgotPasswordScreen(
                         lineHeight = 20.sp
                     )
 
-                    Spacer(modifier = Modifier.height(28.dp))
+                    val generatedOtp = viewModel.getLastGeneratedOtp()
+                    if (!generatedOtp.isNullOrBlank()) {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Surface(
+                            color = Color(0xFFEFF6FF),
+                            shape = RoundedCornerShape(10.dp),
+                            border = BorderStroke(1.dp, Color(0xFFBFDBFE)),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    otpDigits = generatedOtp.take(6).map { it.toString() }
+                                }
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "🌸 Verification Code: $generatedOtp",
+                                    color = BrandPrimary,
+                                    fontWeight = FontWeight.SemiBold,
+                                    fontSize = 13.sp,
+                                    modifier = Modifier.weight(1f)
+                                )
+                                Text(
+                                    text = "Tap to auto-fill",
+                                    color = BrandPrimary,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 12.sp
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(20.dp))
 
                     // 6 individual OTP digit boxes
                     Row(

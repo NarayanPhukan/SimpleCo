@@ -335,6 +335,8 @@ class StoreViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    fun getLastGeneratedOtp(): String? = authRepo.getLastGeneratedOtp()
+
     fun sendOtp(email: String, onSuccess: (String) -> Unit = {}, onError: (String) -> Unit = {}) {
         viewModelScope.launch {
             _isLoading.value = true

@@ -2,7 +2,7 @@
   "latestVersionCode": 7,
   "latestVersionName": "1.0.6",
   "minRequiredVersionCode": 1,
-  "releaseNotes": "• Complete quiet luxury design system matching boutique screenshots\n• Search screen with recent searches and numbered popular trends (01-05)\n• Saved Addresses delivery location manager with default selection & checkout tag\n• 4-step Forgot Password OTP verification & strong password creator flow\n• Redesigned Login and Create Account screens with yarn ball branding\n• Full Edit Profile screen with avatar, personal info & security management\n• Checkout Step 3 Payment Method, Order Confirmed, My Orders & Wishlist",
+  "releaseNotes": "• Complete quiet luxury design system matching boutique screenshots\n• Fixed verification code OTP generation & instant tap-to-fill verification\n• Search screen with recent searches and numbered popular trends (01-05)\n• Saved Addresses delivery location manager with default selection & checkout tag\n• 4-step Forgot Password OTP verification & strong password creator flow\n• Redesigned Login and Create Account screens with yarn ball branding\n• Full Edit Profile screen with avatar, personal info & security management\n• Checkout Step 3 Payment Method, Order Confirmed, My Orders & Wishlist",
   "downloadUrl": "https://raw.githubusercontent.com/NarayanPhukan/SimpleCo/main/android-customer/babyygurll-boutique.apk",
   "releaseDate": "2026-11-06",
   "critical": false

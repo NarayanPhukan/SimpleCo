@@ -212,7 +212,19 @@ exports.setDefaultAddress = async (req, res) => {
   }
 };
 
-// In-memory OTP storage for password reset: email -> { otp, expiresAt, verified }
+// Helper to find user by email or mobile number
+async function findUserByEmailOrPhone(input) {
+  if (!input) return null;
+  const clean = input.trim().toLowerCase();
+  const digits = clean.replace(/\D/g, '');
+  const orConditions = [{ email: clean }, { phone: clean }];
+  if (digits.length >= 10) {
+    orConditions.push({ phone: { $regex: digits.slice(-10) } });
+  }
+  return await User.findOne({ $or: orConditions });
+}
+
+// In-memory OTP storage for password reset: email/phone -> { otp, expiresAt, verified }
 const otpStore = new Map();
 
 // @desc    Send OTP to email for password reset
@@ -221,26 +233,26 @@ exports.sendOtp = async (req, res) => {
   try {
     const { email } = req.body;
     if (!email) {
-      return res.status(400).json({ success: false, message: 'Email address is required' });
+      return res.status(400).json({ success: false, message: 'Email address or mobile number is required' });
     }
 
-    const cleanEmail = email.trim().toLowerCase();
-    const user = await User.findOne({ email: cleanEmail });
+    const cleanInput = email.trim().toLowerCase();
+    const user = await findUserByEmailOrPhone(cleanInput);
     if (!user) {
-      return res.status(404).json({ success: false, message: 'No registered account found with this email' });
+      return res.status(404).json({ success: false, message: 'No registered account found with this email or mobile' });
     }
 
     // Generate secure 6-digit OTP
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     const expiresAt = Date.now() + 10 * 60 * 1000; // 10 minutes
 
-    otpStore.set(cleanEmail, { otp, expiresAt, verified: false });
+    otpStore.set(cleanInput, { otp, expiresAt, verified: false, targetEmail: user.email });
 
-    console.log(`[AUTH] 🌸 Verification OTP generated for ${cleanEmail}: ${otp}`);
+    console.log(`[AUTH] 🌸 Verification OTP generated for ${cleanInput} (${user.email}): ${otp}`);
 
     res.json({
       success: true,
-      message: `6-digit verification code sent to ${cleanEmail}`,
+      message: `6-digit verification code sent to ${cleanInput}`,
       otp: otp
     });
   } catch (error) {
@@ -254,11 +266,11 @@ exports.verifyOtp = async (req, res) => {
   try {
     const { email, otp } = req.body;
     if (!email || !otp) {
-      return res.status(400).json({ success: false, message: 'Email and OTP code are required' });
+      return res.status(400).json({ success: false, message: 'Email/mobile and OTP code are required' });
     }
 
-    const cleanEmail = email.trim().toLowerCase();
-    const record = otpStore.get(cleanEmail);
+    const cleanInput = email.trim().toLowerCase();
+    const record = otpStore.get(cleanInput);
 
     if (!record || Date.now() > record.expiresAt) {
       return res.status(400).json({ success: false, message: 'Verification code has expired. Please request a new one.' });
@@ -269,7 +281,7 @@ exports.verifyOtp = async (req, res) => {
     }
 
     record.verified = true;
-    otpStore.set(cleanEmail, record);
+    otpStore.set(cleanInput, record);
 
     res.json({
       success: true,
@@ -286,15 +298,15 @@ exports.resetPassword = async (req, res) => {
   try {
     const { email, otp, newPassword } = req.body;
     if (!email || !newPassword) {
-      return res.status(400).json({ success: false, message: 'Email and new password are required' });
+      return res.status(400).json({ success: false, message: 'Email/mobile and new password are required' });
     }
 
     if (newPassword.length < 6) {
       return res.status(400).json({ success: false, message: 'New password must be at least 6 characters' });
     }
 
-    const cleanEmail = email.trim().toLowerCase();
-    const record = otpStore.get(cleanEmail);
+    const cleanInput = email.trim().toLowerCase();
+    const record = otpStore.get(cleanInput);
 
     if (otp) {
       if (!record || Date.now() > record.expiresAt) {
@@ -304,10 +316,10 @@ exports.resetPassword = async (req, res) => {
         return res.status(400).json({ success: false, message: 'Invalid verification code' });
       }
     } else if (!record || !record.verified) {
-      return res.status(400).json({ success: false, message: 'Please verify your email code first' });
+      return res.status(400).json({ success: false, message: 'Please verify your verification code first' });
     }
 
-    const user = await User.findOne({ email: cleanEmail });
+    const user = await findUserByEmailOrPhone(cleanInput);
     if (!user) {
       return res.status(404).json({ success: false, message: 'User account not found' });
     }
@@ -316,7 +328,7 @@ exports.resetPassword = async (req, res) => {
     await user.save();
 
     // Invalidate OTP after successful reset
-    otpStore.delete(cleanEmail);
+    otpStore.delete(cleanInput);
 
     res.json({
       success: true,
@@ -335,13 +347,13 @@ exports.forgotPassword = async (req, res) => {
   try {
     const { email, newPassword } = req.body;
     if (!email) {
-      return res.status(400).json({ success: false, message: 'Email address is required' });
+      return res.status(400).json({ success: false, message: 'Email address or mobile number is required' });
     }
 
-    const cleanEmail = email.trim().toLowerCase();
-    const user = await User.findOne({ email: cleanEmail });
+    const cleanInput = email.trim().toLowerCase();
+    const user = await findUserByEmailOrPhone(cleanInput);
     if (!user) {
-      return res.status(404).json({ success: false, message: 'No registered account found with this email' });
+      return res.status(404).json({ success: false, message: 'No registered account found with this email or mobile' });
     }
 
     if (!newPassword || newPassword.length < 6) {
