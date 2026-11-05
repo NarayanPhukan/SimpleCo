@@ -31,7 +31,6 @@ fun OrderConfirmedScreen(
     order: Order,
     onTrackOrder: () -> Unit,
     onContinueShopping: () -> Unit,
-    onCancelOrder: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     Scaffold(
@@ -116,20 +115,6 @@ fun OrderConfirmedScreen(
                             fontSize = 15.sp,
                             fontWeight = FontWeight.Bold
                         )
-                    }
-
-                    if (onCancelOrder != null) {
-                        TextButton(
-                            onClick = onCancelOrder,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text(
-                                text = "Cancel this order",
-                                color = StatusError,
-                                fontSize = 13.sp,
-                                fontWeight = FontWeight.SemiBold
-                            )
-                        }
                     }
                 }
             }
