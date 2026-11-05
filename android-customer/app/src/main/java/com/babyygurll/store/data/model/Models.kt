@@ -1,5 +1,6 @@
 package com.babyygurll.store.data.model
 
+import com.babyygurll.store.util.ImageUrlUtils
 import com.google.gson.annotations.SerializedName
 
 data class Product(
@@ -22,13 +23,19 @@ data class Product(
     val effectiveId: String
         get() = id.ifBlank { mongoId ?: "" }
 
+    val resolvedPrimaryImage: String
+        get() = ImageUrlUtils.resolveImageUrl(image)
+
     val allImages: List<String>
-        get() = if (images.isNotEmpty()) images else if (image.isNotBlank()) listOf(image) else emptyList()
+        get() {
+            val list = if (images.isNotEmpty()) images else if (image.isNotBlank()) listOf(image) else emptyList()
+            return list.map { ImageUrlUtils.resolveImageUrl(it) }
+        }
 }
 
 data class AppVersionInfo(
-    @SerializedName("latestVersionCode") val latestVersionCode: Int = 1,
-    @SerializedName("latestVersionName") val latestVersionName: String = "1.0.0",
+    @SerializedName("latestVersionCode") val latestVersionCode: Int = 2,
+    @SerializedName("latestVersionName") val latestVersionName: String = "1.0.1",
     @SerializedName("minRequiredVersionCode") val minRequiredVersionCode: Int = 1,
     @SerializedName("releaseNotes") val releaseNotes: String = "• Initial Release of BabyyGurll Boutique Customer App",
     @SerializedName("downloadUrl") val downloadUrl: String = "https://raw.githubusercontent.com/NarayanPhukan/SimpleCo/main/android-customer/babyygurll-boutique.apk",
@@ -91,7 +98,10 @@ data class OrderItem(
     @SerializedName("quantity") val quantity: Int = 1,
     @SerializedName("image") val image: String = "",
     @SerializedName("customNote") val customNote: String = ""
-)
+) {
+    val resolvedImage: String
+        get() = ImageUrlUtils.resolveImageUrl(image)
+}
 
 data class TimelineEvent(
     @SerializedName("title") val title: String = "",

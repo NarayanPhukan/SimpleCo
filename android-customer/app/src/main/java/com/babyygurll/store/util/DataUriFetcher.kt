@@ -22,7 +22,10 @@ class DataUriFetcher(
         return try {
             val base64Data = dataUri.substringAfter(base64Prefix)
             val imageBytes = Base64.decode(base64Data, Base64.DEFAULT)
-            val bitmap = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size) ?: return null
+            val decodeOptions = BitmapFactory.Options().apply {
+                inPreferredConfig = android.graphics.Bitmap.Config.RGB_565
+            }
+            val bitmap = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size, decodeOptions) ?: return null
 
             DrawableResult(
                 drawable = BitmapDrawable(options.context.resources, bitmap),
@@ -36,11 +39,10 @@ class DataUriFetcher(
 
     class Factory : Fetcher.Factory<String> {
         override fun create(data: String, options: Options, imageLoader: ImageLoader): Fetcher? {
-            if (data.startsWith("data:image/")) {
+            if (data.startsWith("data:image/") || data.startsWith("data:;base64,")) {
                 return DataUriFetcher(data, options)
             }
             return null
         }
     }
 }
-

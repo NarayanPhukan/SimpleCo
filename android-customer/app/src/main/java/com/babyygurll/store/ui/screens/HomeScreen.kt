@@ -328,10 +328,11 @@ fun ProductCard(
                     .aspectRatio(1f)
                     .background(Color(0xFFF8F9FA))
             ) {
-                if (product.image.isNotBlank()) {
+                val resolvedImg = product.resolvedPrimaryImage
+                if (resolvedImg.isNotBlank()) {
                     AsyncImage(
                         model = ImageRequest.Builder(context)
-                            .data(product.image)
+                            .data(resolvedImg)
                             .crossfade(true)
                             .build(),
                         imageLoader = imageLoader,

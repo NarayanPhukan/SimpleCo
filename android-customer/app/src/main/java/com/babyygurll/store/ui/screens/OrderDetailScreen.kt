@@ -302,9 +302,10 @@ fun OrderDetailScreen(
                                     .clip(RoundedCornerShape(8.dp))
                                     .background(BrandCream)
                             ) {
-                                if (itm.image.isNotBlank()) {
+                                val resolvedImg = itm.resolvedImage
+                                if (resolvedImg.isNotBlank()) {
                                     AsyncImage(
-                                        model = ImageRequest.Builder(context).data(itm.image).crossfade(true).build(),
+                                        model = ImageRequest.Builder(context).data(resolvedImg).crossfade(true).build(),
                                         imageLoader = imageLoader,
                                         contentDescription = itm.name,
                                         contentScale = ContentScale.Crop,

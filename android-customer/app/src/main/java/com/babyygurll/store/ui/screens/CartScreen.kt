@@ -434,9 +434,10 @@ fun CartItemCard(
                     .clip(RoundedCornerShape(12.dp))
                     .background(Color(0xFFF8FAFC))
             ) {
-                if (item.product.image.isNotBlank()) {
+                val resolvedImg = item.product.resolvedPrimaryImage
+                if (resolvedImg.isNotBlank()) {
                     AsyncImage(
-                        model = ImageRequest.Builder(context).data(item.product.image).crossfade(true).build(),
+                        model = ImageRequest.Builder(context).data(resolvedImg).crossfade(true).build(),
                         imageLoader = imageLoader,
                         contentDescription = item.product.name,
                         contentScale = ContentScale.Crop,

@@ -135,3 +135,4 @@ object CustomerUpdateDownloader {
         _downloadState.value = UpdateDownloadState.Idle
     }
 }
+
