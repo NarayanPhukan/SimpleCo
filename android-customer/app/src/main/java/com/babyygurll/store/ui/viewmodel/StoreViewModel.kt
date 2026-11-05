@@ -158,6 +158,25 @@ class StoreViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    fun checkForUpdatesManual() {
+        viewModelScope.launch {
+            _isLoading.value = true
+            storeRepo.getStoreSettings().onSuccess { setting ->
+                _storeSetting.value = setting
+                val versionInfo = setting.customerAppVersion ?: setting.appVersion
+                val isCustomerApk = versionInfo != null && (versionInfo.downloadUrl.contains("android-customer") || setting.customerAppVersion != null)
+                if (versionInfo != null && isCustomerApk && versionInfo.latestVersionCode > BuildConfig.VERSION_CODE) {
+                    _availableUpdate.value = versionInfo
+                } else {
+                    _eventMessage.emit("You're already on the latest version (v${BuildConfig.VERSION_NAME})! 🌸")
+                }
+            }.onFailure { err ->
+                _eventMessage.emit("Unable to check for updates: ${err.message ?: "Network error"}")
+            }
+            _isLoading.value = false
+        }
+    }
+
     fun startAppUpdate(context: Context) {
         val update = _availableUpdate.value ?: return
         viewModelScope.launch {

@@ -153,12 +153,14 @@ fun AccountScreen(
                         Spacer(modifier = Modifier.height(10.dp))
 
                         OutlinedButton(
-                            onClick = { viewModel.triggerManualErrorReport() },
+                            onClick = { viewModel.checkForUpdatesManual() },
                             shape = RoundedCornerShape(12.dp),
-                            colors = ButtonDefaults.outlinedButtonColors(contentColor = TextSecondary),
+                            colors = ButtonDefaults.outlinedButtonColors(contentColor = BrandSecondary),
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Text("🛠️ App Diagnostics & Error Report", fontWeight = FontWeight.SemiBold)
+                            Icon(Icons.Default.Refresh, contentDescription = null, tint = BrandSecondary, modifier = Modifier.size(18.dp))
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Check for Updates Now", fontWeight = FontWeight.Bold)
                         }
 
                         Spacer(modifier = Modifier.height(16.dp))
@@ -401,7 +403,108 @@ fun AccountScreen(
                 }
             }
 
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Dedicated App Version & Live Update Section
+            AppUpdateSection(viewModel = viewModel, isLoading = isLoading)
+
             Spacer(modifier = Modifier.height(20.dp))
+        }
+    }
+}
+
+@Composable
+fun AppUpdateSection(
+    viewModel: StoreViewModel,
+    isLoading: Boolean,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        modifier = modifier.fillMaxWidth()
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Surface(
+                        color = BrandLightPink,
+                        shape = RoundedCornerShape(10.dp),
+                        modifier = Modifier.size(40.dp)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Text("🌸", fontSize = 20.sp)
+                        }
+                    }
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Column {
+                        Text(
+                            text = "BabyyGurll Boutique",
+                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                            color = TextPrimary
+                        )
+                        Text(
+                            text = "v${com.babyygurll.store.BuildConfig.VERSION_NAME} (Build ${com.babyygurll.store.BuildConfig.VERSION_CODE})",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = TextMuted
+                        )
+                    }
+                }
+
+                Surface(
+                    color = BrandCream,
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Text(
+                        text = "Official APK",
+                        color = BrandSecondary,
+                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            Button(
+                onClick = { viewModel.checkForUpdatesManual() },
+                enabled = !isLoading,
+                shape = RoundedCornerShape(10.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = BrandPrimary),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(46.dp)
+            ) {
+                if (isLoading) {
+                    CircularProgressIndicator(color = Color.White, modifier = Modifier.size(18.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Checking Server...", fontWeight = FontWeight.Bold)
+                } else {
+                    Icon(Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Check for Updates Now", fontWeight = FontWeight.Bold)
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            OutlinedButton(
+                onClick = { viewModel.triggerManualErrorReport() },
+                shape = RoundedCornerShape(10.dp),
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = TextSecondary),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(44.dp)
+            ) {
+                Icon(Icons.Default.BugReport, contentDescription = null, modifier = Modifier.size(16.dp))
+                Spacer(modifier = Modifier.width(6.dp))
+                Text("App Diagnostics & Error Logs", fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
+            }
         }
     }
 }
