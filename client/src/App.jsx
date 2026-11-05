@@ -54,24 +54,51 @@ export const App = () => {
   };
 
   // Fetch products from MongoDB Backend
-  const loadProducts = async () => {
+  const loadProducts = async (silent = false) => {
     try {
-      setLoadingProducts(true);
+      if (!silent) setLoadingProducts(true);
       const res = await api.getProducts({
         category: activeCategory,
         search: searchQuery,
         sort: sortOrder
       });
-      setProducts(res.data || []);
-      setLoadingProducts(false);
+      const list = res.data || [];
+      setProducts(list);
+      if (!silent) setLoadingProducts(false);
+
+      // If empty on initial mount, retry once after 1.5 seconds in case backend was cold booting
+      if (list.length === 0 && !searchQuery) {
+        setTimeout(async () => {
+          try {
+            const retryRes = await api.getProducts({
+              category: activeCategory,
+              search: searchQuery,
+              sort: sortOrder
+            });
+            if (retryRes?.data?.length > 0) {
+              setProducts(retryRes.data);
+            }
+          } catch (e) {
+            // Ignore retry error
+          }
+        }, 1500);
+      }
     } catch (err) {
-      console.warn('API fetch products error, using fallback:', err.message);
-      setLoadingProducts(false);
+      console.warn('API fetch products error:', err.message);
+      if (!silent) setLoadingProducts(false);
     }
   };
 
   useEffect(() => {
     loadProducts();
+  }, [activeCategory, searchQuery, sortOrder]);
+
+  // Real-time periodic dynamic sync loop (updates catalog every 8 seconds)
+  useEffect(() => {
+    const timer = setInterval(() => {
+      loadProducts(true);
+    }, 8000);
+    return () => clearInterval(timer);
   }, [activeCategory, searchQuery, sortOrder]);
 
   // Listen for #admin, #studio, #custom, #wishlist, #account, #orders, #checkout hash in URL

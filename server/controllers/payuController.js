@@ -233,3 +233,4 @@ exports.getConfig = (req, res) => {
     }
   });
 };
+

@@ -30,6 +30,19 @@ app.use('/assets', express.static(path.join(__dirname, '../client/public/assets'
 app.use('/assets/images', express.static(path.join(__dirname, '../assets/images')));
 app.use('/assets/images', express.static(path.join(__dirname, '../client/public/assets/images')));
 
+// Middleware: Ensure database is connected before handling any /api routes
+app.use('/api', async (req, res, next) => {
+  try {
+    const mongoose = require('mongoose');
+    if (mongoose.connection.readyState !== 1) {
+      await connectDB();
+    }
+  } catch (err) {
+    console.warn('[Database] Middleware connect error:', err.message);
+  }
+  next();
+});
+
 // API Routes
 app.use('/api/products', productRoutes);
 app.use('/api/auth', authRoutes);

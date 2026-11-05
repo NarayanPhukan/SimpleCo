@@ -11,3 +11,4 @@ router.post('/response', handleResponse);
 router.get('/config', getConfig);
 
 module.exports = router;
+

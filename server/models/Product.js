@@ -27,56 +27,48 @@ const productSchema = new mongoose.Schema({
 
 const MongooseProduct = mongoose.model('Product', productSchema);
 
+const isDbReady = () => mongoose.connection.readyState === 1 || getDBState().isConnected;
+
 const Product = {
   find: (query) => {
-    const { isConnected, memoryDB } = getDBState();
-    if (isConnected) return MongooseProduct.find(query);
-    return memoryDB.products.find(query);
+    if (isDbReady()) return MongooseProduct.find(query);
+    return getDBState().memoryDB.products.find(query);
   },
   findOne: (query) => {
-    const { isConnected, memoryDB } = getDBState();
-    if (isConnected) return MongooseProduct.findOne(query);
-    return memoryDB.products.findOne(query);
+    if (isDbReady()) return MongooseProduct.findOne(query);
+    return getDBState().memoryDB.products.findOne(query);
   },
   findById: (id) => {
-    const { isConnected, memoryDB } = getDBState();
-    if (isConnected) return MongooseProduct.findById(id);
-    return memoryDB.products.findById(id);
+    if (isDbReady()) return MongooseProduct.findById(id);
+    return getDBState().memoryDB.products.findById(id);
   },
   create: (doc) => {
-    const { isConnected, memoryDB } = getDBState();
-    if (isConnected) return MongooseProduct.create(doc);
-    return memoryDB.products.create(doc);
+    if (isDbReady()) return MongooseProduct.create(doc);
+    return getDBState().memoryDB.products.create(doc);
   },
   insertMany: (docs) => {
-    const { isConnected, memoryDB } = getDBState();
-    if (isConnected) return MongooseProduct.insertMany(docs);
-    return memoryDB.products.insertMany(docs);
+    if (isDbReady()) return MongooseProduct.insertMany(docs);
+    return getDBState().memoryDB.products.insertMany(docs);
   },
   countDocuments: (query) => {
-    const { isConnected, memoryDB } = getDBState();
-    if (isConnected) return MongooseProduct.countDocuments(query);
-    return memoryDB.products.countDocuments(query);
+    if (isDbReady()) return MongooseProduct.countDocuments(query);
+    return getDBState().memoryDB.products.countDocuments(query);
   },
   findByIdAndUpdate: (id, update, options) => {
-    const { isConnected, memoryDB } = getDBState();
-    if (isConnected) return MongooseProduct.findByIdAndUpdate(id, update, options);
-    return memoryDB.products.findByIdAndUpdate(id, update, options);
+    if (isDbReady()) return MongooseProduct.findByIdAndUpdate(id, update, options);
+    return getDBState().memoryDB.products.findByIdAndUpdate(id, update, options);
   },
   findByIdAndDelete: (id) => {
-    const { isConnected, memoryDB } = getDBState();
-    if (isConnected) return MongooseProduct.findByIdAndDelete(id);
-    return memoryDB.products.findByIdAndDelete(id);
+    if (isDbReady()) return MongooseProduct.findByIdAndDelete(id);
+    return getDBState().memoryDB.products.findByIdAndDelete(id);
   },
   findOneAndUpdate: (query, update, options) => {
-    const { isConnected, memoryDB } = getDBState();
-    if (isConnected) return MongooseProduct.findOneAndUpdate(query, update, options);
-    return memoryDB.products.findOneAndUpdate(query, update, options);
+    if (isDbReady()) return MongooseProduct.findOneAndUpdate(query, update, options);
+    return getDBState().memoryDB.products.findOneAndUpdate(query, update, options);
   },
   findOneAndDelete: (query) => {
-    const { isConnected, memoryDB } = getDBState();
-    if (isConnected) return MongooseProduct.findOneAndDelete(query);
-    return memoryDB.products.findOneAndDelete(query);
+    if (isDbReady()) return MongooseProduct.findOneAndDelete(query);
+    return getDBState().memoryDB.products.findOneAndDelete(query);
   }
 };
 

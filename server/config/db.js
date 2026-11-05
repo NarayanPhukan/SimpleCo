@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 const { MemoryCollection } = require('./memoryStore');
 
 let isConnected = false;
+let connectionPromise = null;
 let memoryDB = {
   products: new MemoryCollection([]),
   users: new MemoryCollection([]),
@@ -10,30 +11,40 @@ let memoryDB = {
 };
 
 const connectDB = async () => {
-  if (isConnected && mongoose.connection.readyState === 1) {
+  if (mongoose.connection.readyState === 1) {
+    isConnected = true;
     return;
   }
+  if (connectionPromise) {
+    return connectionPromise;
+  }
+
   const mongoUri = process.env.MONGODB_URI;
 
   if (mongoUri) {
-    try {
-      console.log(`Connecting to MongoDB Atlas at: ${mongoUri.replace(/:[^:@]+@/, ':****@')}...`);
-      await mongoose.connect(mongoUri, { serverSelectionTimeoutMS: 5000 });
-      isConnected = true;
-      console.log('[Database] MongoDB Atlas connected successfully.');
-      return;
-    } catch (err) {
-      console.warn('[Database] Could not connect to MONGODB_URI:', err.message);
-    }
+    connectionPromise = (async () => {
+      try {
+        console.log(`Connecting to MongoDB Atlas at: ${mongoUri.replace(/:[^:@]+@/, ':****@')}...`);
+        await mongoose.connect(mongoUri, { serverSelectionTimeoutMS: 8000, bufferCommands: true });
+        isConnected = true;
+        console.log('[Database] MongoDB Atlas connected successfully.');
+      } catch (err) {
+        console.warn('[Database] Could not connect to MONGODB_URI:', err.message);
+        connectionPromise = null;
+      }
+    })();
+    return connectionPromise;
   } else {
-    try {
-      await mongoose.connect('mongodb://127.0.0.1:27017/babyygurll', { serverSelectionTimeoutMS: 1500 });
-      isConnected = true;
-      console.log('[Database] Connected to local MongoDB on port 27017.');
-      return;
-    } catch (localErr) {
-      // Local mongod not running
-    }
+    connectionPromise = (async () => {
+      try {
+        await mongoose.connect('mongodb://127.0.0.1:27017/babyygurll', { serverSelectionTimeoutMS: 1500 });
+        isConnected = true;
+        console.log('[Database] Connected to local MongoDB on port 27017.');
+      } catch (localErr) {
+        connectionPromise = null;
+      }
+    })();
+    return connectionPromise;
   }
 
   // Fallback to embedded in-memory MongoDB store
