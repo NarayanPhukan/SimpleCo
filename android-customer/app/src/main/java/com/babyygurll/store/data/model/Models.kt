@@ -157,7 +157,10 @@ data class Order(
     @SerializedName("shiprocketShipmentId") val shiprocketShipmentId: String? = null,
     @SerializedName("shiprocketStatus") val shiprocketStatus: String? = null,
     @SerializedName("cancelReason") val cancelReason: String? = null,
-    @SerializedName("cancelledAt") val cancelledAt: String? = null
+    @SerializedName("cancelledAt") val cancelledAt: String? = null,
+    @SerializedName("razorpayRefundId") val razorpayRefundId: String? = null,
+    @SerializedName("refundStatus") val refundStatus: String? = null,
+    @SerializedName("refundAmount") val refundAmount: Double? = null
 ) {
     val id: String
         get() = orderId

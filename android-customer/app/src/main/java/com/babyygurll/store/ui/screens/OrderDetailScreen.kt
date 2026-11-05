@@ -269,17 +269,31 @@ fun OrderDetailScreen(
                         Spacer(modifier = Modifier.width(12.dp))
                         Column {
                             Text(
-                                text = "Order Cancelled",
+                                text = if (!currentOrder.razorpayRefundId.isNullOrBlank()) "Order Cancelled • Refund Processed" else "Order Cancelled",
                                 fontWeight = FontWeight.Bold,
                                 color = StatusError,
                                 fontSize = 15.sp
                             )
                             Spacer(modifier = Modifier.height(2.dp))
                             Text(
-                                text = currentOrder.cancelReason ?: "Cancelled upon customer request. Full refund initiated.",
+                                text = currentOrder.cancelReason ?: "Cancelled upon customer request.",
                                 fontSize = 12.sp,
                                 color = TextSecondary
                             )
+                            if (!currentOrder.razorpayRefundId.isNullOrBlank()) {
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = "✓ Razorpay Refund ID: ${currentOrder.razorpayRefundId}",
+                                    fontSize = 11.sp,
+                                    color = BrandPrimary,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Text(
+                                    text = "₹${currentOrder.total.toInt()} refunded back to your source account / UPI.",
+                                    fontSize = 11.sp,
+                                    color = TextSecondary
+                                )
+                            }
                         }
                     }
                 }

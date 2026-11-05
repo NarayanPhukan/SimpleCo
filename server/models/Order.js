@@ -55,6 +55,9 @@ const orderSchema = new mongoose.Schema({
   returnStatus: { type: String, default: '' },
   cancelReason: { type: String, default: '' },
   cancelledAt: { type: String, default: '' },
+  razorpayRefundId: { type: String, default: '' },
+  refundStatus: { type: String, default: '' },
+  refundAmount: { type: Number, default: 0 },
   shiprocketOrderId: { type: String, default: '' },
   shiprocketShipmentId: { type: String, default: '' },
   shiprocketStatus: { type: String, default: '' }

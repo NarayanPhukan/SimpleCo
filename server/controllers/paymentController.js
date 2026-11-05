@@ -174,3 +174,28 @@ exports.getKey = (req, res) => {
     key_id
   });
 };
+
+// @desc    Issue a full or partial refund via Razorpay
+exports.issueRefund = async (paymentId, amountInPaise, notes = {}) => {
+  const razorpay = getRazorpayInstance();
+  if (!razorpay) {
+    throw new Error('Razorpay credentials not configured');
+  }
+  const refundOptions = { notes };
+  if (amountInPaise && amountInPaise > 0) {
+    refundOptions.amount = Math.round(amountInPaise);
+  }
+  return await razorpay.payments.refund(paymentId, refundOptions);
+};
+
+// @desc    Fetch successful payment ID for an order ID from Razorpay
+exports.fetchPaymentForOrder = async (orderId) => {
+  const razorpay = getRazorpayInstance();
+  if (!razorpay || !orderId) return null;
+  const payments = await razorpay.orders.fetchPayments(orderId);
+  if (payments && payments.items && payments.items.length > 0) {
+    const successful = payments.items.find(p => p.status === 'captured') || payments.items[0];
+    return successful ? successful.id : null;
+  }
+  return null;
+};

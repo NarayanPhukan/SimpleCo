@@ -1,5 +1,6 @@
 const Order = require('../models/Order');
 const shiprocketService = require('../services/shiprocketService');
+const paymentController = require('./paymentController');
 
 // @desc    Create new crochet order
 // @route   POST /api/orders
@@ -376,35 +377,80 @@ exports.cancelOrder = async (req, res) => {
     const cancelReason = (reason && reason.trim()) ? reason.trim() : 'Customer requested order cancellation';
     const now = new Date();
     const cancelDateFormatted = now.toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' });
-    const isPrepaid = order.paymentStatus === 'paid';
+    const isPrepaid = order.paymentStatus === 'paid' || 
+      (order.paymentMethod && order.paymentMethod.toLowerCase().includes('razorpay') && order.paymentStatus !== 'failed');
+
+    let refundSuccess = false;
+    let refundId = null;
+
+    // Issue automatic Razorpay refund for prepaid orders
+    if (isPrepaid) {
+      try {
+        let paymentId = order.razorpayPaymentId;
+        if (!paymentId && order.razorpayOrderId) {
+          paymentId = await paymentController.fetchPaymentForOrder(order.razorpayOrderId);
+          if (paymentId) {
+            order.razorpayPaymentId = paymentId;
+          }
+        }
+
+        if (paymentId) {
+          const amountInPaise = Math.round(order.total * 100);
+          const refund = await paymentController.issueRefund(paymentId, amountInPaise, {
+            orderId: cleanId,
+            reason: cancelReason
+          });
+          refundId = refund.id;
+          order.razorpayRefundId = refund.id;
+          order.refundStatus = refund.status || 'processed';
+          order.refundAmount = (refund.amount || amountInPaise) / 100;
+          order.paymentStatus = 'refunded';
+          refundSuccess = true;
+        } else {
+          order.paymentStatus = 'refund_pending';
+          order.refundStatus = 'manual_review';
+        }
+      } catch (refundError) {
+        console.error(`Razorpay Refund failed for Order #${cleanId}:`, refundError.message);
+        order.paymentStatus = 'refund_pending';
+        order.refundStatus = 'failed: ' + refundError.message;
+      }
+    } else {
+      order.paymentStatus = 'cancelled';
+    }
 
     order.statusCode = 'cancelled';
-    order.statusLabel = 'Order Cancelled • Refund Initiated';
+    order.statusLabel = refundSuccess
+      ? 'Order Cancelled • Refund Processed'
+      : (isPrepaid ? 'Order Cancelled • Refund Initiated' : 'Order Cancelled');
     order.cancelReason = cancelReason;
     order.cancelledAt = cancelDateFormatted;
-    order.paymentStatus = isPrepaid ? 'refund_pending' : 'cancelled';
 
     // Mark current timeline steps as completed/cancelled
     order.timeline.forEach(step => {
       step.current = false;
     });
 
+    const refundDesc = refundSuccess
+      ? `Cancellation confirmed: ${cancelReason}. Razorpay full refund of ₹${order.total} has been issued (Refund ID: ${refundId}) back to your original payment method / UPI.`
+      : (isPrepaid
+        ? `Cancellation confirmed: ${cancelReason}. Full refund of ₹${order.total} has been initiated back to your source account / UPI (settlement in 2-3 business days).`
+        : `Cancellation confirmed: ${cancelReason}. As this was a Cash on Delivery order, no amount was charged.`);
+
     order.timeline.push({
       stage: 'cancelled',
-      title: 'Order Cancelled & Refund Initiated',
+      title: refundSuccess ? 'Order Cancelled & Refund Processed' : 'Order Cancelled & Refund Initiated',
       time: cancelDateFormatted + ' (' + now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) + ')',
       completed: true,
       current: true,
-      desc: isPrepaid
-        ? `Cancellation confirmed: ${cancelReason}. Full refund of ₹${order.total} has been initiated back to your source account / UPI (settlement in 2-3 business days).`
-        : `Cancellation confirmed: ${cancelReason}. As this was a Cash on Delivery order, no amount was charged.`
+      desc: refundDesc
     });
 
     await order.save();
 
     res.json({
       success: true,
-      message: `Order #${cleanId} has been successfully cancelled`,
+      message: `Order #${cleanId} has been successfully cancelled${refundSuccess ? ' and refund processed via Razorpay' : ''}`,
       data: order
     });
   } catch (error) {
