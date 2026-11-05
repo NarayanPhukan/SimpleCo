@@ -1,10 +1,14 @@
 package com.babyygurll.store.ui.viewmodel
 
 import android.app.Application
+import android.content.Context
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.babyygurll.store.BuildConfig
+import com.babyygurll.store.data.diagnostics.ErrorLogManager
 import com.babyygurll.store.data.model.*
 import com.babyygurll.store.data.repository.*
+import com.babyygurll.store.data.update.CustomerUpdateDownloader
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
@@ -34,6 +38,15 @@ class StoreViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _coupons = MutableStateFlow<List<Coupon>>(emptyList())
     val coupons = _coupons.asStateFlow()
+
+    // Auto-Update State
+    private val _availableUpdate = MutableStateFlow<AppVersionInfo?>(null)
+    val availableUpdate = _availableUpdate.asStateFlow()
+    val updateDownloadState = CustomerUpdateDownloader.downloadState
+
+    // Auto-Detected Error Report State
+    private val _pendingErrorReport = MutableStateFlow<String?>(null)
+    val pendingErrorReport = _pendingErrorReport.asStateFlow()
 
     // Derived filtered and sorted products
     val products: StateFlow<List<Product>> = combine(
@@ -110,6 +123,7 @@ class StoreViewModel(application: Application) : AndroidViewModel(application) {
         fetchProducts()
         fetchSettings()
         fetchCoupons()
+        checkPendingCrashReport()
     }
 
     fun fetchProducts() {
@@ -119,6 +133,7 @@ class StoreViewModel(application: Application) : AndroidViewModel(application) {
             res.onSuccess { list ->
                 _rawProducts.value = list
             }.onFailure { err ->
+                ErrorLogManager.logWarning("CATALOG_FETCH", "Failed to fetch products: ${err.message}")
                 _eventMessage.emit(err.message ?: "Could not load products")
             }
             _isLoading.value = false
@@ -128,8 +143,51 @@ class StoreViewModel(application: Application) : AndroidViewModel(application) {
     fun fetchSettings() {
         viewModelScope.launch {
             val res = storeRepo.getStoreSettings()
-            res.onSuccess { _storeSetting.value = it }
+            res.onSuccess {
+                _storeSetting.value = it
+                checkForUpdates(it)
+            }
         }
+    }
+
+    private fun checkForUpdates(setting: StoreSetting) {
+        val versionInfo = setting.customerAppVersion ?: setting.appVersion ?: return
+        val isCustomerApk = versionInfo.downloadUrl.contains("android-customer") || setting.customerAppVersion != null
+        if (isCustomerApk && versionInfo.latestVersionCode > BuildConfig.VERSION_CODE) {
+            _availableUpdate.value = versionInfo
+        }
+    }
+
+    fun startAppUpdate(context: Context) {
+        val update = _availableUpdate.value ?: return
+        viewModelScope.launch {
+            CustomerUpdateDownloader.startDownload(
+                context = context,
+                rawUrl = update.downloadUrl,
+                versionName = update.latestVersionName
+            )
+        }
+    }
+
+    fun dismissUpdateDialog() {
+        _availableUpdate.value = null
+        CustomerUpdateDownloader.resetState()
+    }
+
+    private fun checkPendingCrashReport() {
+        val report = ErrorLogManager.getPendingCrashReport(getApplication())
+        if (!report.isNullOrBlank()) {
+            _pendingErrorReport.value = report
+        }
+    }
+
+    fun dismissErrorReport() {
+        _pendingErrorReport.value = null
+        ErrorLogManager.dismissPendingCrashReport(getApplication())
+    }
+
+    fun triggerManualErrorReport() {
+        _pendingErrorReport.value = ErrorLogManager.generateDiagnosticsReport()
     }
 
     fun fetchCoupons() {

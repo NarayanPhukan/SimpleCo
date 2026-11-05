@@ -20,6 +20,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.*
+import com.babyygurll.store.BuildConfig
 import com.babyygurll.store.data.model.Order
 import com.babyygurll.store.data.model.Product
 import com.babyygurll.store.data.model.ShippingAddress
@@ -71,8 +72,31 @@ class MainActivity : ComponentActivity(), PaymentResultWithDataListener {
                 val cartItems by viewModel.cartItems.collectAsState()
                 val cartBadgeCount = remember(cartItems) { cartItems.sumOf { it.quantity } }
 
+                val availableUpdate by viewModel.availableUpdate.collectAsState()
+                val updateDownloadState by viewModel.updateDownloadState.collectAsState()
+                val pendingErrorReport by viewModel.pendingErrorReport.collectAsState()
+
                 var selectedProductForDetail by remember { mutableStateOf<Product?>(null) }
                 var selectedOrderForDetail by remember { mutableStateOf<Order?>(null) }
+
+                // Auto-Update Dialog
+                if (availableUpdate != null) {
+                    AppUpdateDialog(
+                        updateInfo = availableUpdate!!,
+                        currentVersion = BuildConfig.VERSION_NAME,
+                        downloadState = updateDownloadState,
+                        onDownloadClick = { viewModel.startAppUpdate(this@MainActivity) },
+                        onDismiss = { viewModel.dismissUpdateDialog() }
+                    )
+                }
+
+                // Auto-Detected Error Report Dialog
+                if (!pendingErrorReport.isNullOrBlank()) {
+                    ErrorReportDialog(
+                        reportText = pendingErrorReport!!,
+                        onDismiss = { viewModel.dismissErrorReport() }
+                    )
+                }
 
                 // Observe Toast Events
                 LaunchedEffect(Unit) {

@@ -78,6 +78,18 @@ const storeSettingSchema = new mongoose.Schema({
     downloadUrl: { type: String, default: 'https://raw.githubusercontent.com/NarayanPhukan/SimpleCo/main/android-admin/babyygurll-admin.apk' },
     releaseDate: { type: String, default: '2026-11-05' },
     critical: { type: Boolean, default: false }
+  },
+  customerAppVersion: {
+    latestVersionCode: { type: Number, default: 1 },
+    latestVersionName: { type: String, default: '1.0.0' },
+    minRequiredVersionCode: { type: Number, default: 1 },
+    releaseNotes: {
+      type: String,
+      default: '• Direct handcrafted boutique shopping with 100% milk cotton yarn\n• Live Shiprocket parcel tracking & AWB copy\n• Instant promo code redemption (BABYYGURLL 15% OFF)\n• Auto-update & error diagnostics reporting'
+    },
+    downloadUrl: { type: String, default: 'https://raw.githubusercontent.com/NarayanPhukan/SimpleCo/main/android-customer/babyygurll-boutique.apk' },
+    releaseDate: { type: String, default: '2026-11-05' },
+    critical: { type: Boolean, default: false }
   }
 }, {
   timestamps: true

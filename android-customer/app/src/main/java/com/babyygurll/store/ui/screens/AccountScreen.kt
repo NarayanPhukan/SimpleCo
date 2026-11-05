@@ -150,6 +150,17 @@ fun AccountScreen(
                             Text("💬 WhatsApp Crafter Concierge", fontWeight = FontWeight.Bold)
                         }
 
+                        Spacer(modifier = Modifier.height(10.dp))
+
+                        OutlinedButton(
+                            onClick = { viewModel.triggerManualErrorReport() },
+                            shape = RoundedCornerShape(12.dp),
+                            colors = ButtonDefaults.outlinedButtonColors(contentColor = TextSecondary),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("🛠️ App Diagnostics & Error Report", fontWeight = FontWeight.SemiBold)
+                        }
+
                         Spacer(modifier = Modifier.height(16.dp))
 
                         TextButton(
@@ -375,6 +386,17 @@ fun AccountScreen(
                         PerkItem("🌸", "Save wishlist pieces across devices")
                         PerkItem("📦", "Live Shiprocket order tracking & past invoices")
                         PerkItem("🎁", "Instant 15% discount on your first order with code BABYYGURLL")
+
+                        Spacer(modifier = Modifier.height(14.dp))
+
+                        OutlinedButton(
+                            onClick = { viewModel.triggerManualErrorReport() },
+                            shape = RoundedCornerShape(10.dp),
+                            colors = ButtonDefaults.outlinedButtonColors(contentColor = TextSecondary),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("🛠️ App Diagnostics & Error Logs", fontWeight = FontWeight.Medium, fontSize = 13.sp)
+                        }
                     }
                 }
             }

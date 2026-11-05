@@ -26,6 +26,15 @@ const DEFAULT_CONFIG = {
     downloadUrl: 'https://raw.githubusercontent.com/NarayanPhukan/SimpleCo/main/android-admin/babyygurll-admin.apk',
     releaseDate: '2026-11-05',
     critical: false
+  },
+  customerAppVersion: {
+    latestVersionCode: 1,
+    latestVersionName: '1.0.0',
+    minRequiredVersionCode: 1,
+    releaseNotes: '• Direct handcrafted boutique shopping with 100% milk cotton yarn\n• Live Shiprocket parcel tracking & AWB copy\n• Instant promo code redemption (BABYYGURLL 15% OFF)\n• Auto-update & error diagnostics reporting',
+    downloadUrl: 'https://raw.githubusercontent.com/NarayanPhukan/SimpleCo/main/android-customer/babyygurll-boutique.apk',
+    releaseDate: '2026-11-05',
+    critical: false
   }
 };
 

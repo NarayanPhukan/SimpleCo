@@ -26,6 +26,15 @@ data class Product(
         get() = if (images.isNotEmpty()) images else if (image.isNotBlank()) listOf(image) else emptyList()
 }
 
+data class AppVersionInfo(
+    @SerializedName("latestVersionCode") val latestVersionCode: Int = 1,
+    @SerializedName("latestVersionName") val latestVersionName: String = "1.0.0",
+    @SerializedName("minRequiredVersionCode") val minRequiredVersionCode: Int = 1,
+    @SerializedName("releaseNotes") val releaseNotes: String = "• Initial Release of BabyyGurll Boutique Customer App",
+    @SerializedName("downloadUrl") val downloadUrl: String = "https://raw.githubusercontent.com/NarayanPhukan/SimpleCo/main/android-customer/babyygurll-boutique.apk",
+    @SerializedName("critical") val critical: Boolean = false
+)
+
 data class StoreSetting(
     @SerializedName("storeName") val storeName: String = "BabyyGurll Crochet Studio",
     @SerializedName("tagline") val tagline: String = "Bespoke Handmade Crochet Creations",
@@ -36,7 +45,9 @@ data class StoreSetting(
     @SerializedName("standardShippingFee") val standardShippingFee: Double = 0.0,
     @SerializedName("expressShippingFee") val expressShippingFee: Double = 0.0,
     @SerializedName("supportEmail") val supportEmail: String = "hello@babyygurll.in",
-    @SerializedName("supportPhone") val supportPhone: String = "+91 98200 12345"
+    @SerializedName("supportPhone") val supportPhone: String = "+91 98200 12345",
+    @SerializedName("customerAppVersion") val customerAppVersion: AppVersionInfo? = null,
+    @SerializedName("appVersion") val appVersion: AppVersionInfo? = null
 )
 
 data class Coupon(
