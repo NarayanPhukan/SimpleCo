@@ -28,6 +28,7 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.babyygurll.store.data.model.Order
+import com.babyygurll.store.ui.components.BoutiqueImage
 import com.babyygurll.store.ui.theme.*
 import com.babyygurll.store.ui.viewmodel.StoreViewModel
 import com.babyygurll.store.util.DataUriFetcher
@@ -302,20 +303,12 @@ fun OrderDetailScreen(
                                     .clip(RoundedCornerShape(8.dp))
                                     .background(BrandCream)
                             ) {
-                                val resolvedImg = itm.resolvedImage
-                                if (resolvedImg.isNotBlank()) {
-                                    AsyncImage(
-                                        model = ImageRequest.Builder(context).data(resolvedImg).crossfade(true).build(),
-                                        imageLoader = imageLoader,
-                                        contentDescription = itm.name,
-                                        contentScale = ContentScale.Crop,
-                                        modifier = Modifier.fillMaxSize()
-                                    )
-                                } else {
-                                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                                        Text("🧶", fontSize = 20.sp)
-                                    }
-                                }
+                                BoutiqueImage(
+                                    imageUrl = itm.resolvedImage,
+                                    contentDescription = itm.name,
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentScale = ContentScale.Crop
+                                )
                             }
 
                             Spacer(modifier = Modifier.width(12.dp))

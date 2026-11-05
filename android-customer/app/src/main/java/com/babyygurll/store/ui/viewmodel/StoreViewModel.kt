@@ -335,6 +335,54 @@ class StoreViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    fun sendOtp(email: String, onSuccess: (String) -> Unit = {}, onError: (String) -> Unit = {}) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            val res = authRepo.sendOtp(email)
+            _isLoading.value = false
+            res.onSuccess { msg ->
+                _eventMessage.emit(msg)
+                onSuccess(msg)
+            }.onFailure { err ->
+                val msg = err.message ?: "Failed to send code"
+                _eventMessage.emit(msg)
+                onError(msg)
+            }
+        }
+    }
+
+    fun verifyOtp(email: String, otp: String, onSuccess: () -> Unit = {}, onError: (String) -> Unit = {}) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            val res = authRepo.verifyOtp(email, otp)
+            _isLoading.value = false
+            res.onSuccess {
+                _eventMessage.emit("Code verified successfully! 🌸")
+                onSuccess()
+            }.onFailure { err ->
+                val msg = err.message ?: "Invalid code"
+                _eventMessage.emit(msg)
+                onError(msg)
+            }
+        }
+    }
+
+    fun resetPasswordWithOtp(email: String, otp: String, newPass: String, onSuccess: () -> Unit = {}, onError: (String) -> Unit = {}) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            val res = authRepo.resetPassword(email, otp, newPass)
+            _isLoading.value = false
+            res.onSuccess { user ->
+                _eventMessage.emit("Password reset successfully! Welcome, ${user.name} 🌸")
+                onSuccess()
+            }.onFailure { err ->
+                val msg = err.message ?: "Failed to reset password"
+                _eventMessage.emit(msg)
+                onError(msg)
+            }
+        }
+    }
+
     fun logout() {
         authRepo.logout()
         viewModelScope.launch {

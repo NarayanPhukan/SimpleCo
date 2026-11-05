@@ -212,7 +212,124 @@ exports.setDefaultAddress = async (req, res) => {
   }
 };
 
-// @desc    Forgot / Reset password
+// In-memory OTP storage for password reset: email -> { otp, expiresAt, verified }
+const otpStore = new Map();
+
+// @desc    Send OTP to email for password reset
+// @route   POST /api/auth/send-otp
+exports.sendOtp = async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({ success: false, message: 'Email address is required' });
+    }
+
+    const cleanEmail = email.trim().toLowerCase();
+    const user = await User.findOne({ email: cleanEmail });
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'No registered account found with this email' });
+    }
+
+    // Generate secure 6-digit OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = Date.now() + 10 * 60 * 1000; // 10 minutes
+
+    otpStore.set(cleanEmail, { otp, expiresAt, verified: false });
+
+    console.log(`[AUTH] 🌸 Verification OTP generated for ${cleanEmail}: ${otp}`);
+
+    res.json({
+      success: true,
+      message: `6-digit verification code sent to ${cleanEmail}`,
+      otp: otp
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// @desc    Verify OTP for password reset
+// @route   POST /api/auth/verify-otp
+exports.verifyOtp = async (req, res) => {
+  try {
+    const { email, otp } = req.body;
+    if (!email || !otp) {
+      return res.status(400).json({ success: false, message: 'Email and OTP code are required' });
+    }
+
+    const cleanEmail = email.trim().toLowerCase();
+    const record = otpStore.get(cleanEmail);
+
+    if (!record || Date.now() > record.expiresAt) {
+      return res.status(400).json({ success: false, message: 'Verification code has expired. Please request a new one.' });
+    }
+
+    if (record.otp !== otp.trim()) {
+      return res.status(400).json({ success: false, message: 'Invalid verification code. Please check and try again.' });
+    }
+
+    record.verified = true;
+    otpStore.set(cleanEmail, record);
+
+    res.json({
+      success: true,
+      message: 'Email verified successfully! You can now choose a new password.'
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// @desc    Reset password using verified OTP
+// @route   POST /api/auth/reset-password
+exports.resetPassword = async (req, res) => {
+  try {
+    const { email, otp, newPassword } = req.body;
+    if (!email || !newPassword) {
+      return res.status(400).json({ success: false, message: 'Email and new password are required' });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({ success: false, message: 'New password must be at least 6 characters' });
+    }
+
+    const cleanEmail = email.trim().toLowerCase();
+    const record = otpStore.get(cleanEmail);
+
+    if (otp) {
+      if (!record || Date.now() > record.expiresAt) {
+        return res.status(400).json({ success: false, message: 'Verification code has expired. Please request a new code.' });
+      }
+      if (record.otp !== otp.trim() && !record.verified) {
+        return res.status(400).json({ success: false, message: 'Invalid verification code' });
+      }
+    } else if (!record || !record.verified) {
+      return res.status(400).json({ success: false, message: 'Please verify your email code first' });
+    }
+
+    const user = await User.findOne({ email: cleanEmail });
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User account not found' });
+    }
+
+    user.password = newPassword;
+    await user.save();
+
+    // Invalidate OTP after successful reset
+    otpStore.delete(cleanEmail);
+
+    res.json({
+      success: true,
+      message: 'Password reset successfully! You can now sign in with your new password.',
+      data: user,
+      user: user
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// @desc    Forgot / Reset password (Legacy Direct)
 // @route   POST /api/auth/forgot-password
 exports.forgotPassword = async (req, res) => {
   try {
@@ -237,7 +354,8 @@ exports.forgotPassword = async (req, res) => {
     res.json({
       success: true,
       message: 'Password reset successfully. Please sign in with your new password.',
-      data: user
+      data: user,
+      user: user
     });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });

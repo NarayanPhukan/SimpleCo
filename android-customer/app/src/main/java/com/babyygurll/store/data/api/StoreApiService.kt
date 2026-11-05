@@ -54,6 +54,21 @@ interface StoreApiService {
         @Body body: Map<String, String>
     ): Response<AuthResponse>
 
+    @POST("auth/send-otp")
+    suspend fun sendOtp(
+        @Body body: Map<String, String>
+    ): Response<ApiResponse<Map<String, Any>>>
+
+    @POST("auth/verify-otp")
+    suspend fun verifyOtp(
+        @Body body: Map<String, String>
+    ): Response<ApiResponse<Map<String, Any>>>
+
+    @POST("auth/reset-password")
+    suspend fun resetPassword(
+        @Body body: Map<String, String>
+    ): Response<AuthResponse>
+
     @GET("shipping/serviceability")
     suspend fun checkPincode(
         @Query("delivery_postcode") deliveryPostcode: String

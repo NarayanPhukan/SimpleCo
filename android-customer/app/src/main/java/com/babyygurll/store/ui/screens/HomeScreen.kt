@@ -1,5 +1,6 @@
 package com.babyygurll.store.ui.screens
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -33,6 +34,7 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.babyygurll.store.data.model.Product
+import com.babyygurll.store.ui.components.BoutiqueImage
 import com.babyygurll.store.ui.theme.*
 import com.babyygurll.store.ui.viewmodel.StoreViewModel
 import com.babyygurll.store.util.DataUriFetcher
@@ -65,10 +67,11 @@ fun HomeScreen(
             .fillMaxSize()
             .background(BrandCream)
     ) {
-        // Luxury Top App Header
+        // Luxury Artisanal Top App Header
         Surface(
-            color = BrandSecondary,
-            shadowElevation = 4.dp
+            color = Color.White,
+            shadowElevation = 2.dp,
+            border = BorderStroke(1.dp, SurfaceBorder)
         ) {
             Column(
                 modifier = Modifier
@@ -89,61 +92,63 @@ fun HomeScreen(
                                     fontWeight = FontWeight.ExtraBold,
                                     letterSpacing = 0.5.sp
                                 ),
-                                color = Color.White
+                                color = BrandSecondary
                             )
                             Spacer(modifier = Modifier.width(6.dp))
                             Text(
                                 text = "🌸",
-                                fontSize = 18.sp
+                                fontSize = 20.sp
                             )
                         }
                         Text(
                             text = "Bespoke Artisanal Handcrafted Crochet",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = BrandPastelPink
+                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Medium),
+                            color = TextSecondary
                         )
                     }
 
                     Surface(
-                        color = Color.White.copy(alpha = 0.15f),
-                        shape = RoundedCornerShape(20.dp)
+                        color = BrandLightPink,
+                        shape = RoundedCornerShape(20.dp),
+                        border = BorderStroke(1.dp, BrandPastelPink.copy(alpha = 0.6f))
                     ) {
                         Row(
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
                                 text = "✨ 100% Milk Cotton",
-                                color = Color.White,
-                                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold)
+                                color = BrandPrimary,
+                                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold)
                             )
                         }
                     }
                 }
 
-                // Announcement bar
+                // Announcement banner with soft boutique styling
                 if (storeSetting.announcementActive && storeSetting.announcementText.isNotBlank()) {
                     Spacer(modifier = Modifier.height(10.dp))
                     Surface(
-                        color = BrandPrimary.copy(alpha = 0.9f),
-                        shape = RoundedCornerShape(8.dp),
+                        color = Color(0xFFFEEBEB),
+                        shape = RoundedCornerShape(10.dp),
+                        border = BorderStroke(1.dp, Color(0xFFFCD3D3)),
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Row(
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Icon(
                                 Icons.Default.LocalShipping,
                                 contentDescription = null,
-                                tint = Color.White,
+                                tint = Color(0xFFDE1110),
                                 modifier = Modifier.size(16.dp)
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
                                 text = storeSetting.announcementText,
-                                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Medium),
-                                color = Color.White,
+                                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
+                                color = Color(0xFF9E0B0B),
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
                             )
@@ -151,9 +156,9 @@ fun HomeScreen(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(10.dp))
+                Spacer(modifier = Modifier.height(12.dp))
 
-                // Search Bar
+                // Search Bar with warm boutique styling
                 OutlinedTextField(
                     value = searchQuery,
                     onValueChange = { viewModel.setSearchQuery(it) },
@@ -175,12 +180,12 @@ fun HomeScreen(
                         }
                     },
                     singleLine = true,
-                    shape = RoundedCornerShape(12.dp),
+                    shape = RoundedCornerShape(16.dp),
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedContainerColor = Color.White,
-                        unfocusedContainerColor = Color.White,
+                        focusedContainerColor = Color(0xFFF8FAFC),
+                        unfocusedContainerColor = Color(0xFFF8FAFC),
                         focusedBorderColor = BrandPrimary,
-                        unfocusedBorderColor = Color.Transparent
+                        unfocusedBorderColor = SurfaceBorderActive
                     ),
                     modifier = Modifier
                         .fillMaxWidth()
@@ -189,41 +194,32 @@ fun HomeScreen(
             }
         }
 
-        // Category Filter Chips
+        // Category Filter Chips with boutique styling
         LazyRow(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 10.dp),
+                .padding(vertical = 12.dp),
             contentPadding = PaddingValues(horizontal = 16.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             items(CATEGORIES) { (key, label) ->
                 val isSelected = selectedCategory == key
-                FilterChip(
-                    selected = isSelected,
-                    onClick = { viewModel.selectCategory(key) },
-                    label = {
-                        Text(
-                            text = label,
-                            style = MaterialTheme.typography.bodyMedium.copy(
-                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
-                            )
-                        )
-                    },
-                    colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = BrandPrimary,
-                        selectedLabelColor = Color.White,
-                        containerColor = Color.White,
-                        labelColor = TextPrimary
-                    ),
-                    shape = RoundedCornerShape(20.dp),
-                    border = FilterChipDefaults.filterChipBorder(
-                        borderColor = if (isSelected) BrandPrimary else SurfaceBorder,
-                        borderWidth = 1.dp,
-                        enabled = true,
-                        selected = isSelected
+                Surface(
+                    color = if (isSelected) BrandPrimary else Color.White,
+                    contentColor = if (isSelected) Color.White else TextPrimary,
+                    shape = RoundedCornerShape(14.dp),
+                    border = if (isSelected) null else BorderStroke(1.dp, SurfaceBorderActive),
+                    shadowElevation = if (isSelected) 3.dp else 1.dp,
+                    modifier = Modifier.clickable { viewModel.selectCategory(key) }
+                ) {
+                    Text(
+                        text = label,
+                        style = MaterialTheme.typography.labelLarge.copy(
+                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
+                        ),
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 9.dp)
                     )
-                )
+                }
             }
         }
 
@@ -305,102 +301,90 @@ fun ProductCard(
     onAddToCart: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val context = LocalContext.current
-    val imageLoader = remember {
-        coil.ImageLoader.Builder(context)
-            .components { add(DataUriFetcher.Factory()) }
-            .build()
-    }
-
     Card(
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        border = BorderStroke(1.dp, SurfaceBorderActive),
         modifier = modifier
             .fillMaxWidth()
             .clickable { onProductClick() }
     ) {
         Column {
-            // Product Image Box with Badges
+            // Product Image Box with Badges & Wishlist Button
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .aspectRatio(1f)
-                    .background(Color(0xFFF8F9FA))
+                    .background(BrandCream)
             ) {
-                val resolvedImg = product.resolvedPrimaryImage
-                if (resolvedImg.isNotBlank()) {
-                    AsyncImage(
-                        model = ImageRequest.Builder(context)
-                            .data(resolvedImg)
-                            .crossfade(true)
-                            .build(),
-                        imageLoader = imageLoader,
-                        contentDescription = product.name,
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxSize()
-                    )
-                } else {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text("🧶", fontSize = 40.sp)
-                    }
-                }
+                // High-performance boutique image loader (instant Base64 & cached HTTP/HTTPS)
+                BoutiqueImage(
+                    imageUrl = product.resolvedPrimaryImage,
+                    contentDescription = product.name,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop
+                )
 
                 // In Stock / Sold Out Badge
                 if (!product.inStock) {
                     Surface(
-                        color = Color.Black.copy(alpha = 0.7f),
-                        shape = RoundedCornerShape(bottomEnd = 10.dp),
+                        color = Color.Black.copy(alpha = 0.75f),
+                        shape = RoundedCornerShape(bottomEnd = 12.dp),
                         modifier = Modifier.align(Alignment.TopStart)
                     ) {
                         Text(
                             text = "SOLD OUT",
                             color = Color.White,
                             style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                            modifier = Modifier.padding(horizontal = 9.dp, vertical = 5.dp)
                         )
                     }
                 } else if (!product.badge.isNullOrBlank()) {
                     Surface(
-                        color = BrandPrimary,
-                        shape = RoundedCornerShape(bottomEnd = 10.dp),
+                        color = BrandLightPink,
+                        shape = RoundedCornerShape(bottomEnd = 12.dp),
+                        border = BorderStroke(1.dp, BrandPastelPink.copy(alpha = 0.7f)),
                         modifier = Modifier.align(Alignment.TopStart)
                     ) {
                         Text(
-                            text = product.badge.uppercase(),
-                            color = Color.White,
+                            text = "🌸 ${product.badge}",
+                            color = BrandPrimary,
                             style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                            modifier = Modifier.padding(horizontal = 9.dp, vertical = 5.dp)
                         )
                     }
                 }
 
-                // Wishlist Heart Button
-                IconButton(
-                    onClick = onWishlistClick,
+                // Wishlist Heart Floating Button with Glassmorphic styling
+                Surface(
+                    color = Color.White.copy(alpha = 0.88f),
+                    shape = CircleShape,
+                    shadowElevation = 2.dp,
                     modifier = Modifier
                         .align(Alignment.TopEnd)
-                        .padding(4.dp)
+                        .padding(8.dp)
                         .size(36.dp)
-                        .background(Color.White.copy(alpha = 0.85f), CircleShape)
                 ) {
-                    Icon(
-                        imageVector = if (isWishlisted) Icons.Default.Favorite else Icons.Outlined.FavoriteBorder,
-                        contentDescription = "Wishlist",
-                        tint = if (isWishlisted) BrandPrimary else TextSecondary,
-                        modifier = Modifier.size(20.dp)
-                    )
+                    IconButton(
+                        onClick = onWishlistClick,
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        Icon(
+                            imageVector = if (isWishlisted) Icons.Default.Favorite else Icons.Outlined.FavoriteBorder,
+                            contentDescription = "Wishlist",
+                            tint = if (isWishlisted) BrandPrimary else TextMuted,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
                 }
             }
 
             // Product Details
-            Column(modifier = Modifier.padding(10.dp)) {
+            Column(modifier = Modifier.padding(12.dp)) {
                 Text(
                     text = product.name,
-                    style = MaterialTheme.typography.titleLarge.copy(fontSize = 14.sp, fontWeight = FontWeight.SemiBold),
+                    style = MaterialTheme.typography.titleMedium.copy(fontSize = 15.sp, fontWeight = FontWeight.Bold),
                     color = TextPrimary,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
@@ -410,27 +394,27 @@ fun ProductCard(
 
                 Text(
                     text = product.categoryName.ifBlank { product.category.replaceFirstChar { it.uppercase() } },
-                    style = MaterialTheme.typography.labelSmall,
+                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Medium),
                     color = TextMuted
                 )
 
-                Spacer(modifier = Modifier.height(6.dp))
+                Spacer(modifier = Modifier.height(8.dp))
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
+                    Column {
                         Text(
                             text = "₹${product.price.toInt()}",
-                            style = MaterialTheme.typography.titleLarge.copy(
+                            style = MaterialTheme.typography.titleMedium.copy(
                                 fontWeight = FontWeight.ExtraBold,
-                                color = BrandSecondary
+                                color = BrandSecondary,
+                                fontSize = 17.sp
                             )
                         )
                         if (product.originalPrice != null && product.originalPrice > product.price) {
-                            Spacer(modifier = Modifier.width(4.dp))
                             Text(
                                 text = "₹${product.originalPrice.toInt()}",
                                 style = MaterialTheme.typography.labelSmall.copy(
@@ -445,17 +429,17 @@ fun ProductCard(
                     if (product.inStock) {
                         FilledIconButton(
                             onClick = onAddToCart,
-                            shape = CircleShape,
+                            shape = RoundedCornerShape(12.dp),
                             colors = IconButtonDefaults.filledIconButtonColors(
                                 containerColor = BrandPrimary,
                                 contentColor = Color.White
                             ),
-                            modifier = Modifier.size(32.dp)
+                            modifier = Modifier.size(36.dp)
                         ) {
                             Icon(
                                 Icons.Default.Add,
                                 contentDescription = "Add to Cart",
-                                modifier = Modifier.size(18.dp)
+                                modifier = Modifier.size(20.dp)
                             )
                         }
                     }

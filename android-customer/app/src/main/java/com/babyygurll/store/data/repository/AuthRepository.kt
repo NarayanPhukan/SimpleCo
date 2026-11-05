@@ -127,5 +127,63 @@ class AuthRepository(private val context: Context) {
     fun saveAddress(addr: ShippingAddress) {
         prefs.edit().putString(KEY_SAVED_ADDRESS, gson.toJson(addr)).apply()
     }
+
+    suspend fun sendOtp(email: String): Result<String> = withContext(Dispatchers.IO) {
+        try {
+            val response = api.sendOtp(mapOf("email" to email.trim()))
+            if (response.isSuccessful && response.body()?.success == true) {
+                val msg = response.body()?.message ?: "Verification code sent to your email"
+                Result.success(msg)
+            } else {
+                val err = response.errorBody()?.string()?.let {
+                    try {
+                        gson.fromJson(it, Map::class.java)["message"]?.toString()
+                    } catch (e: Exception) { null }
+                } ?: response.body()?.message ?: "Failed to send verification code"
+                Result.failure(Exception(err))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun verifyOtp(email: String, otp: String): Result<Boolean> = withContext(Dispatchers.IO) {
+        try {
+            val response = api.verifyOtp(mapOf("email" to email.trim(), "otp" to otp.trim()))
+            if (response.isSuccessful && response.body()?.success == true) {
+                Result.success(true)
+            } else {
+                val err = response.errorBody()?.string()?.let {
+                    try {
+                        gson.fromJson(it, Map::class.java)["message"]?.toString()
+                    } catch (e: Exception) { null }
+                } ?: response.body()?.message ?: "Invalid verification code"
+                Result.failure(Exception(err))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun resetPassword(email: String, otp: String, newPass: String): Result<User> = withContext(Dispatchers.IO) {
+        try {
+            val map = mapOf(
+                "email" to email.trim(),
+                "otp" to otp.trim(),
+                "newPassword" to newPass
+            )
+            val response = api.resetPassword(map)
+            val body = response.body()
+            val user = body?.effectiveUser
+            if (response.isSuccessful && user != null) {
+                saveUserSession(user, body?.token ?: "")
+                Result.success(user)
+            } else {
+                Result.failure(Exception(extractErrorMessage(response, "Password reset failed")))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
 }
 

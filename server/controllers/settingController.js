@@ -28,10 +28,10 @@ const DEFAULT_CONFIG = {
     critical: false
   },
   customerAppVersion: {
-    latestVersionCode: 3,
-    latestVersionName: '1.0.2',
+    latestVersionCode: 4,
+    latestVersionName: '1.0.3',
     minRequiredVersionCode: 1,
-    releaseNotes: '• Fixed customer account registration and authentication\n• Fixed product catalog and detail images loading\n• Enhanced image caching and Base64 loading performance',
+    releaseNotes: '• Fixed product images rendering for all handcrafted crochet pieces (Base64 & URL)\n• Added Forgot Password with secure 6-digit email OTP verification\n• Refined luxury boutique aesthetics, warm ivory tones, and artisan navigation',
     downloadUrl: 'https://raw.githubusercontent.com/NarayanPhukan/SimpleCo/main/android-customer/babyygurll-boutique.apk',
     releaseDate: '2026-11-05',
     critical: false

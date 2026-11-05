@@ -18,6 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -48,19 +49,51 @@ fun AccountScreen(
     var regPhone by remember { mutableStateOf("") }
 
     var formError by remember { mutableStateOf<String?>(null) }
+    var showForgotPassword by remember { mutableStateOf(false) }
+
+    if (showForgotPassword) {
+        ForgotPasswordDialog(
+            viewModel = viewModel,
+            initialEmail = loginEmail,
+            onDismiss = { showForgotPassword = false },
+            onPasswordResetSuccess = {
+                showForgotPassword = false
+                formError = "Password reset successfully! Please sign in with your new password."
+            }
+        )
+    }
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        text = if (currentUser != null) "My Account" else "Welcome to BabyyGurll",
-                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-                        color = TextPrimary
-                    )
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
-            )
+            Surface(
+                color = Color.White,
+                shadowElevation = 2.dp
+            ) {
+                TopAppBar(
+                    title = {
+                        Column {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(
+                                    text = if (currentUser != null) "My Account" else "BabyyGurll Boutique",
+                                    style = MaterialTheme.typography.titleLarge.copy(
+                                        fontWeight = FontWeight.Bold,
+                                        fontFamily = FontFamily.Serif
+                                    ),
+                                    color = TextPrimary
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text("🌸", fontSize = 18.sp)
+                            }
+                            Text(
+                                text = if (currentUser != null) "Artisanal Member Profile" else "Sign in for orders, wishlist & discounts",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = TextMuted
+                            )
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
+                )
+            }
         }
     ) { innerPadding ->
         Column(
@@ -256,7 +289,23 @@ fun AccountScreen(
                                 modifier = Modifier.fillMaxWidth()
                             )
 
-                            Spacer(modifier = Modifier.height(16.dp))
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.End
+                            ) {
+                                TextButton(
+                                    onClick = { showForgotPassword = true },
+                                    contentPadding = PaddingValues(horizontal = 4.dp, vertical = 2.dp)
+                                ) {
+                                    Text(
+                                        text = "Forgot Password?",
+                                        color = BrandPrimary,
+                                        style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.SemiBold)
+                                    )
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(10.dp))
 
                             Button(
                                 onClick = {

@@ -31,6 +31,7 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.babyygurll.store.data.model.Product
+import com.babyygurll.store.ui.components.BoutiqueImage
 import com.babyygurll.store.ui.theme.*
 import com.babyygurll.store.ui.viewmodel.StoreViewModel
 import com.babyygurll.store.util.DataUriFetcher
@@ -170,22 +171,12 @@ fun ProductDetailScreen(
                     .aspectRatio(1f)
                     .background(Color.White)
             ) {
-                if (currentImg.isNotBlank()) {
-                    AsyncImage(
-                        model = ImageRequest.Builder(context)
-                            .data(currentImg)
-                            .crossfade(true)
-                            .build(),
-                        imageLoader = imageLoader,
-                        contentDescription = product.name,
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxSize()
-                    )
-                } else {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text("🧶", fontSize = 60.sp)
-                    }
-                }
+                BoutiqueImage(
+                    imageUrl = currentImg,
+                    contentDescription = product.name,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop
+                )
 
                 if (!product.inStock) {
                     Surface(
@@ -224,12 +215,11 @@ fun ProductDetailScreen(
                                 )
                                 .clickable { selectedImageIndex = index }
                         ) {
-                            AsyncImage(
-                                model = ImageRequest.Builder(context).data(imgUrl).crossfade(true).build(),
-                                imageLoader = imageLoader,
+                            BoutiqueImage(
+                                imageUrl = imgUrl,
                                 contentDescription = null,
-                                contentScale = ContentScale.Crop,
-                                modifier = Modifier.fillMaxSize()
+                                modifier = Modifier.fillMaxSize(),
+                                contentScale = ContentScale.Crop
                             )
                         }
                     }
