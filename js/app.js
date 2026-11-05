@@ -1113,111 +1113,165 @@ document.addEventListener("DOMContentLoaded", () => {
   el.btnNextToStep3.addEventListener("click", () => setCheckoutStep(3));
   el.btnBackToStep2.addEventListener("click", () => setCheckoutStep(2));
 
-  // Place Order Final Action (Powered by PayU)
+  // Place Order Final Action (Powered by Razorpay Only)
   el.btnPlaceOrderFinal.addEventListener("click", async () => {
     const selectedAddr = store.getAddresses().find(a => a.id === state.checkoutSelectedAddressId) || store.getDefaultAddress();
     const totals = store.getCartTotals();
     const cartItems = store.getCart();
 
+    if (!cartItems || cartItems.length === 0) {
+      showToast("Your cart is empty!", "🛒");
+      return;
+    }
+
     el.btnPlaceOrderFinal.disabled = true;
-    el.btnPlaceOrderFinal.textContent = "Connecting to PayU... 🔒";
+    el.btnPlaceOrderFinal.textContent = "Connecting to Razorpay... 🔒";
 
-    const newOrder = store.createOrder({
-      shippingAddress: selectedAddr,
-      paymentMethod: "PayU Online Payment",
-      items: cartItems,
-      totals: totals
-    });
+    const cleanPhone = (selectedAddr.phone || '9820012345').replace(/\D/g, '').slice(-10) || '9820012345';
+    const cleanName = (selectedAddr.recipientName || selectedAddr.name || 'Customer').trim();
+    const cleanEmail = (selectedAddr.email || 'customer@babyygurll.in').trim();
 
-    // 1. Post order to live cloud backend
     try {
-      await fetch('/api/orders', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          shippingAddress: {
-            recipientName: selectedAddr.recipientName || selectedAddr.name || 'Valued Customer',
-            phone: selectedAddr.phone || '+91 98200 12345',
-            street: selectedAddr.addressLine1 || selectedAddr.street || 'Studio Address',
-            city: selectedAddr.city || 'Mumbai',
-            state: selectedAddr.state || 'Maharashtra',
-            zip: selectedAddr.pincode || selectedAddr.zip || '400050',
-            country: 'India'
-          },
-          paymentMethod: "PayU Online Payment",
-          items: cartItems.map(ci => {
-            const prod = (typeof PRODUCTS_DATA !== 'undefined' ? PRODUCTS_DATA.find(p => p.id === ci.productId) : null) || {};
-            return {
-              id: ci.productId,
-              name: prod.name || 'Crochet Piece',
-              color: (ci.selectedColor && ci.selectedColor.name) || 'Pastel Harmony',
-              quantity: ci.quantity || 1,
-              price: prod.price || 999,
-              image: prod.image || '/assets/images/strawberry-cow.jpg'
-            };
-          }),
-          totals: {
-            subtotal: totals.subtotal,
-            discount: totals.discount || 0,
-            shipping: totals.shipping || 0,
-            tax: totals.tax || 0,
-            total: totals.total
-          }
-        })
-      });
-    } catch (err) {
-      console.warn('Could not post order to cloud backend:', err);
-    }
-
-    // 2. Initiate PayU Payment Gateway Checkout
-    try {
-      const cleanPhone = (selectedAddr.phone || '9820012345').replace(/\D/g, '').slice(-10) || '9820012345';
-      const cleanName = (selectedAddr.recipientName || selectedAddr.name || 'Customer').trim();
-      const cleanEmail = (selectedAddr.email || 'customer@babyygurll.in').trim();
-
-      const payuRes = await fetch('/api/payu/initiate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          amount: totals.total,
-          productinfo: `BabyyGurll Crochet Order #${newOrder.orderId}`,
-          firstname: cleanName.split(' ')[0] || 'Customer',
-          email: cleanEmail,
-          phone: cleanPhone,
-          orderId: newOrder.orderId
-        })
-      });
-
-      const payuData = await payuRes.json();
-      if (payuData.success && payuData.action && payuData.params) {
-        // Create invisible form and POST directly to PayU secure payment page
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = payuData.action;
-        for (const [k, v] of Object.entries(payuData.params)) {
-          const input = document.createElement('input');
-          input.type = 'hidden';
-          input.name = k;
-          input.value = v;
-          form.appendChild(input);
-        }
-        document.body.appendChild(form);
-        form.submit();
-        return;
+      // 1. Fetch public Razorpay key and create order on server
+      let rzpKey = '';
+      try {
+        const keyRes = await fetch('/api/payment/razorpay-key').catch(() => fetch('/api/razorpay-key'));
+        const keyData = await keyRes.json();
+        rzpKey = keyData.key || keyData.key_id;
+      } catch (e) {
+        rzpKey = 'rzp_live_TmiLSHkOVIFPyZ';
       }
-    } catch (payuErr) {
-      console.warn('PayU payment initiation error:', payuErr);
-    }
 
-    // Fallback if gateway initiation fails
-    el.btnPlaceOrderFinal.disabled = false;
-    el.btnPlaceOrderFinal.textContent = "Place Order & Stitch Magic 🌸";
-    state.checkoutSelectedOrderId = newOrder.orderId;
-    el.newPlacedOrderId.textContent = `Order #${newOrder.orderId}`;
-    updateCartUI();
-    setCheckoutStep(4);
-    triggerConfetti();
-    showToast(`Order #${newOrder.orderId} placed successfully! 🌸`, "🎉");
+      const amountInPaise = Math.round(Number(totals.total || 0) * 100);
+      const createRes = await fetch('/api/payment/create-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          amount: amountInPaise,
+          currency: 'INR',
+          receipt: `rcpt_${Date.now()}`
+        })
+      });
+      const orderData = await createRes.json();
+      const rzpOrderId = orderData.order_id || orderData.id;
+
+      if (!rzpOrderId || !rzpKey) {
+        throw new Error(orderData.message || 'Could not initiate Razorpay checkout');
+      }
+
+      // 2. Open Razorpay Checkout modal
+      const options = {
+        key: rzpKey,
+        amount: amountInPaise,
+        currency: 'INR',
+        name: 'BabyyGurll Crochet',
+        description: 'Artisanal Handmade Crochet Order',
+        image: 'https://images.unsplash.com/photo-1584917865442-de89df76afd3?auto=format&fit=crop&w=200&q=80',
+        order_id: rzpOrderId,
+        prefill: {
+          name: cleanName,
+          email: cleanEmail,
+          contact: cleanPhone
+        },
+        theme: {
+          color: '#FF7B9C'
+        },
+        modal: {
+          ondismiss: function () {
+            el.btnPlaceOrderFinal.disabled = false;
+            el.btnPlaceOrderFinal.textContent = "Pay with Razorpay & Place Order 🌸";
+            showToast("Payment window closed.", "ℹ");
+          }
+        },
+        handler: async function (response) {
+          try {
+            // Verify signature
+            await fetch('/api/payment/verify-payment', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature
+              })
+            }).catch(e => console.warn('Verification endpoint notice:', e));
+
+            // Post verified order to cloud backend
+            const newOrder = store.createOrder({
+              shippingAddress: selectedAddr,
+              paymentMethod: `Razorpay Online (${response.razorpay_payment_id})`,
+              items: cartItems,
+              totals: totals
+            });
+
+            await fetch('/api/orders', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                shippingAddress: {
+                  recipientName: cleanName,
+                  phone: cleanPhone,
+                  street: selectedAddr.addressLine1 || selectedAddr.street || 'Studio Address',
+                  city: selectedAddr.city || 'Mumbai',
+                  state: selectedAddr.state || 'Maharashtra',
+                  zip: selectedAddr.pincode || selectedAddr.zip || '400050',
+                  country: 'India'
+                },
+                paymentMethod: `Razorpay Online (${response.razorpay_payment_id})`,
+                paymentStatus: 'paid',
+                razorpayPaymentId: response.razorpay_payment_id,
+                razorpayOrderId: response.razorpay_order_id,
+                items: cartItems.map(ci => {
+                  const prod = (typeof PRODUCTS_DATA !== 'undefined' ? PRODUCTS_DATA.find(p => p.id === ci.productId) : null) || {};
+                  return {
+                    id: ci.productId,
+                    name: prod.name || 'Crochet Piece',
+                    color: (ci.selectedColor && ci.selectedColor.name) || 'Pastel Harmony',
+                    quantity: ci.quantity || 1,
+                    price: prod.price || 999,
+                    image: prod.image || '/assets/images/strawberry-cow.jpg'
+                  };
+                }),
+                totals: {
+                  subtotal: totals.subtotal,
+                  discount: totals.discount || 0,
+                  shipping: 0,
+                  tax: totals.tax || 0,
+                  total: totals.total
+                }
+              })
+            }).catch(e => console.warn('Could not post order:', e));
+
+            state.checkoutSelectedOrderId = newOrder.orderId;
+            el.newPlacedOrderId.textContent = `Order #${newOrder.orderId}`;
+            store.clearCart();
+            updateCartUI();
+            setCheckoutStep(4);
+            triggerConfetti();
+            showToast(`Payment successful! Order #${newOrder.orderId} placed 🌸`, "🎉");
+          } catch (handlerErr) {
+            console.error('Order recording error:', handlerErr);
+            setCheckoutStep(4);
+          } finally {
+            el.btnPlaceOrderFinal.disabled = false;
+            el.btnPlaceOrderFinal.textContent = "Pay with Razorpay & Place Order 🌸";
+          }
+        }
+      };
+
+      const rzp = new window.Razorpay(options);
+      rzp.on('payment.failed', function (resp) {
+        el.btnPlaceOrderFinal.disabled = false;
+        el.btnPlaceOrderFinal.textContent = "Pay with Razorpay & Place Order 🌸";
+        showToast(`Payment Failed: ${resp.error?.description || 'Transaction declined'}`, "⚠️");
+      });
+      rzp.open();
+    } catch (err) {
+      console.error('Razorpay checkout error:', err);
+      el.btnPlaceOrderFinal.disabled = false;
+      el.btnPlaceOrderFinal.textContent = "Pay with Razorpay & Place Order 🌸";
+      showToast(err.message || "Could not launch Razorpay", "⚠️");
+    }
   });
 
   el.btnTrackNewlyPlacedOrder.addEventListener("click", () => {

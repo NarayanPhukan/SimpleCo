@@ -206,7 +206,7 @@ export const QuickViewModal = ({ product, onClose, onShowToast, onOpenCart }) =>
                   <span>Delivery to {pinCode} by <strong>{pinResult.date}</strong></span>
                 </div>
                 <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
-                  Via {pinResult.courier} • Cash on Delivery Available • {pinResult.freeShip ? 'Free Shipping' : 'Standard Shipping'}
+                  Via {pinResult.courier} • Prepaid via Razorpay • Free Nationwide Delivery
                 </div>
               </div>
             )}

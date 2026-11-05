@@ -293,91 +293,57 @@ export const CheckoutModal = ({
     const customerName = chosenAddr?.recipientName || user?.name || addrForm?.recipientName || 'Customer';
     const customerPhone = chosenAddr?.phone || user?.phone || addrForm?.phone || '';
 
-    // Online Payment Checkout Flow
-    if (paymentMethod === 'razorpay') {
-      onShowToast('Opening secure payment gateway...', '✓');
-      await openRazorpayStandardCheckout({
-        amountInRupees: payAmount,
-        prefill: {
-          name: customerName,
-          email: customerEmail,
-          contact: customerPhone
-        },
-        onSuccess: async (payDetails) => {
-          try {
-            const orderPayload = {
-              userEmail: customerEmail,
-              shippingAddress: chosenAddr,
-              paymentMethod: `Online Payment (${payDetails.paymentId})`,
-              paymentStatus: 'paid',
-              razorpayPaymentId: payDetails.paymentId,
-              razorpayOrderId: payDetails.orderId,
-              items: cart,
-              totals: finalTotals
-            };
+    // Online Payment Checkout Flow via Razorpay Only
+    onShowToast('Opening secure Razorpay payment gateway...', '✓');
+    await openRazorpayStandardCheckout({
+      amountInRupees: payAmount,
+      prefill: {
+        name: customerName,
+        email: customerEmail,
+        contact: customerPhone
+      },
+      onSuccess: async (payDetails) => {
+        try {
+          const orderPayload = {
+            userEmail: customerEmail,
+            shippingAddress: chosenAddr,
+            paymentMethod: `Razorpay Online (${payDetails.paymentId})`,
+            paymentStatus: 'paid',
+            razorpayPaymentId: payDetails.paymentId,
+            razorpayOrderId: payDetails.orderId,
+            items: cart,
+            totals: finalTotals
+          };
 
-            const res = await api.createOrder(orderPayload);
-            const newId = res.data?.orderId || res.orderId || ('BGC-' + Math.floor(10000 + Math.random() * 90000));
-            setPlacedOrderId(newId);
-            clearCart();
-            removeCoupon();
-            setStep(4);
-            setSubmitting(false);
-            if (onOrderPlacedSuccess) onOrderPlacedSuccess(newId);
-            onShowToast(`Payment verified! Order #${newId} placed successfully`, '✓');
-          } catch (createErr) {
-            const fallbackId = 'BGC-' + Math.floor(10000 + Math.random() * 90000);
-            setPlacedOrderId(fallbackId);
-            clearCart();
-            removeCoupon();
-            setStep(4);
-            setSubmitting(false);
-            if (onOrderPlacedSuccess) onOrderPlacedSuccess(fallbackId);
-            onShowToast(`Order #${fallbackId} recorded with payment ${payDetails.paymentId}`, '✓');
-          }
-        },
-        onError: (errMsg) => {
+          const res = await api.createOrder(orderPayload);
+          const newId = res.data?.orderId || res.orderId || ('BGC-' + Math.floor(10000 + Math.random() * 90000));
+          setPlacedOrderId(newId);
+          clearCart();
+          removeCoupon();
+          setStep(4);
           setSubmitting(false);
-          onShowToast(errMsg, '!');
-        },
-        onDismiss: () => {
+          if (onOrderPlacedSuccess) onOrderPlacedSuccess(newId);
+          onShowToast(`Payment verified! Order #${newId} placed successfully`, '✓');
+        } catch (createErr) {
+          const fallbackId = 'BGC-' + Math.floor(10000 + Math.random() * 90000);
+          setPlacedOrderId(fallbackId);
+          clearCart();
+          removeCoupon();
+          setStep(4);
           setSubmitting(false);
-          onShowToast('Payment window closed. You can retry when ready.', 'ℹ');
+          if (onOrderPlacedSuccess) onOrderPlacedSuccess(fallbackId);
+          onShowToast(`Order #${fallbackId} recorded with payment ${payDetails.paymentId}`, '✓');
         }
-      });
-      return;
-    }
-
-    // Cash on Delivery Flow
-    const orderPayload = {
-      userEmail: customerEmail,
-      shippingAddress: chosenAddr,
-      paymentMethod: 'Cash on Delivery (COD)',
-      paymentStatus: 'pending',
-      items: cart,
-      totals: finalTotals
-    };
-
-    try {
-      const res = await api.createOrder(orderPayload);
-      const newId = res.data?.orderId || res.orderId || ('BGC-' + Math.floor(10000 + Math.random() * 90000));
-      setPlacedOrderId(newId);
-      clearCart();
-      removeCoupon();
-      setStep(4);
-      setSubmitting(false);
-      if (onOrderPlacedSuccess) onOrderPlacedSuccess(newId);
-      onShowToast(`Order #${newId} placed via Cash on Delivery`, '✓');
-    } catch (err) {
-      const fallbackId = 'BGC-' + Math.floor(10000 + Math.random() * 90000);
-      setPlacedOrderId(fallbackId);
-      clearCart();
-      removeCoupon();
-      setStep(4);
-      setSubmitting(false);
-      if (onOrderPlacedSuccess) onOrderPlacedSuccess(fallbackId);
-      onShowToast(`Order #${fallbackId} placed successfully`, '✓');
-    }
+      },
+      onError: (errMsg) => {
+        setSubmitting(false);
+        onShowToast(errMsg, '!');
+      },
+      onDismiss: () => {
+        setSubmitting(false);
+        onShowToast('Payment window closed. You can retry when ready.', 'ℹ');
+      }
+    });
   };
 
   return (
@@ -519,7 +485,7 @@ export const CheckoutModal = ({
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
                 <span style={{ color: 'var(--text-muted)' }}>Payment Method:</span>
-                <strong style={{ color: 'var(--text-dark)' }}>{paymentMethod === 'razorpay' ? 'Paid Online via Razorpay' : 'Cash on Delivery (Pending)'}</strong>
+                <strong style={{ color: 'var(--text-dark)' }}>Paid Online via Razorpay</strong>
               </div>
             </div>
 
@@ -1228,75 +1194,43 @@ export const CheckoutModal = ({
                       </button>
                     </div>
 
-                    {/* Payment Method Selector Tabs */}
-                    <div style={{ display: 'grid', gridTemplateColumns: '1.3fr 1fr', gap: '0.85rem', marginBottom: '1.5rem' }}>
-                      <button 
-                        type="button" 
-                        className={`filter-tab ${paymentMethod === 'razorpay' ? 'active' : ''}`}
-                        style={{ textAlign: 'center', padding: '0.85rem 0.75rem', fontSize: '0.88rem', fontWeight: 600 }}
-                        onClick={() => setPaymentMethod('razorpay')}
-                      >
-                        Online Payment (UPI / Cards / NetBanking)
-                      </button>
-                      <button 
-                        type="button" 
-                        className={`filter-tab ${paymentMethod === 'cod' ? 'active' : ''}`}
-                        style={{ textAlign: 'center', padding: '0.85rem 0.75rem', fontSize: '0.88rem', fontWeight: 600 }}
-                        onClick={() => setPaymentMethod('cod')}
-                      >
-                        Cash on Delivery (COD)
-                      </button>
-                    </div>
-
                     {/* Razorpay Standard Web Checkout Option */}
-                    {paymentMethod === 'razorpay' && (
-                      <div style={{ background: 'var(--bg-warm)', border: '1.5px solid var(--border-card)', borderRadius: 'var(--radius-md)', padding: '1.4rem', marginBottom: '1.75rem' }}>
-                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.9rem', marginBottom: '1.1rem' }}>
-                          <div style={{ color: 'var(--primary)', marginTop: '0.2rem' }}>
-                            <IconShield size={24} />
-                          </div>
-                          <div style={{ flexGrow: 1 }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '0.25rem' }}>
-                              <strong style={{ fontSize: '1rem', color: 'var(--text-dark)' }}>Online Payment Gateway</strong>
-                              <span style={{ background: 'var(--primary-light)', color: 'var(--primary)', padding: '0.15rem 0.55rem', borderRadius: '4px', fontSize: '0.72rem', fontWeight: 700 }}>
-                                256-BIT SSL SECURE
-                              </span>
-                            </div>
-                            <p style={{ fontSize: '0.84rem', color: 'var(--text-muted)', margin: 0 }}>
-                              Instant pan-India payments. Supports Google Pay, PhonePe, Paytm, RuPay, Visa, MasterCard, and NetBanking.
-                            </p>
-                          </div>
+                    <div style={{ background: 'var(--bg-warm)', border: '1.5px solid var(--border-card)', borderRadius: 'var(--radius-md)', padding: '1.4rem', marginBottom: '1.5rem' }}>
+                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.9rem', marginBottom: '1.1rem' }}>
+                        <div style={{ color: 'var(--primary)', marginTop: '0.2rem' }}>
+                          <IconShield size={26} />
                         </div>
-
-                        <div style={{ display: 'flex', gap: '0.45rem', flexWrap: 'wrap', marginBottom: '1.1rem' }}>
-                          <span style={{ background: '#FFFFFF', border: '1px solid var(--border-card)', padding: '0.28rem 0.65rem', borderRadius: '4px', fontSize: '0.76rem', fontWeight: 600, color: 'var(--text-dark)' }}>Instant UPI</span>
-                          <span style={{ background: '#FFFFFF', border: '1px solid var(--border-card)', padding: '0.28rem 0.65rem', borderRadius: '4px', fontSize: '0.76rem', fontWeight: 600, color: 'var(--text-dark)' }}>Google Pay / PhonePe</span>
-                          <span style={{ background: '#FFFFFF', border: '1px solid var(--border-card)', padding: '0.28rem 0.65rem', borderRadius: '4px', fontSize: '0.76rem', fontWeight: 600, color: 'var(--text-dark)' }}>RuPay / Cards</span>
-                          <span style={{ background: '#FFFFFF', border: '1px solid var(--border-card)', padding: '0.28rem 0.65rem', borderRadius: '4px', fontSize: '0.76rem', fontWeight: 600, color: 'var(--text-dark)' }}>NetBanking</span>
-                        </div>
-
-                        <div style={{ background: '#FFFFFF', border: '1px dashed var(--border-card)', borderRadius: '6px', padding: '0.85rem 1rem', fontSize: '0.82rem', color: 'var(--text-main)' }}>
-                          Clicking <strong>"Pay Securely"</strong> opens the secure gateway window. Once completed, your order is immediately processed for dispatch.
+                        <div style={{ flexGrow: 1 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '0.25rem' }}>
+                            <strong style={{ fontSize: '1.05rem', color: 'var(--text-dark)' }}>Razorpay Secure Checkout</strong>
+                            <span style={{ background: '#DCFCE7', color: '#166534', padding: '0.15rem 0.55rem', borderRadius: '4px', fontSize: '0.72rem', fontWeight: 700 }}>
+                              ✓ OFFICIAL GATEWAY
+                            </span>
+                            <span style={{ background: 'var(--primary-light)', color: 'var(--primary)', padding: '0.15rem 0.55rem', borderRadius: '4px', fontSize: '0.72rem', fontWeight: 700 }}>
+                              256-BIT SSL ENCRYPTED
+                            </span>
+                          </div>
+                          <p style={{ fontSize: '0.84rem', color: 'var(--text-muted)', margin: 0 }}>
+                            Instant pan-India prepaid checkout. Supports UPI, Google Pay, PhonePe, Paytm, RuPay, Visa, MasterCard, and NetBanking.
+                          </p>
                         </div>
                       </div>
-                    )}
 
-                    {/* Cash on Delivery */}
-                    {paymentMethod === 'cod' && (
-                      <div style={{ background: 'var(--bg-warm)', border: '1.5px solid var(--border-subtle)', borderRadius: 'var(--radius-md)', padding: '1.4rem', marginBottom: '1.75rem' }}>
-                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.9rem' }}>
-                          <div style={{ color: 'var(--primary)', marginTop: '0.2rem' }}>
-                            <IconPackage size={24} />
-                          </div>
-                          <div>
-                            <strong style={{ fontSize: '0.98rem', color: 'var(--text-dark)' }}>Cash on Delivery (COD)</strong>
-                            <p style={{ fontSize: '0.84rem', color: 'var(--text-muted)', margin: '0.25rem 0 0' }}>
-                              Pay in cash or scan delivery partner UPI QR upon package arrival at your doorstep across India.
-                            </p>
-                          </div>
-                        </div>
+                      <div style={{ display: 'flex', gap: '0.45rem', flexWrap: 'wrap', marginBottom: '1.1rem' }}>
+                        <span style={{ background: '#FFFFFF', border: '1px solid var(--border-card)', padding: '0.28rem 0.65rem', borderRadius: '4px', fontSize: '0.76rem', fontWeight: 600, color: 'var(--text-dark)' }}>Instant UPI (GPay / PhonePe / Paytm)</span>
+                        <span style={{ background: '#FFFFFF', border: '1px solid var(--border-card)', padding: '0.28rem 0.65rem', borderRadius: '4px', fontSize: '0.76rem', fontWeight: 600, color: 'var(--text-dark)' }}>RuPay / Debit & Credit Cards</span>
+                        <span style={{ background: '#FFFFFF', border: '1px solid var(--border-card)', padding: '0.28rem 0.65rem', borderRadius: '4px', fontSize: '0.76rem', fontWeight: 600, color: 'var(--text-dark)' }}>NetBanking</span>
                       </div>
-                    )}
+
+                      <div style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: '6px', padding: '0.75rem 1rem', fontSize: '0.82rem', color: '#1E40AF', marginBottom: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <span>ℹ️</span>
+                        <span><strong>Prepaid Only:</strong> Cash on Delivery (COD) is temporarily disabled to prevent return transit delays and ensure priority dispatch.</span>
+                      </div>
+
+                      <div style={{ background: '#FFFFFF', border: '1px dashed var(--border-card)', borderRadius: '6px', padding: '0.85rem 1rem', fontSize: '0.82rem', color: 'var(--text-main)' }}>
+                        Clicking <strong>"Pay with Razorpay"</strong> opens the secure gateway window. Once completed, your order is immediately confirmed for artisan crafting and dispatch.
+                      </div>
+                    </div>
 
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
                       <button className="btn btn-secondary" onClick={() => setStep(2)} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -1310,11 +1244,7 @@ export const CheckoutModal = ({
                         disabled={submitting}
                         style={{ padding: '0.95rem 2rem', fontSize: '0.96rem' }}
                       >
-                        {submitting ? 'Connecting...' : (
-                          paymentMethod === 'razorpay' 
-                            ? `Pay Securely ${formatPrice(grandTotal)}` 
-                            : `Place Order via COD (${formatPrice(grandTotal)})`
-                        )}
+                        {submitting ? 'Connecting...' : `Pay with Razorpay ${formatPrice(grandTotal)}`}
                       </button>
                     </div>
                   </div>

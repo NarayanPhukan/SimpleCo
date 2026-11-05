@@ -16,6 +16,14 @@ exports.createOrder = async (req, res) => {
       totals
     } = req.body;
 
+    // Enforce Online Razorpay Payments: Reject any COD attempts
+    if (paymentMethod && paymentMethod.toLowerCase().includes('cod')) {
+      return res.status(400).json({
+        success: false,
+        message: 'Cash on Delivery (COD) is temporarily disabled. Please pay securely online via Razorpay.'
+      });
+    }
+
     const newOrderId = 'BGC-' + Math.floor(10000 + Math.random() * 90000);
     const trackingNumber = 'TRK-' + newOrderId + '-IN';
     const now = new Date();
@@ -97,7 +105,7 @@ exports.createOrder = async (req, res) => {
       estimatedDelivery: estDate,
       shippingAddress: normalizedAddress,
       paymentMethod: paymentMethod || 'Razorpay Online',
-      paymentStatus: paymentStatus || (paymentMethod?.toLowerCase().includes('cod') ? 'pending' : 'paid'),
+      paymentStatus: paymentStatus || 'paid',
       razorpayPaymentId: razorpayPaymentId || '',
       razorpayOrderId: razorpayOrderId || '',
       subtotal: totals?.subtotal || 0,

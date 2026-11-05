@@ -14,6 +14,9 @@
 
   <!-- Stylesheet -->
   <link rel="stylesheet" href="css/style.css">
+
+  <!-- Razorpay Checkout SDK -->
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 </head>
 <body>
 
@@ -778,15 +781,15 @@
       <!-- Step 3: Payment Method & Place Order -->
       <div class="checkout-step-content" id="checkoutStep3" style="display: none;">
         <h3 style="font-family: var(--font-serif); font-size: 1.35rem; margin-bottom: 0.5rem;">Secure Payment</h3>
-        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.25rem;">Encrypted & live checkout powered by PayU Payments.</p>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.25rem;">Encrypted & live checkout powered by Razorpay Payments.</p>
 
-        <!-- PayU Live Gateway Card -->
+        <!-- Razorpay Live Gateway Card -->
         <div style="background: linear-gradient(135deg, #F0FDF4 0%, #FFFFFF 100%); border: 1.5px solid #86EFAC; border-radius: var(--radius-md); padding: 1.25rem; margin-bottom: 1.5rem; box-shadow: 0 2px 8px rgba(34,197,94,0.08);">
           <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.6rem;">
             <div style="display: flex; align-items: center; gap: 0.6rem;">
               <span style="font-size: 1.6rem;">🔒</span>
               <div>
-                <strong style="color: #166534; font-size: 1rem; display: block;">PayU Payment Gateway</strong>
+                <strong style="color: #166534; font-size: 1rem; display: block;">Razorpay Payment Gateway</strong>
                 <span style="font-size: 0.8rem; color: #15803D;">UPI, Cards & NetBanking</span>
               </div>
             </div>
@@ -794,11 +797,11 @@
           </div>
           <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.8rem;">
             <span style="background: #FFFFFF; border: 1px solid #D1D5DB; border-radius: 6px; padding: 0.25rem 0.5rem; font-size: 0.75rem; font-weight: 600; color: #374151;">GPay / PhonePe / Paytm</span>
-            <span style="background: #FFFFFF; border: 1px solid #D1D5DB; border-radius: 6px; padding: 0.25rem 0.5rem; font-size: 0.75rem; font-weight: 600; color: #374151;">Credit / Debit Card</span>
+            <span style="background: #FFFFFF; border: 1px solid #D1D5DB; border-radius: 6px; padding: 0.25rem 0.5rem; font-size: 0.75rem; font-weight: 600; color: #374151;">RuPay / Credit / Debit</span>
             <span style="background: #FFFFFF; border: 1px solid #D1D5DB; border-radius: 6px; padding: 0.25rem 0.5rem; font-size: 0.75rem; font-weight: 600; color: #374151;">NetBanking</span>
           </div>
           <p style="font-size: 0.78rem; color: #6B7280; margin-top: 0.8rem; margin-bottom: 0;">
-            100% secure 256-bit encryption. Settlements deposit directly into the artisan studio bank account.
+            100% secure 256-bit encryption. Cash on Delivery is disabled — all orders are safely prepaid via Razorpay.
           </p>
         </div>
 
@@ -812,7 +815,7 @@
         <div style="display: flex; justify-content: space-between; align-items: center;">
           <button class="btn btn-secondary" id="btnBackToStep2">⬅️ Back</button>
           <button class="btn btn-primary" id="btnPlaceOrderFinal" style="padding: 0.95rem 2rem;">
-            Pay with PayU & Place Order 🌸
+            Pay with Razorpay & Place Order 🌸
           </button>
         </div>
       </div>
