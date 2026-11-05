@@ -28,12 +28,12 @@ const DEFAULT_CONFIG = {
     critical: false
   },
   customerAppVersion: {
-    latestVersionCode: 5,
-    latestVersionName: '1.0.4',
+    latestVersionCode: 7,
+    latestVersionName: '1.0.6',
     minRequiredVersionCode: 1,
-    releaseNotes: '• Quiet luxury midnight navy & royal blue bespoke design overhaul\n• Redesigned Home with handcrafted hero showcase & category pills\n• 2x2 Specs and dual Add to Cart / Buy Now actions on Product Detail\n• Free delivery unlock banner & coupon cards in Shopping Bag\n• 3-step checkout with contact & delivery address validation\n• My Account boutique hub with orders, addresses & support',
+    releaseNotes: '• Complete quiet luxury design system matching boutique screenshots\n• Search screen with recent searches and numbered popular trends (01-05)\n• Saved Addresses delivery location manager with default selection & checkout tag\n• 4-step Forgot Password OTP verification & strong password creator flow\n• Redesigned Login and Create Account screens with yarn ball branding\n• Full Edit Profile screen with avatar, personal info & security management\n• Checkout Step 3 Payment Method, Order Confirmed, My Orders & Wishlist',
     downloadUrl: 'https://raw.githubusercontent.com/NarayanPhukan/SimpleCo/main/android-customer/babyygurll-boutique.apk',
-    releaseDate: '2026-11-05',
+    releaseDate: '2026-11-06',
     critical: false
   }
 };

@@ -13,11 +13,9 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.outlined.LocationOn
-import androidx.compose.material.icons.outlined.Lock
-import androidx.compose.material.icons.outlined.Person
-import androidx.compose.material.icons.outlined.ShoppingBag
+import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -574,6 +572,228 @@ fun CheckoutScreen(
                     }
                 }
             }
+
+            // Card 3: STEP 3 - Payment Method (Screenshot 1)
+            var selectedPaymentMethod by remember { mutableStateOf("UPI") }
+            Card(
+                shape = RoundedCornerShape(18.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                border = BorderStroke(1.dp, SurfaceBorder),
+                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Surface(
+                            color = Color(0xFFEFF6FF),
+                            shape = RoundedCornerShape(10.dp),
+                            modifier = Modifier.size(36.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    imageVector = Icons.Outlined.CreditCard,
+                                    contentDescription = null,
+                                    tint = BrandPrimary,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                        }
+                        Spacer(modifier = Modifier.width(10.dp))
+                        Column {
+                            Text("STEP 3", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = BrandPrimary, letterSpacing = 0.8.sp)
+                            Text("Payment Method", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = BrandDarkNavy)
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(14.dp))
+
+                    // Razorpay Secure Banner
+                    Surface(
+                        color = Color(0xFFEFF6FF),
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.Shield,
+                                contentDescription = null,
+                                tint = BrandPrimary,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Column {
+                                Text(
+                                    text = "Razorpay Secure",
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = BrandDarkNavy
+                                )
+                                Text(
+                                    text = "100% safe & encrypted payments",
+                                    fontSize = 11.sp,
+                                    color = TextSecondary
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    // Payment Method Radio Options
+                    val paymentOptions = listOf(
+                        "UPI" to "UPI",
+                        "Card" to "Credit / Debit Card",
+                        "Netbanking" to "Netbanking",
+                        "Wallets" to "Wallets"
+                    )
+
+                    paymentOptions.forEachIndexed { index, (key, label) ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { selectedPaymentMethod = key }
+                                .padding(vertical = 10.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Surface(
+                                    color = Color(0xFFF8FAFC),
+                                    shape = RoundedCornerShape(8.dp),
+                                    border = BorderStroke(1.dp, SurfaceBorder),
+                                    modifier = Modifier.size(width = 42.dp, height = 30.dp)
+                                ) {
+                                    Box(contentAlignment = Alignment.Center) {
+                                        when (key) {
+                                            "UPI" -> Text("UPI", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = BrandPrimary)
+                                            "Card" -> Icon(Icons.Outlined.CreditCard, contentDescription = null, tint = TextSecondary, modifier = Modifier.size(16.dp))
+                                            "Netbanking" -> Text("₹", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = TextSecondary)
+                                            else -> Icon(Icons.Outlined.AccountBalanceWallet, contentDescription = null, tint = TextSecondary, modifier = Modifier.size(16.dp))
+                                        }
+                                    }
+                                }
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Text(
+                                    text = label,
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    color = BrandDarkNavy
+                                )
+                            }
+
+                            RadioButton(
+                                selected = selectedPaymentMethod == key,
+                                onClick = { selectedPaymentMethod = key },
+                                colors = RadioButtonDefaults.colors(
+                                    selectedColor = BrandPrimary,
+                                    unselectedColor = TextMuted
+                                )
+                            )
+                        }
+
+                        if (index < paymentOptions.size - 1) {
+                            HorizontalDivider(color = SurfaceBorder, thickness = 1.dp)
+                        }
+                    }
+                }
+            }
+
+            // Order Summary Preview Card (Screenshot 1)
+            val cartItems by viewModel.cartItems.collectAsState()
+            var showSummaryModal by remember { mutableStateOf(false) }
+            Card(
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                border = BorderStroke(1.dp, SurfaceBorder),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { showSummaryModal = !showSummaryModal }
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(14.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        // Mini thumbnails
+                        Row(horizontalArrangement = Arrangement.spacedBy((-10).dp)) {
+                            cartItems.take(2).forEach { item ->
+                                Surface(
+                                    shape = RoundedCornerShape(8.dp),
+                                    border = BorderStroke(1.5.dp, Color.White),
+                                    modifier = Modifier.size(38.dp)
+                                ) {
+                                    com.babyygurll.store.ui.components.BoutiqueImage(
+                                        imageUrl = item.product.resolvedPrimaryImage,
+                                        contentDescription = null,
+                                        modifier = Modifier.fillMaxSize()
+                                    )
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.width(16.dp))
+
+                        Column {
+                            val count = cartItems.sumOf { it.quantity }
+                            Text(
+                                text = "$count handmade ${if (count == 1) "piece" else "pieces"}",
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = BrandDarkNavy
+                            )
+                            Text(
+                                text = "View order summary",
+                                fontSize = 11.sp,
+                                color = BrandPrimary,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
+                    }
+
+                    Icon(
+                        imageVector = Icons.Default.ChevronRight,
+                        contentDescription = "Expand",
+                        tint = TextSecondary,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+
+                if (showSummaryModal) {
+                    HorizontalDivider(color = SurfaceBorder, thickness = 1.dp)
+                    Column(modifier = Modifier.padding(14.dp)) {
+                        cartItems.forEach { item ->
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 4.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text(
+                                    text = "${item.quantity}× ${item.product.name}",
+                                    fontSize = 12.sp,
+                                    color = TextSecondary,
+                                    maxLines = 1,
+                                    modifier = Modifier.weight(1f)
+                                )
+                                Text(
+                                    text = "₹${(item.product.price * item.quantity).toInt()}",
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = BrandDarkNavy
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(20.dp))
         }
     }
 }

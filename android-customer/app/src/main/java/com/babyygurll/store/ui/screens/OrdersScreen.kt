@@ -1,26 +1,31 @@
 package com.babyygurll.store.ui.screens
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.babyygurll.store.data.model.Order
+import com.babyygurll.store.ui.components.BoutiqueImage
 import com.babyygurll.store.ui.theme.*
 import com.babyygurll.store.ui.viewmodel.StoreViewModel
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun OrdersScreen(
     viewModel: StoreViewModel,
@@ -32,81 +37,122 @@ fun OrdersScreen(
     val orders by viewModel.customerOrders.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
 
-    var guestEmail by remember { mutableStateOf("") }
+    var selectedTab by remember { mutableStateOf("All") }
+    val tabs = listOf("All", "Processing", "Shipped", "Delivered")
 
     LaunchedEffect(currentUser) {
         currentUser?.email?.let { viewModel.fetchCustomerOrders(it) }
     }
 
+    val filteredOrders = remember(orders, selectedTab) {
+        when (selectedTab) {
+            "Processing" -> orders.filter { it.status.equals("processing", ignoreCase = true) || it.status.equals("placed", ignoreCase = true) }
+            "Shipped" -> orders.filter { it.status.equals("shipped", ignoreCase = true) }
+            "Delivered" -> orders.filter { it.status.equals("delivered", ignoreCase = true) }
+            else -> orders
+        }
+    }
+
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        text = "My Orders",
-                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-                        color = TextPrimary
-                    )
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
-            )
+            Surface(
+                color = Color.White,
+                border = BorderStroke(1.dp, SurfaceBorder)
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .statusBarsPadding()
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Surface(
+                            color = Color.White,
+                            shape = CircleShape,
+                            border = BorderStroke(1.dp, SurfaceBorder),
+                            modifier = Modifier
+                                .size(38.dp)
+                                .clickable { onExploreClick() }
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                    contentDescription = "Back",
+                                    tint = BrandDarkNavy,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.width(16.dp))
+
+                        Text(
+                            text = "My Orders",
+                            style = MaterialTheme.typography.titleMedium.copy(
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 18.sp
+                            ),
+                            color = BrandDarkNavy
+                        )
+                    }
+
+                    // Segmented Tabs Row: All | Processing | Shipped | Delivered (Screenshot 2)
+                    TabRow(
+                        selectedTabIndex = tabs.indexOf(selectedTab),
+                        containerColor = Color.White,
+                        contentColor = BrandPrimary,
+                        divider = { HorizontalDivider(color = SurfaceBorder, thickness = 1.dp) }
+                    ) {
+                        tabs.forEach { tabName ->
+                            val isSelected = selectedTab == tabName
+                            Tab(
+                                selected = isSelected,
+                                onClick = { selectedTab = tabName },
+                                text = {
+                                    Text(
+                                        text = tabName,
+                                        fontSize = 13.sp,
+                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                        color = if (isSelected) BrandPrimary else TextSecondary
+                                    )
+                                }
+                            )
+                        }
+                    }
+                }
+            }
         }
     ) { innerPadding ->
         Column(
             modifier = modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .background(BrandCream)
+                .background(BrandBackground)
+                .padding(horizontal = 16.dp)
         ) {
-            // Guest Email Lookup Bar if not logged in
-            if (currentUser == null) {
-                Surface(
-                    color = Color.White,
-                    shadowElevation = 1.dp,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Text(
-                            text = "Track Guest Orders",
-                            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-                            color = TextPrimary
-                        )
-                        Spacer(modifier = Modifier.height(6.dp))
-                        Text(
-                            text = "Enter the email used during checkout to view your orders:",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = TextSecondary
-                        )
-                        Spacer(modifier = Modifier.height(10.dp))
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            OutlinedTextField(
-                                value = guestEmail,
-                                onValueChange = { guestEmail = it },
-                                placeholder = { Text("your.email@gmail.com") },
-                                singleLine = true,
-                                shape = RoundedCornerShape(10.dp),
-                                modifier = Modifier.weight(1f)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Button(
-                                onClick = { viewModel.fetchCustomerOrders(guestEmail) },
-                                shape = RoundedCornerShape(10.dp),
-                                colors = ButtonDefaults.buttonColors(containerColor = BrandPrimary),
-                                modifier = Modifier.height(52.dp)
-                            ) {
-                                Text("Find")
-                            }
-                        }
-                    }
-                }
-            }
+            Spacer(modifier = Modifier.height(14.dp))
 
-            // Orders List
-            if (isLoading) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Text(
+                text = "${filteredOrders.size} ${if (filteredOrders.size == 1) "order" else "orders"} in the last 6 months",
+                fontSize = 12.sp,
+                color = TextSecondary,
+                modifier = Modifier.padding(start = 4.dp, bottom = 12.dp)
+            )
+
+            if (isLoading && orders.isEmpty()) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(200.dp),
+                    contentAlignment = Alignment.Center
+                ) {
                     CircularProgressIndicator(color = BrandPrimary)
                 }
-            } else if (orders.isEmpty()) {
+            } else if (filteredOrders.isEmpty()) {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
@@ -114,18 +160,22 @@ fun OrdersScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("📦", fontSize = 52.sp)
-                        Spacer(modifier = Modifier.height(16.dp))
+                        Text("📦", fontSize = 48.sp)
+                        Spacer(modifier = Modifier.height(14.dp))
                         Text(
                             text = "No orders found",
-                            style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
-                            color = TextPrimary
+                            style = MaterialTheme.typography.titleMedium.copy(
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 18.sp
+                            ),
+                            color = BrandDarkNavy
                         )
                         Spacer(modifier = Modifier.height(6.dp))
                         Text(
-                            text = "Once you place an order, you can track yarn crafting & live Shiprocket delivery here!",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = TextSecondary
+                            text = "When you order our handcrafted pieces, track them right here!",
+                            fontSize = 13.sp,
+                            color = TextSecondary,
+                            textAlign = TextAlign.Center
                         )
                         Spacer(modifier = Modifier.height(20.dp))
                         Button(
@@ -133,18 +183,17 @@ fun OrdersScreen(
                             shape = RoundedCornerShape(12.dp),
                             colors = ButtonDefaults.buttonColors(containerColor = BrandPrimary)
                         ) {
-                            Text("Browse Boutique")
+                            Text("Start Shopping", fontWeight = FontWeight.Bold)
                         }
                     }
                 }
             } else {
                 LazyColumn(
-                    contentPadding = PaddingValues(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                    modifier = Modifier.fillMaxSize()
+                    verticalArrangement = Arrangement.spacedBy(14.dp),
+                    contentPadding = PaddingValues(bottom = 24.dp)
                 ) {
-                    items(orders, key = { it.orderId }) { order ->
-                        OrderSummaryCard(
+                    items(filteredOrders, key = { it.orderId.ifBlank { it.id } }) { order ->
+                        OrderHistoryCard(
                             order = order,
                             onClick = { onOrderClick(order) }
                         )
@@ -155,108 +204,170 @@ fun OrdersScreen(
     }
 }
 
+/**
+ * Order Card matching Screenshot 2
+ */
 @Composable
-fun OrderSummaryCard(
+fun OrderHistoryCard(
     order: Order,
     onClick: () -> Unit
 ) {
     Card(
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(18.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
+        border = BorderStroke(1.dp, SurfaceBorder),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
         modifier = Modifier
             .fillMaxWidth()
             .clickable { onClick() }
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(modifier = Modifier.fillMaxWidth()) {
+            // Header Row: ORDER #... | Date
+            val orderRef = order.orderId.ifBlank { "BG" + order.id.takeLast(8) }
             Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column {
-                    Text(
-                        text = "Order #${order.orderId}",
-                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-                        color = BrandSecondary
-                    )
-                    Text(
-                        text = order.dateFormatted.ifBlank { "Recently placed" },
-                        style = MaterialTheme.typography.labelSmall,
-                        color = TextMuted
-                    )
-                }
-
-                Surface(
-                    color = when (order.statusStage) {
-                        3 -> StatusSuccess.copy(alpha = 0.15f)
-                        2 -> BrandAccent.copy(alpha = 0.15f)
-                        1 -> BrandPrimary.copy(alpha = 0.15f)
-                        else -> BrandLightPink
-                    },
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Text(
-                        text = order.statusLabel,
-                        color = when (order.statusStage) {
-                            3 -> StatusSuccess
-                            2 -> BrandAccent
-                            1 -> BrandPrimary
-                            else -> BrandSecondary
-                        },
-                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
-            HorizontalDivider(color = SurfaceBorder)
-            Spacer(modifier = Modifier.height(12.dp))
-
-            Text(
-                text = "${order.items.size} handcrafted piece${if (order.items.size > 1) "s" else ""}: " +
-                        order.items.joinToString(", ") { it.name },
-                style = MaterialTheme.typography.bodyMedium,
-                color = TextSecondary,
-                maxLines = 2
-            )
-
-            if (order.trackingNumber.isNotBlank()) {
-                Spacer(modifier = Modifier.height(8.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.LocalShipping, contentDescription = null, tint = BrandAccent, modifier = Modifier.size(16.dp))
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text(
-                        text = "Waybill: ${order.trackingNumber}",
-                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
-                        color = BrandAccent
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Total: ₹${order.total.toInt()}",
-                    style = MaterialTheme.typography.titleLarge.copy(
-                        fontWeight = FontWeight.ExtraBold,
-                        color = BrandSecondary
+                    text = "ORDER #$orderRef",
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = BrandDarkNavy,
+                    letterSpacing = 0.5.sp
+                )
+                Text(
+                    text = order.dateFormatted.ifBlank { "Recent" },
+                    fontSize = 11.sp,
+                    color = TextMuted
+                )
+            }
+
+            HorizontalDivider(color = SurfaceBorder, thickness = 1.dp)
+
+            // Item Details Row (Screenshot 2)
+            val firstItem = order.items.firstOrNull()
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Image
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = Color(0xFFF8FAFC),
+                    modifier = Modifier.size(64.dp)
+                ) {
+                    BoutiqueImage(
+                        imageUrl = firstItem?.image,
+                        contentDescription = firstItem?.name,
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
                     )
+                }
+
+                Spacer(modifier = Modifier.width(14.dp))
+
+                Column(modifier = Modifier.weight(1f)) {
+                    // Status Badge (Screenshot 2: HANDCRAFTED / SHIPPED / DELIVERED)
+                    val statusUpper = order.status.uppercase()
+                    val badgeColor = when {
+                        statusUpper.contains("DELIVER") -> StatusSuccess
+                        statusUpper.contains("SHIP") -> BrandPrimary
+                        else -> Color(0xFF2563EB)
+                    }
+                    val badgeBg = when {
+                        statusUpper.contains("DELIVER") -> Color(0xFFDCFCE7)
+                        statusUpper.contains("SHIP") -> Color(0xFFEFF6FF)
+                        else -> Color(0xFFEFF6FF)
+                    }
+                    val badgeText = when {
+                        statusUpper.contains("DELIVER") -> "DELIVERED"
+                        statusUpper.contains("SHIP") -> "SHIPPED"
+                        else -> "HANDCRAFTED"
+                    }
+
+                    Surface(
+                        color = badgeBg,
+                        shape = RoundedCornerShape(6.dp),
+                        modifier = Modifier.padding(bottom = 4.dp)
+                    ) {
+                        Text(
+                            text = badgeText,
+                            color = badgeColor,
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 0.5.sp,
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                        )
+                    }
+
+                    Text(
+                        text = firstItem?.name ?: "Handcrafted Crochet Piece",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = BrandDarkNavy,
+                        maxLines = 1
+                    )
+
+                    Spacer(modifier = Modifier.height(2.dp))
+
+                    val statusMsg = when {
+                        statusUpper.contains("DELIVER") -> "Delivered to your doorstep"
+                        statusUpper.contains("SHIP") -> "In transit with Shiprocket"
+                        else -> "Your order is being made with care"
+                    }
+                    Text(
+                        text = statusMsg,
+                        fontSize = 12.sp,
+                        color = TextSecondary
+                    )
+
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    Text(
+                        text = "₹${order.total.toInt()}",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = BrandDarkNavy
+                    )
+                }
+
+                Icon(
+                    imageVector = Icons.Default.ChevronRight,
+                    contentDescription = null,
+                    tint = TextMuted,
+                    modifier = Modifier.size(18.dp)
+                )
+            }
+
+            HorizontalDivider(color = SurfaceBorder, thickness = 1.dp)
+
+            // Footer: View order details › (Screenshot 2)
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "View order details",
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = BrandPrimary
                 )
 
-                Text(
-                    text = "Track Live →",
-                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
-                    color = BrandPrimary
+                Icon(
+                    imageVector = Icons.Default.ChevronRight,
+                    contentDescription = null,
+                    tint = BrandPrimary,
+                    modifier = Modifier.size(16.dp)
                 )
             }
         }
     }
 }
-

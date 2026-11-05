@@ -45,8 +45,13 @@ sealed class Screen(val route: String, val title: String, val activeIcon: ImageV
 
     object ProductDetail : Screen("product_detail", "Product Detail", Icons.Filled.Info, Icons.Outlined.Info)
     object Checkout : Screen("checkout", "Checkout", Icons.Filled.Payment, Icons.Outlined.Payment)
+    object OrderConfirmed : Screen("order_confirmed", "Order Confirmed", Icons.Filled.Check, Icons.Outlined.Check)
     object Orders : Screen("orders", "Orders", Icons.Filled.ReceiptLong, Icons.Outlined.ReceiptLong)
     object OrderDetail : Screen("order_detail", "Order Detail", Icons.Filled.LocalShipping, Icons.Outlined.LocalShipping)
+    object EditProfile : Screen("edit_profile", "Edit Profile", Icons.Filled.Person, Icons.Outlined.Person)
+    object Search : Screen("search", "Search", Icons.Filled.Search, Icons.Outlined.Search)
+    object ForgotPassword : Screen("forgot_password", "Forgot Password", Icons.Filled.Lock, Icons.Outlined.Lock)
+    object SavedAddresses : Screen("saved_addresses", "Saved Addresses", Icons.Filled.LocationOn, Icons.Outlined.LocationOn)
 }
 
 val BOTTOM_NAV_ITEMS = listOf(
@@ -82,6 +87,7 @@ class MainActivity : ComponentActivity(), PaymentResultWithDataListener {
 
                 var selectedProductForDetail by remember { mutableStateOf<Product?>(null) }
                 var selectedOrderForDetail by remember { mutableStateOf<Order?>(null) }
+                var confirmedOrder by remember { mutableStateOf<Order?>(null) }
 
                 // Auto-Update Dialog
                 if (availableUpdate != null) {
@@ -109,7 +115,12 @@ class MainActivity : ComponentActivity(), PaymentResultWithDataListener {
                     }
                 }
 
-                val showBottomBar = currentRoute in BOTTOM_NAV_ITEMS.map { it.route }
+                val showBottomBar = currentRoute in BOTTOM_NAV_ITEMS.map { it.route } ||
+                        currentRoute in listOf(
+                            Screen.Search.route,
+                            Screen.SavedAddresses.route,
+                            Screen.EditProfile.route
+                        )
 
                 Scaffold(
                     bottomBar = {
@@ -124,7 +135,12 @@ class MainActivity : ComponentActivity(), PaymentResultWithDataListener {
                                     modifier = Modifier.height(68.dp)
                                 ) {
                                     BOTTOM_NAV_ITEMS.forEach { screen ->
-                                        val isSelected = currentRoute == screen.route
+                                        val activeScreen = when (currentRoute) {
+                                            Screen.EditProfile.route, Screen.SavedAddresses.route -> Screen.Account
+                                            Screen.Search.route -> Screen.Home
+                                            else -> BOTTOM_NAV_ITEMS.find { it.route == currentRoute }
+                                        }
+                                        val isSelected = activeScreen == screen
                                         NavigationBarItem(
                                             selected = isSelected,
                                             onClick = {
@@ -213,6 +229,19 @@ class MainActivity : ComponentActivity(), PaymentResultWithDataListener {
                                 },
                                 onNavigateToBag = {
                                     navController.navigate(Screen.Cart.route)
+                                },
+                                onNavigateToSearch = {
+                                    navController.navigate(Screen.Search.route)
+                                }
+                            )
+                        }
+
+                        composable(Screen.Search.route) {
+                            SearchScreen(
+                                viewModel = viewModel,
+                                onProductClick = { product ->
+                                    selectedProductForDetail = product
+                                    navController.navigate(Screen.ProductDetail.route)
                                 }
                             )
                         }
@@ -266,7 +295,46 @@ class MainActivity : ComponentActivity(), PaymentResultWithDataListener {
                                 },
                                 onNavigateToWishlist = {
                                     navController.navigate(Screen.Wishlist.route)
+                                },
+                                onNavigateToEditProfile = {
+                                    navController.navigate(Screen.EditProfile.route)
+                                },
+                                onNavigateToSavedAddresses = {
+                                    navController.navigate(Screen.SavedAddresses.route)
+                                },
+                                onNavigateToForgotPassword = {
+                                    navController.navigate(Screen.ForgotPassword.route)
+                                },
+                                onNavigateToHome = {
+                                    navController.navigate(Screen.Home.route)
                                 }
+                            )
+                        }
+
+                        composable(Screen.EditProfile.route) {
+                            EditProfileScreen(
+                                viewModel = viewModel,
+                                onBack = { navController.popBackStack() },
+                                onNavigateToSavedAddresses = {
+                                    navController.navigate(Screen.SavedAddresses.route)
+                                },
+                                onNavigateToChangePassword = {
+                                    navController.navigate(Screen.ForgotPassword.route)
+                                }
+                            )
+                        }
+
+                        composable(Screen.SavedAddresses.route) {
+                            SavedAddressesScreen(
+                                viewModel = viewModel,
+                                onBack = { navController.popBackStack() }
+                            )
+                        }
+
+                        composable(Screen.ForgotPassword.route) {
+                            ForgotPasswordScreen(
+                                viewModel = viewModel,
+                                onBackToLogin = { navController.popBackStack() }
                             )
                         }
 
@@ -296,14 +364,36 @@ class MainActivity : ComponentActivity(), PaymentResultWithDataListener {
                                 onStartPayment = { address, amount ->
                                     pendingShippingAddress = address
                                     onPaymentSuccessCallback = { createdOrder ->
+                                        confirmedOrder = createdOrder
                                         selectedOrderForDetail = createdOrder
-                                        navController.navigate(Screen.OrderDetail.route) {
+                                        viewModel.clearCart()
+                                        navController.navigate(Screen.OrderConfirmed.route) {
                                             popUpTo(Screen.Home.route) { inclusive = false }
                                         }
                                     }
                                     startRazorpayCheckout(address, amount)
                                 }
                             )
+                        }
+
+                        composable(Screen.OrderConfirmed.route) {
+                            val ord = confirmedOrder
+                            if (ord != null) {
+                                OrderConfirmedScreen(
+                                    order = ord,
+                                    onTrackOrder = {
+                                        selectedOrderForDetail = ord
+                                        navController.navigate(Screen.OrderDetail.route)
+                                    },
+                                    onContinueShopping = {
+                                        navController.navigate(Screen.Home.route) {
+                                            popUpTo(Screen.Home.route) { inclusive = true }
+                                        }
+                                    }
+                                )
+                            } else {
+                                LaunchedEffect(Unit) { navController.navigate(Screen.Home.route) }
+                            }
                         }
 
                         composable(Screen.Orders.route) {

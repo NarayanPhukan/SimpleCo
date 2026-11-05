@@ -80,15 +80,15 @@ const storeSettingSchema = new mongoose.Schema({
     critical: { type: Boolean, default: false }
   },
   customerAppVersion: {
-    latestVersionCode: { type: Number, default: 5 },
-    latestVersionName: { type: String, default: '1.0.4' },
+    latestVersionCode: { type: Number, default: 7 },
+    latestVersionName: { type: String, default: '1.0.6' },
     minRequiredVersionCode: { type: Number, default: 1 },
     releaseNotes: {
       type: String,
-      default: '• Quiet luxury midnight navy & royal blue bespoke design overhaul\n• Redesigned Home with handcrafted hero showcase & category pills\n• 2x2 Specs and dual Add to Cart / Buy Now actions on Product Detail\n• Free delivery unlock banner & coupon cards in Shopping Bag\n• 3-step checkout with contact & delivery address validation\n• My Account boutique hub with orders, addresses & support'
+      default: '• Complete quiet luxury design system matching boutique screenshots\n• Search screen with recent searches and numbered popular trends (01-05)\n• Saved Addresses delivery location manager with default selection & checkout tag\n• 4-step Forgot Password OTP verification & strong password creator flow\n• Redesigned Login and Create Account screens with yarn ball branding\n• Full Edit Profile screen with avatar, personal info & security management\n• Checkout Step 3 Payment Method, Order Confirmed, My Orders & Wishlist'
     },
     downloadUrl: { type: String, default: 'https://raw.githubusercontent.com/NarayanPhukan/SimpleCo/main/android-customer/babyygurll-boutique.apk' },
-    releaseDate: { type: String, default: '2026-11-05' },
+    releaseDate: { type: String, default: '2026-11-06' },
     critical: { type: Boolean, default: false }
   }
 }, {

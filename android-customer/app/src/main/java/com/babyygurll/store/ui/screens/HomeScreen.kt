@@ -51,6 +51,7 @@ fun HomeScreen(
     onProductClick: (Product) -> Unit,
     onNavigateToShop: () -> Unit = {},
     onNavigateToBag: () -> Unit = {},
+    onNavigateToSearch: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val products by viewModel.products.collectAsState()
@@ -84,10 +85,13 @@ fun HomeScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp, vertical = 10.dp)
+                        .clickable { onNavigateToSearch() }
                 ) {
                     OutlinedTextField(
                         value = searchQuery,
                         onValueChange = { viewModel.setSearchQuery(it) },
+                        readOnly = true,
+                        enabled = false,
                         placeholder = {
                             Text(
                                 text = "Search handmade treasures",
@@ -106,14 +110,16 @@ fun HomeScreen(
                         singleLine = true,
                         shape = RoundedCornerShape(16.dp),
                         colors = OutlinedTextFieldDefaults.colors(
-                            focusedContainerColor = Color.White,
-                            unfocusedContainerColor = Color.White,
-                            focusedBorderColor = BrandPrimary,
-                            unfocusedBorderColor = SurfaceBorder
+                            disabledContainerColor = Color.White,
+                            disabledBorderColor = SurfaceBorder,
+                            disabledTextColor = BrandDarkNavy,
+                            disabledPlaceholderColor = TextMuted,
+                            disabledLeadingIconColor = TextMuted
                         ),
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(52.dp)
+                            .clickable { onNavigateToSearch() }
                     )
                 }
             }

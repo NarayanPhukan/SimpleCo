@@ -82,7 +82,31 @@ data class ShippingAddress(
     @SerializedName("state") val state: String = "Maharashtra",
     @SerializedName("zip") val zip: String = "",
     @SerializedName("country") val country: String = "India"
-)
+) {
+    val name: String get() = recipientName
+    val addressLine: String get() = street
+    val pincode: String get() = zip
+
+    companion object {
+        fun from(
+            name: String = "",
+            phone: String = "",
+            addressLine: String = "",
+            city: String = "",
+            state: String = "Maharashtra",
+            pincode: String = "",
+            country: String = "India"
+        ) = ShippingAddress(
+            recipientName = name,
+            phone = phone,
+            street = addressLine,
+            city = city,
+            state = state,
+            zip = pincode,
+            country = country
+        )
+    }
+}
 
 data class OrderTotals(
     @SerializedName("subtotal") val subtotal: Double = 0.0,
@@ -132,7 +156,13 @@ data class Order(
     @SerializedName("shiprocketOrderId") val shiprocketOrderId: String? = null,
     @SerializedName("shiprocketShipmentId") val shiprocketShipmentId: String? = null,
     @SerializedName("shiprocketStatus") val shiprocketStatus: String? = null
-)
+) {
+    val id: String
+        get() = orderId
+
+    val status: String
+        get() = statusCode.ifBlank { statusLabel }
+}
 
 data class OrderCreateRequest(
     @SerializedName("userEmail") val userEmail: String,
