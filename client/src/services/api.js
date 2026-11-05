@@ -71,7 +71,7 @@ export const api = {
       body: JSON.stringify({ email, password })
     });
     if (!res.ok) {
-      const err = await res.json();
+      const err = await res.json().catch(() => ({}));
       throw new Error(err.message || 'Login failed');
     }
     return res.json();
@@ -84,7 +84,7 @@ export const api = {
       body: JSON.stringify(userData)
     });
     if (!res.ok) {
-      const err = await res.json();
+      const err = await res.json().catch(() => ({}));
       throw new Error(err.message || 'Registration failed');
     }
     return res.json();

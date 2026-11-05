@@ -80,12 +80,12 @@ const storeSettingSchema = new mongoose.Schema({
     critical: { type: Boolean, default: false }
   },
   customerAppVersion: {
-    latestVersionCode: { type: Number, default: 2 },
-    latestVersionName: { type: String, default: '1.0.1' },
+    latestVersionCode: { type: Number, default: 3 },
+    latestVersionName: { type: String, default: '1.0.2' },
     minRequiredVersionCode: { type: Number, default: 1 },
     releaseNotes: {
       type: String,
-      default: '• Fixed product images in catalog, product details, and cart\n• Enhanced image caching and Base64 loading performance\n• Free delivery across India on all handcrafted orders'
+      default: '• Fixed customer account registration and authentication\n• Fixed product catalog and detail images loading\n• Enhanced image caching and Base64 loading performance'
     },
     downloadUrl: { type: String, default: 'https://raw.githubusercontent.com/NarayanPhukan/SimpleCo/main/android-customer/babyygurll-boutique.apk' },
     releaseDate: { type: String, default: '2026-11-05' },

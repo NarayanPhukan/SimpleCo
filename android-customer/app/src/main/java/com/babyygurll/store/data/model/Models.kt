@@ -34,10 +34,10 @@ data class Product(
 }
 
 data class AppVersionInfo(
-    @SerializedName("latestVersionCode") val latestVersionCode: Int = 2,
-    @SerializedName("latestVersionName") val latestVersionName: String = "1.0.1",
+    @SerializedName("latestVersionCode") val latestVersionCode: Int = 3,
+    @SerializedName("latestVersionName") val latestVersionName: String = "1.0.2",
     @SerializedName("minRequiredVersionCode") val minRequiredVersionCode: Int = 1,
-    @SerializedName("releaseNotes") val releaseNotes: String = "• Initial Release of BabyyGurll Boutique Customer App",
+    @SerializedName("releaseNotes") val releaseNotes: String = "• Fixed account registration and login authentication\n• Fixed product images loading across boutique\n• Live Shiprocket tracking and Razorpay secure checkout",
     @SerializedName("downloadUrl") val downloadUrl: String = "https://raw.githubusercontent.com/NarayanPhukan/SimpleCo/main/android-customer/babyygurll-boutique.apk",
     @SerializedName("critical") val critical: Boolean = false
 )
@@ -146,18 +146,28 @@ data class OrderCreateRequest(
 )
 
 data class User(
+    @SerializedName("_id") val mongoId: String? = null,
     @SerializedName("id") val id: String? = null,
     @SerializedName("name") val name: String = "",
     @SerializedName("email") val email: String = "",
-    @SerializedName("phone") val phone: String? = null
-)
+    @SerializedName("phone") val phone: String? = null,
+    @SerializedName("memberTier") val memberTier: String? = "VIP Collector Club",
+    @SerializedName("memberSince") val memberSince: String? = null
+) {
+    val effectiveId: String
+        get() = id ?: mongoId ?: email
+}
 
 data class AuthResponse(
-    @SerializedName("success") val success: Boolean,
+    @SerializedName("success") val success: Boolean = false,
     @SerializedName("token") val token: String? = null,
     @SerializedName("user") val user: User? = null,
+    @SerializedName("data") val data: User? = null,
     @SerializedName("message") val message: String? = null
-)
+) {
+    val effectiveUser: User?
+        get() = user ?: data
+}
 
 data class ApiResponse<T>(
     @SerializedName("success") val success: Boolean = false,

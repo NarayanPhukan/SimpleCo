@@ -34,15 +34,45 @@ class AuthRepository(private val context: Context) {
         }
     }
 
+    private fun extractErrorMessage(response: retrofit2.Response<AuthResponse>, fallback: String): String {
+        val bodyMsg = response.body()?.message
+        if (!bodyMsg.isNullOrBlank()) return bodyMsg
+
+        val errString = try {
+            response.errorBody()?.string()
+        } catch (e: Exception) {
+            null
+        }
+
+        if (!errString.isNullOrBlank()) {
+            try {
+                val parsed = gson.fromJson(errString, AuthResponse::class.java)
+                if (!parsed.message.isNullOrBlank()) {
+                    return parsed.message
+                }
+            } catch (e: Exception) {
+                try {
+                    val map = gson.fromJson(errString, Map::class.java)
+                    val msg = map["message"]?.toString()
+                    if (!msg.isNullOrBlank()) return msg
+                } catch (e2: Exception) {
+                    return errString.take(120)
+                }
+            }
+        }
+        return fallback
+    }
+
     suspend fun login(email: String, pass: String): Result<User> = withContext(Dispatchers.IO) {
         try {
             val response = api.login(mapOf("email" to email.trim(), "password" to pass))
             val body = response.body()
-            if (response.isSuccessful && body?.user != null) {
-                saveUserSession(body.user, body.token ?: "")
-                Result.success(body.user)
+            val user = body?.effectiveUser
+            if (response.isSuccessful && user != null) {
+                saveUserSession(user, body?.token ?: "")
+                Result.success(user)
             } else {
-                Result.failure(Exception(body?.message ?: "Login failed"))
+                Result.failure(Exception(extractErrorMessage(response, "Login failed")))
             }
         } catch (e: Exception) {
             Result.failure(e)
@@ -60,11 +90,12 @@ class AuthRepository(private val context: Context) {
 
             val response = api.register(map)
             val body = response.body()
-            if (response.isSuccessful && body?.user != null) {
-                saveUserSession(body.user, body.token ?: "")
-                Result.success(body.user)
+            val user = body?.effectiveUser
+            if (response.isSuccessful && user != null) {
+                saveUserSession(user, body?.token ?: "")
+                Result.success(user)
             } else {
-                Result.failure(Exception(body?.message ?: "Registration failed"))
+                Result.failure(Exception(extractErrorMessage(response, "Registration failed")))
             }
         } catch (e: Exception) {
             Result.failure(e)

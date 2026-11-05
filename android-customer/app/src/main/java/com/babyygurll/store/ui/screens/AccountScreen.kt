@@ -263,7 +263,7 @@ fun AccountScreen(
                                         return@Button
                                     }
                                     formError = null
-                                    viewModel.login(loginEmail, loginPassword)
+                                    viewModel.login(loginEmail, loginPassword, onError = { formError = it })
                                 },
                                 enabled = !isLoading,
                                 shape = RoundedCornerShape(10.dp),
@@ -350,7 +350,7 @@ fun AccountScreen(
                                     }
 
                                     formError = null
-                                    viewModel.register(regName, regEmail, regPassword, cleanPhone)
+                                    viewModel.register(regName, regEmail, regPassword, cleanPhone, onError = { formError = it })
                                 },
                                 enabled = !isLoading,
                                 shape = RoundedCornerShape(10.dp),

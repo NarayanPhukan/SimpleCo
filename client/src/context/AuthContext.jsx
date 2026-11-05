@@ -35,7 +35,8 @@ export const AuthProvider = ({ children }) => {
     setLoading(true);
     try {
       const res = await api.login(email, password);
-      const userData = { ...res.data, isLoggedIn: true };
+      const userPayload = res.user || res.data;
+      const userData = { ...userPayload, isLoggedIn: true };
       setUser(userData);
       localStorage.setItem('bgc_auth_user_v2', JSON.stringify(userData));
       setLoading(false);
@@ -50,7 +51,8 @@ export const AuthProvider = ({ children }) => {
     setLoading(true);
     try {
       const res = await api.register({ ...userData, country: 'India' });
-      const created = { ...res.data, isLoggedIn: true };
+      const userPayload = res.user || res.data;
+      const created = { ...userPayload, isLoggedIn: true };
       setUser(created);
       localStorage.setItem('bgc_auth_user_v2', JSON.stringify(created));
       setLoading(false);

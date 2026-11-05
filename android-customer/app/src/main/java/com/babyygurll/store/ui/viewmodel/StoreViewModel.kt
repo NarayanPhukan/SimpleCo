@@ -284,7 +284,7 @@ class StoreViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     // User / Auth Actions
-    fun login(email: String, pass: String, onSuccess: () -> Unit = {}) {
+    fun login(email: String, pass: String, onSuccess: () -> Unit = {}, onError: (String) -> Unit = {}) {
         viewModelScope.launch {
             _isLoading.value = true
             val res = authRepo.login(email, pass)
@@ -293,12 +293,14 @@ class StoreViewModel(application: Application) : AndroidViewModel(application) {
                 _eventMessage.emit("Welcome back, ${user.name}! 🌸")
                 onSuccess()
             }.onFailure { err ->
-                _eventMessage.emit(err.message ?: "Login failed")
+                val msg = err.message ?: "Login failed"
+                _eventMessage.emit(msg)
+                onError(msg)
             }
         }
     }
 
-    fun register(name: String, email: String, pass: String, phone: String?, onSuccess: () -> Unit = {}) {
+    fun register(name: String, email: String, pass: String, phone: String?, onSuccess: () -> Unit = {}, onError: (String) -> Unit = {}) {
         viewModelScope.launch {
             _isLoading.value = true
             val res = authRepo.register(name, email, pass, phone)
@@ -307,7 +309,9 @@ class StoreViewModel(application: Application) : AndroidViewModel(application) {
                 _eventMessage.emit("Account created for ${user.name}! 🌸")
                 onSuccess()
             }.onFailure { err ->
-                _eventMessage.emit(err.message ?: "Registration failed")
+                val msg = err.message ?: "Registration failed"
+                _eventMessage.emit(msg)
+                onError(msg)
             }
         }
     }

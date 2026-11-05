@@ -25,8 +25,16 @@ exports.register = async (req, res) => {
       savedAddresses: []
     });
 
-    res.status(201).json({ success: true, data: user });
+    res.status(201).json({
+      success: true,
+      message: 'Account created successfully',
+      data: user,
+      user: user
+    });
   } catch (error) {
+    if (error.code === 11000) {
+      return res.status(400).json({ success: false, message: 'An account with this email already exists' });
+    }
     res.status(500).json({ success: false, message: error.message });
   }
 };
@@ -50,7 +58,12 @@ exports.login = async (req, res) => {
       return res.status(401).json({ success: false, message: 'Incorrect password' });
     }
 
-    res.json({ success: true, data: user });
+    res.json({
+      success: true,
+      message: 'Logged in successfully',
+      data: user,
+      user: user
+    });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -77,7 +90,11 @@ exports.getMe = async (req, res) => {
         savedAddresses: []
       });
     }
-    res.json({ success: true, data: user });
+    res.json({
+      success: true,
+      data: user,
+      user: user
+    });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
