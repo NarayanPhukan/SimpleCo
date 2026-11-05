@@ -150,8 +150,10 @@ export const Navbar = ({
 
           {/* Download App Shortcut */}
           <a
-            href="/download/app"
+            href="https://raw.githubusercontent.com/NarayanPhukan/SimpleCo/main/android-customer/babyygurll-boutique.apk"
             download="babyygurll-boutique.apk"
+            target="_blank"
+            rel="noopener noreferrer"
             className="nav-icon-btn nav-app-btn"
             title="Download BabyyGurll Android App (.apk)"
             aria-label="Download BabyyGurll Android App"
@@ -298,8 +300,10 @@ export const Navbar = ({
           {/* Download Android App Mobile Card */}
           <div style={{ margin: '0 0 0.85rem 0' }}>
             <a 
-              href="/download/app"
+              href="https://raw.githubusercontent.com/NarayanPhukan/SimpleCo/main/android-customer/babyygurll-boutique.apk"
               download="babyygurll-boutique.apk"
+              target="_blank"
+              rel="noopener noreferrer"
               className="drawer-studio-card-btn"
               style={{
                 textDecoration: 'none',

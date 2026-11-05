@@ -14,6 +14,14 @@
       "destination": "https://simpleco.onrender.com/api/$1"
     },
     {
+      "source": "/download/app",
+      "destination": "https://raw.githubusercontent.com/NarayanPhukan/SimpleCo/main/android-customer/babyygurll-boutique.apk"
+    },
+    {
+      "source": "/download/admin",
+      "destination": "https://raw.githubusercontent.com/NarayanPhukan/SimpleCo/main/android-admin/babyygurll-admin.apk"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
