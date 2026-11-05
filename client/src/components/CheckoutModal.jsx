@@ -213,7 +213,7 @@ export const CheckoutModal = ({
   if (!isOpen) return null;
 
   const totals = getTotals();
-  const shippingCost = shippingMethod === 'express' ? 149 : totals.shipping;
+  const shippingCost = 0; // Delivery charges removed for now (Free Delivery)
   const grandTotal = Math.max(0, totals.subtotal - totals.discount + (totals.giftPackagingCost || 0) + shippingCost + totals.tax);
 
   const chosenAddr = addresses.find(a => (a._id === selectedAddressId || a.id === selectedAddressId)) 
@@ -1165,7 +1165,7 @@ export const CheckoutModal = ({
                           </div>
                         </div>
                         <span style={{ fontWeight: 700, color: 'var(--primary)', fontSize: '0.95rem' }}>
-                          {totals.subtotal >= 999 ? 'FREE' : '₹79'}
+                          FREE
                         </span>
                       </label>
 
@@ -1184,7 +1184,7 @@ export const CheckoutModal = ({
                             <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', margin: '0.15rem 0 0' }}>Fast-track craft allocation + handwritten calligraphy card</p>
                           </div>
                         </div>
-                        <span style={{ fontWeight: 700, color: 'var(--text-dark)', fontSize: '0.95rem' }}>₹149</span>
+                        <span style={{ fontWeight: 700, color: 'var(--primary)', fontSize: '0.95rem' }}>FREE</span>
                       </label>
                     </div>
 

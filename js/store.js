@@ -302,7 +302,7 @@ class Store {
     });
 
     let discount = 0;
-    let shipping = subtotal >= 45 ? 0 : (subtotal > 0 ? 4.99 : 0);
+    let shipping = 0; // Free delivery for all orders for now
 
     if (this.coupon) {
       if (this.coupon.discountPercent) {
@@ -325,8 +325,8 @@ class Store {
       shipping,
       tax,
       total,
-      freeShippingThreshold: 45,
-      remainingForFreeShipping: Math.max(0, 45 - subtotal)
+      freeShippingThreshold: 0,
+      remainingForFreeShipping: 0
     };
   }
 

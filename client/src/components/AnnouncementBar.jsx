@@ -4,7 +4,7 @@ import { api } from '../services/api';
 export const AnnouncementBar = () => {
   const [announcement, setAnnouncement] = useState({
     active: true,
-    text: 'Free delivery across India on orders over ₹999 • Handcrafted with 100% milk cotton yarn',
+    text: 'Free delivery across India on all orders • Handcrafted with 100% milk cotton yarn',
     badge: 'Code: BABYYGURLL for 15% OFF'
   });
 

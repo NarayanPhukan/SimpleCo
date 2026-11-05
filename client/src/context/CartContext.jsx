@@ -280,9 +280,9 @@ export const CartProvider = ({ children }) => {
   // Calculations for India
   const getTotals = () => {
     const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-    const FREE_SHIPPING_THRESHOLD = 999;
+    const FREE_SHIPPING_THRESHOLD = 0; // Free delivery for all orders for now
     let discount = 0;
-    let shipping = subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : (subtotal > 0 ? 79 : 0);
+    let shipping = 0; // Delivery charges removed for now (Free Shipping)
 
     if (coupon) {
       if (coupon.discountPercent) {
@@ -309,7 +309,7 @@ export const CartProvider = ({ children }) => {
       tax,
       total,
       freeShippingThreshold: FREE_SHIPPING_THRESHOLD,
-      remainingForFreeShipping: Math.max(0, FREE_SHIPPING_THRESHOLD - subtotal),
+      remainingForFreeShipping: 0,
       itemCount: cart.reduce((c, item) => c + item.quantity, 0)
     };
   };

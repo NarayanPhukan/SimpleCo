@@ -17,7 +17,7 @@ const storeSettingSchema = new mongoose.Schema({
   },
   announcementText: {
     type: String,
-    default: 'Free delivery across India on orders over ₹999 • Handcrafted with 100% milk cotton yarn'
+    default: 'Free delivery across India on all orders • Handcrafted with 100% milk cotton yarn'
   },
   announcementBadge: {
     type: String,
@@ -33,15 +33,15 @@ const storeSettingSchema = new mongoose.Schema({
   },
   freeShippingThreshold: {
     type: Number,
-    default: 999
+    default: 0
   },
   standardShippingFee: {
     type: Number,
-    default: 79
+    default: 0
   },
   expressShippingFee: {
     type: Number,
-    default: 149
+    default: 0
   },
   supportEmail: {
     type: String,
