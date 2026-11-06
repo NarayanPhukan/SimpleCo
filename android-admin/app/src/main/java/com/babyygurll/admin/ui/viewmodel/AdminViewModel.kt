@@ -52,6 +52,8 @@ data class AdminUiState(
     val filteredProducts: List<Product> = emptyList(),
     val productSearchQuery: String = "",
     val selectedProductCategory: String = "all",
+    val selectedProductFilter: String = "All",
+    val selectedProduct: Product? = null,
 
     // Coupons
     val coupons: List<Coupon> = emptyList(),
@@ -523,6 +525,15 @@ class AdminViewModel : ViewModel() {
         applyProductFilters()
     }
 
+    fun setProductFilter(filter: String) {
+        _uiState.update { it.copy(selectedProductFilter = filter) }
+        applyProductFilters()
+    }
+
+    fun selectProduct(product: Product?) {
+        _uiState.update { it.copy(selectedProduct = product) }
+    }
+
     fun setProductSearch(query: String) {
         _uiState.update { it.copy(productSearchQuery = query) }
         applyProductFilters()
@@ -531,16 +542,24 @@ class AdminViewModel : ViewModel() {
     private fun applyProductFilters() {
         val all = _uiState.value.products
         val cat = _uiState.value.selectedProductCategory
+        val filterStatus = _uiState.value.selectedProductFilter
         val query = _uiState.value.productSearchQuery.trim().lowercase()
 
         val filtered = all.filter { p ->
             val matchesCat = if (cat == "all") true else p.category == cat
+            val matchesFilter = when (filterStatus.lowercase()) {
+                "published" -> p.displayStatus == "Published" || (p.inStock && p.stockCount > 3)
+                "draft" -> p.displayStatus == "Draft"
+                "low stock" -> p.displayStatus == "Low stock" || p.stockCount in 1..3
+                else -> true
+            }
             val matchesQuery = if (query.isEmpty()) true else {
                 p.name.lowercase().contains(query) ||
                 p.categoryName.lowercase().contains(query) ||
+                p.sku.lowercase().contains(query) ||
                 p.description.lowercase().contains(query)
             }
-            matchesCat && matchesQuery
+            matchesCat && matchesFilter && matchesQuery
         }
 
         _uiState.update { it.copy(filteredProducts = filtered) }

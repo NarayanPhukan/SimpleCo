@@ -276,15 +276,49 @@ class MainActivity : ComponentActivity() {
                                     state = uiState,
                                     serverUrl = uiState.serverUrl,
                                     onSearchChange = { viewModel.setProductSearch(it) },
-                                    onCategoryChange = { viewModel.setProductCategoryFilter(it) },
+                                    onFilterChange = { viewModel.setProductFilter(it) },
                                     onRefresh = { viewModel.fetchProducts() },
-                                    onToggleStock = { product -> viewModel.toggleProductStock(product) },
+                                    onSelectProduct = { product ->
+                                        viewModel.selectProduct(product)
+                                        navController.navigate(Screen.ProductDetail.createRoute(product.id.ifBlank { product.mongoId ?: "" }))
+                                    },
                                     onEditProduct = { product ->
                                         navController.navigate(Screen.ProductEdit.createRoute(product.id))
                                     },
+                                    onToggleStock = { product -> viewModel.toggleProductStock(product) },
                                     onDeleteProduct = { id -> viewModel.deleteProduct(id) },
                                     onNewProduct = {
                                         navController.navigate(Screen.ProductEdit.createRoute(null))
+                                    }
+                                )
+                            }
+
+                            // Product Details Screen (Images 1 & 2)
+                            composable(
+                                route = Screen.ProductDetail.route,
+                                arguments = listOf(navArgument("productId") { type = NavType.StringType })
+                            ) { backStackEntry ->
+                                val productId = backStackEntry.arguments?.getString("productId") ?: ""
+                                val product = uiState.products.find { it.id == productId || it.mongoId == productId }
+                                    ?: uiState.selectedProduct
+
+                                ProductDetailScreen(
+                                    product = product,
+                                    serverUrl = uiState.serverUrl,
+                                    onBack = { navController.popBackStack() },
+                                    onEdit = {
+                                        product?.let {
+                                            navController.navigate(Screen.ProductEdit.createRoute(it.id))
+                                        }
+                                    },
+                                    onToggleStock = {
+                                        product?.let { viewModel.toggleProductStock(it) }
+                                    },
+                                    onDelete = {
+                                        product?.let {
+                                            viewModel.deleteProduct(it.mongoId ?: it.id)
+                                            navController.popBackStack()
+                                        }
                                     }
                                 )
                             }

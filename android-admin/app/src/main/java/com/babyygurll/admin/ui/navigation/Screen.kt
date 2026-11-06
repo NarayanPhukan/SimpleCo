@@ -8,6 +8,9 @@ sealed class Screen(val route: String, val title: String) {
         fun createRoute(orderId: String) = "order_detail/$orderId"
     }
     object Products : Screen("products", "Catalog")
+    object ProductDetail : Screen("product_detail/{productId}", "Product Details") {
+        fun createRoute(productId: String) = "product_detail/$productId"
+    }
     object ProductEdit : Screen("product_edit?id={id}", "Edit Piece") {
         fun createRoute(id: String? = null) = if (id != null) "product_edit?id=$id" else "product_edit"
     }

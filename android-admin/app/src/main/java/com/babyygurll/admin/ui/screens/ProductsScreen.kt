@@ -1,26 +1,24 @@
 package com.babyygurll.admin.ui.screens
 
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
-import android.util.Base64
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -29,6 +27,8 @@ import coil.compose.AsyncImage
 import com.babyygurll.admin.data.model.Product
 import com.babyygurll.admin.ui.theme.*
 import com.babyygurll.admin.ui.viewmodel.AdminUiState
+import java.text.NumberFormat
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -36,143 +36,256 @@ fun ProductsScreen(
     state: AdminUiState,
     serverUrl: String,
     onSearchChange: (String) -> Unit,
-    onCategoryChange: (String) -> Unit,
+    onFilterChange: (String) -> Unit,
     onRefresh: () -> Unit,
-    onToggleStock: (Product) -> Unit,
+    onSelectProduct: (Product) -> Unit,
     onEditProduct: (Product) -> Unit,
+    onToggleStock: (Product) -> Unit,
     onDeleteProduct: (String) -> Unit,
     onNewProduct: () -> Unit
 ) {
-    val categories = listOf(
-        "all" to "All (${state.products.size})",
-        "plushies" to "Plushies",
-        "floral" to "Floral",
-        "bags" to "Bags",
-        "wearables" to "Wearables",
-        "accessories" to "Accessories"
-    )
+    val currencyFormat = remember {
+        NumberFormat.getCurrencyInstance(Locale("en", "IN")).apply {
+            maximumFractionDigits = 0
+        }
+    }
 
+    val filterPills = listOf("All", "Published", "Draft", "Low stock")
     var productToDelete by remember { mutableStateOf<Product?>(null) }
+    var sortAscending by remember { mutableStateOf(false) }
+
+    val displayedProducts = remember(state.filteredProducts, sortAscending) {
+        if (sortAscending) {
+            state.filteredProducts.sortedBy { it.price }
+        } else {
+            state.filteredProducts
+        }
+    }
 
     Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        text = "Boutique Catalog",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White
-                    )
-                },
-                actions = {
-                    IconButton(onClick = onRefresh) {
-                        Icon(Icons.Default.Refresh, contentDescription = "Refresh", tint = Color.White)
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = BrandSecondary)
-            )
-        },
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick = onNewProduct,
-                containerColor = BrandPrimary,
-                contentColor = Color.White,
-                shape = RoundedCornerShape(16.dp)
-            ) {
-                Icon(Icons.Default.Add, contentDescription = "Add New Crochet Piece")
-            }
-        },
-        containerColor = BrandBackground
+        containerColor = SoftIvory
     ) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
+                .padding(horizontal = 16.dp, vertical = 12.dp)
         ) {
-            // Search Input
-            OutlinedTextField(
-                value = state.productSearchQuery,
-                onValueChange = onSearchChange,
-                placeholder = { Text("Search by name, category, yarn...") },
-                leadingIcon = {
-                    Icon(Icons.Default.Search, contentDescription = null, tint = TextMuted)
-                },
-                trailingIcon = {
-                    if (state.productSearchQuery.isNotEmpty()) {
-                        IconButton(onClick = { onSearchChange("") }) {
-                            Icon(Icons.Default.Close, contentDescription = "Clear")
-                        }
-                    }
-                },
-                singleLine = true,
-                shape = RoundedCornerShape(12.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedContainerColor = BrandSurface,
-                    unfocusedContainerColor = BrandSurface
-                ),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp)
-            )
-
-            // Category Chips
+            // Header: Title ("Products"), Subtitle ("46 products in your catalogue"), "+" blue button
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .horizontalScroll(rememberScrollState())
-                    .padding(horizontal = 16.dp, vertical = 4.dp),
+                    .padding(bottom = 12.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column {
+                    Text(
+                        text = "Products",
+                        style = MaterialTheme.typography.headlineMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MidnightNavy,
+                        fontSize = 26.sp
+                    )
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = "${state.products.size} products in your catalogue",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = TextMuted,
+                        fontSize = 13.sp
+                    )
+                }
+
+                // Add New Product Button (+ Blue Box)
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = RoyalBlue,
+                    modifier = Modifier
+                        .size(44.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .clickable(onClick = onNewProduct)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            imageVector = Icons.Default.Add,
+                            contentDescription = "Add Product",
+                            tint = Color.White,
+                            modifier = Modifier.size(22.dp)
+                        )
+                    }
+                }
+            }
+
+            // Search Bar: Search by name, SKU or category
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
+                color = Color.White,
+                border = androidx.compose.foundation.BorderStroke(1.dp, BrandBorder)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp, vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Search,
+                        contentDescription = "Search",
+                        tint = TextMuted,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    TextField(
+                        value = state.productSearchQuery,
+                        onValueChange = onSearchChange,
+                        placeholder = {
+                            Text(
+                                text = "Search by name, SKU or category",
+                                color = TextMuted,
+                                fontSize = 14.sp
+                            )
+                        },
+                        singleLine = true,
+                        colors = TextFieldDefaults.colors(
+                            focusedContainerColor = Color.Transparent,
+                            unfocusedContainerColor = Color.Transparent,
+                            disabledContainerColor = Color.Transparent,
+                            focusedIndicatorColor = Color.Transparent,
+                            unfocusedIndicatorColor = Color.Transparent
+                        ),
+                        modifier = Modifier.weight(1f)
+                    )
+                    if (state.productSearchQuery.isNotEmpty()) {
+                        IconButton(
+                            onClick = { onSearchChange("") },
+                            modifier = Modifier.size(28.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Close,
+                                contentDescription = "Clear",
+                                tint = TextMuted,
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
+                    } else {
+                        Icon(
+                            imageVector = Icons.Outlined.Tune,
+                            contentDescription = "Filter",
+                            tint = MidnightNavy,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // Filter Pills Row (All, Published, Draft, Low stock)
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState()),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                categories.forEach { (key, label) ->
-                    val isSelected = state.selectedProductCategory == key
-                    FilterChip(
-                        selected = isSelected,
-                        onClick = { onCategoryChange(key) },
-                        label = { Text(label) },
-                        colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = BrandPrimary,
-                            selectedLabelColor = Color.White
+                filterPills.forEach { pill ->
+                    val isSelected = state.selectedProductFilter.equals(pill, true)
+                    Surface(
+                        shape = RoundedCornerShape(20.dp),
+                        color = if (isSelected) RoyalBlue else Color.White,
+                        border = if (isSelected) null else androidx.compose.foundation.BorderStroke(1.dp, BrandBorder),
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(20.dp))
+                            .clickable { onFilterChange(pill) }
+                    ) {
+                        Text(
+                            text = pill,
+                            fontSize = 12.sp,
+                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                            color = if (isSelected) Color.White else TextMuted,
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 7.dp)
                         )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            // Meta Info Line: "46 products" | "Recently added"
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "${displayedProducts.size} products",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = TextMuted
+                )
+
+                Row(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(6.dp))
+                        .clickable { sortAscending = !sortAscending }
+                        .padding(horizontal = 4.dp, vertical = 2.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.Sort,
+                        contentDescription = "Sort",
+                        tint = MidnightNavy,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = if (sortAscending) "Price: Low to High" else "Recently added",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MidnightNavy
                     )
                 }
             }
 
-            // Products List
-            if (state.filteredProducts.isEmpty()) {
+            Spacer(modifier = Modifier.height(10.dp))
+
+            // Products Catalog List
+            if (displayedProducts.isEmpty()) {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(32.dp),
+                        .padding(bottom = 50.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(text = "🧶", fontSize = 42.sp)
-                        Spacer(modifier = Modifier.height(12.dp))
+                        Icon(
+                            imageVector = Icons.Outlined.Inventory2,
+                            contentDescription = null,
+                            tint = TextMuted.copy(alpha = 0.5f),
+                            modifier = Modifier.size(48.dp)
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            text = if (state.productSearchQuery.isNotEmpty())
-                                "No items match '${state.productSearchQuery}'"
-                            else
-                                "No products in this category",
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = TextMuted
+                            text = "No pieces found in catalogue",
+                            color = TextMuted,
+                            fontSize = 14.sp
                         )
                     }
                 }
             } else {
                 LazyColumn(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(horizontal = 16.dp),
                     verticalArrangement = Arrangement.spacedBy(10.dp),
-                    contentPadding = PaddingValues(top = 8.dp, bottom = 80.dp)
+                    contentPadding = PaddingValues(bottom = 80.dp),
+                    modifier = Modifier.fillMaxSize()
                 ) {
-                    items(state.filteredProducts) { product ->
-                        ProductItemCard(
+                    items(displayedProducts, key = { it.id.ifBlank { it.mongoId ?: it.name } }) { product ->
+                        ProductCatalogueCard(
                             product = product,
                             serverUrl = serverUrl,
-                            onToggleStock = { onToggleStock(product) },
+                            currencyFormat = currencyFormat,
+                            onClick = { onSelectProduct(product) },
                             onEdit = { onEditProduct(product) },
+                            onToggleStock = { onToggleStock(product) },
                             onDelete = { productToDelete = product }
                         )
                     }
@@ -181,35 +294,27 @@ fun ProductsScreen(
         }
     }
 
-    if (productToDelete != null) {
+    // Delete Confirmation Dialog
+    productToDelete?.let { prod ->
         AlertDialog(
             onDismissRequest = { productToDelete = null },
-            title = { Text("Delete Product?") },
-            text = {
-                Text("Are you sure you want to remove '${productToDelete?.name}' from the boutique catalog? This action cannot be undone.")
-            },
+            title = { Text("Delete Piece", fontWeight = FontWeight.Bold, color = CrimsonAccent) },
+            text = { Text("Are you sure you want to permanently remove \"${prod.name}\" from the studio catalog?") },
             confirmButton = {
                 Button(
                     onClick = {
-                        productToDelete?.let { prod ->
-                            val targetId = prod.id.trim().ifBlank { prod.mongoId?.trim() ?: "" }
-                            if (targetId.isNotBlank()) {
-                                onDeleteProduct(targetId)
-                            }
-                        }
+                        val id = prod.mongoId ?: prod.id
+                        onDeleteProduct(id)
                         productToDelete = null
                     },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = BrandAccentRed,
-                        contentColor = Color.White
-                    )
+                    colors = ButtonDefaults.buttonColors(containerColor = CrimsonAccent)
                 ) {
-                    Text("Delete", color = Color.White, fontWeight = FontWeight.Bold)
+                    Text("Delete", color = Color.White)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { productToDelete = null }) {
-                    Text("Cancel")
+                    Text("Cancel", color = TextMuted)
                 }
             }
         )
@@ -217,18 +322,25 @@ fun ProductsScreen(
 }
 
 @Composable
-fun ProductItemCard(
+fun ProductCatalogueCard(
     product: Product,
     serverUrl: String,
-    onToggleStock: () -> Unit,
+    currencyFormat: NumberFormat,
+    onClick: () -> Unit,
     onEdit: () -> Unit,
+    onToggleStock: () -> Unit,
     onDelete: () -> Unit
 ) {
+    var showMenu by remember { mutableStateOf(false) }
+
     Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(14.dp),
-        colors = CardDefaults.cardColors(containerColor = BrandSurface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        border = androidx.compose.foundation.BorderStroke(1.dp, BrandBorder),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.5.dp)
     ) {
         Row(
             modifier = Modifier
@@ -236,113 +348,153 @@ fun ProductItemCard(
                 .padding(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            val base64Bitmap: Bitmap? = remember(product.image) {
-                if (product.image.startsWith("data:image/") && product.image.contains(";base64,")) {
-                    try {
-                        val base64Data = product.image.substringAfter(";base64,")
-                        val bytes = Base64.decode(base64Data, Base64.DEFAULT)
-                        BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
-                    } catch (e: Exception) {
-                        null
-                    }
-                } else null
-            }
-
-            val imageUrl = remember(product.image, serverUrl) {
-                when {
-                    product.image.isBlank() -> ""
-                    product.image.startsWith("data:") -> product.image
-                    product.image.startsWith("http://") || product.image.startsWith("https://") -> product.image
-                    else -> "${serverUrl.trimEnd('/')}/${product.image.trimStart('/')}"
+            // Product Image Thumbnail
+            Box(
+                modifier = Modifier
+                    .size(70.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(Color(0xFFF1F5F9))
+            ) {
+                val imageUrl = if (product.image.startsWith("http")) {
+                    product.image
+                } else if (product.image.isNotBlank()) {
+                    "${serverUrl.trimEnd('/')}${if (product.image.startsWith("/")) "" else "/"}${product.image}"
+                } else {
+                    ""
                 }
-            }
 
-            if (base64Bitmap != null) {
-                Image(
-                    bitmap = base64Bitmap.asImageBitmap(),
-                    contentDescription = product.name,
-                    modifier = Modifier
-                        .size(68.dp)
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(BrandPrimaryLight),
-                    contentScale = ContentScale.Crop
-                )
-            } else {
-                AsyncImage(
-                    model = imageUrl,
-                    contentDescription = product.name,
-                    modifier = Modifier
-                        .size(68.dp)
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(BrandPrimaryLight),
-                    contentScale = ContentScale.Crop
-                )
+                if (imageUrl.isNotBlank()) {
+                    AsyncImage(
+                        model = imageUrl,
+                        contentDescription = product.name,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                } else {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.ShoppingBag,
+                            contentDescription = null,
+                            tint = TextMuted,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
+                }
             }
 
             Spacer(modifier = Modifier.width(12.dp))
 
+            // Details Column
             Column(modifier = Modifier.weight(1f)) {
-                if (!product.badge.isNullOrBlank()) {
-                    Surface(
-                        color = BrandPrimaryLight,
-                        shape = RoundedCornerShape(4.dp)
-                    ) {
-                        Text(
-                            text = product.badge,
-                            color = BrandPrimary,
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                        )
-                    }
-                    Spacer(modifier = Modifier.height(2.dp))
-                }
-
                 Text(
                     text = product.name,
-                    style = MaterialTheme.typography.titleMedium,
+                    fontSize = 15.sp,
                     fontWeight = FontWeight.Bold,
-                    color = TextPrimary
+                    color = MidnightNavy,
+                    maxLines = 1
                 )
-
+                Spacer(modifier = Modifier.height(2.dp))
                 Text(
-                    text = "₹${product.price.toInt()} • ${product.categoryName}",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = TextSecondary
+                    text = "${product.categoryName} · ${product.sku}",
+                    fontSize = 12.sp,
+                    color = TextMuted,
+                    maxLines = 1
                 )
-
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.padding(top = 4.dp)
-                ) {
-                    Switch(
-                        checked = product.inStock,
-                        onCheckedChange = { onToggleStock() },
-                        modifier = Modifier.scale(0.75f)
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
+                Spacer(modifier = Modifier.height(4.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
-                        text = if (product.inStock) "In Stock" else "Sold Out",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = if (product.inStock) StatusDelivered else BrandAccentRed,
-                        fontWeight = FontWeight.SemiBold
+                        text = currencyFormat.format(product.price),
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MidnightNavy
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "${product.stockCount} in stock",
+                        fontSize = 12.sp,
+                        color = TextMuted
+                    )
+                }
+                Spacer(modifier = Modifier.height(6.dp))
+
+                // Status Badge Pill
+                val status = product.displayStatus
+                val (bgColor, textColor) = when (status) {
+                    "Published" -> Color(0xFFDCFCE7) to Color(0xFF16A34A)
+                    "Low stock" -> Color(0xFFFEF3C7) to Color(0xFFD97706)
+                    "Out of stock" -> Color(0xFFFEE2E2) to Color(0xFFDC2626)
+                    else -> Color(0xFFF1F5F9) to Color(0xFF64748B) // Draft
+                }
+
+                Surface(
+                    shape = RoundedCornerShape(6.dp),
+                    color = bgColor
+                ) {
+                    Text(
+                        text = status,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = textColor,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
                     )
                 }
             }
 
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                IconButton(onClick = onEdit) {
-                    Icon(Icons.Default.Edit, contentDescription = "Edit", tint = BrandPrimary)
+            // Three-Dots Menu Button
+            Box {
+                IconButton(
+                    onClick = { showMenu = true },
+                    modifier = Modifier.size(36.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.MoreHoriz,
+                        contentDescription = "Options",
+                        tint = TextMuted
+                    )
                 }
-                IconButton(onClick = onDelete) {
-                    Icon(Icons.Default.DeleteOutline, contentDescription = "Delete", tint = BrandAccentRed)
+
+                DropdownMenu(
+                    expanded = showMenu,
+                    onDismissRequest = { showMenu = false }
+                ) {
+                    DropdownMenuItem(
+                        text = { Text("View Details") },
+                        leadingIcon = { Icon(Icons.Outlined.Visibility, contentDescription = null) },
+                        onClick = {
+                            showMenu = false
+                            onClick()
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Edit Piece") },
+                        leadingIcon = { Icon(Icons.Outlined.Edit, contentDescription = null) },
+                        onClick = {
+                            showMenu = false
+                            onEdit()
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { Text(if (product.inStock) "Mark Out of Stock" else "Mark In Stock") },
+                        leadingIcon = { Icon(Icons.Outlined.Inventory, contentDescription = null) },
+                        onClick = {
+                            showMenu = false
+                            onToggleStock()
+                        }
+                    )
+                    HorizontalDivider()
+                    DropdownMenuItem(
+                        text = { Text("Delete Piece", color = CrimsonAccent) },
+                        leadingIcon = { Icon(Icons.Outlined.Delete, contentDescription = null, tint = CrimsonAccent) },
+                        onClick = {
+                            showMenu = false
+                            onDelete()
+                        }
+                    )
                 }
             }
         }
     }
 }
-
-private fun Modifier.scale(scale: Float): Modifier = this.then(
-    Modifier.padding(0.dp)
-)
-
