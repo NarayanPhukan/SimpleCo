@@ -1,8 +1,8 @@
 {
-  "latestVersionCode": 11,
-  "latestVersionName": "1.1.0",
+  "latestVersionCode": 12,
+  "latestVersionName": "1.2.0",
   "minRequiredVersionCode": 1,
-  "releaseNotes": "• Performance optimizations & quiet luxury UI updates\n• Seamless Razorpay UPI instant checkout & live order tracking\n• Automatic refund tracking for cancelled prepaid orders",
+  "releaseNotes": "• Product photo slideshow carousel with smooth touch swipe gestures, navigation arrows, and interactive thumbnails\n• Support for raw Base64 and remote product images\n• Real-time stock availability and dynamic variants",
   "downloadUrl": "https://raw.githubusercontent.com/NarayanPhukan/SimpleCo/main/android-customer/babyygurll-boutique.apk",
   "releaseDate": "2026-11-06",
   "critical": false

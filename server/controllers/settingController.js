@@ -19,19 +19,19 @@ const DEFAULT_CONFIG = {
   adminPassword: 'admin123',
   adminRazorpayAccountId: '',
   appVersion: {
-    latestVersionCode: 15,
-    latestVersionName: '1.4.0',
+    latestVersionCode: 16,
+    latestVersionName: '1.5.0',
     minRequiredVersionCode: 1,
-    releaseNotes: '• Real-time dynamic Bezier analytics chart\n• Flawless Base64 and network image loading across products and orders\n• Dynamic product details and catalog images',
+    releaseNotes: '• Product image drag-to-reorder with touch gestures & move arrows\n• Dedicated + Add Variant dialog for custom variants with pricing & stock\n• 100% real live data across Inventory, Production Queue, Custom Requests, and Shipping\n• Product detail photo swipe carousel and full backend variant persistence',
     downloadUrl: 'https://raw.githubusercontent.com/NarayanPhukan/SimpleCo/main/android-admin/babyygurll-admin.apk',
     releaseDate: '2026-11-06',
     critical: false
   },
   customerAppVersion: {
-    latestVersionCode: 11,
-    latestVersionName: '1.1.0',
+    latestVersionCode: 12,
+    latestVersionName: '1.2.0',
     minRequiredVersionCode: 1,
-    releaseNotes: '• Performance optimizations & quiet luxury UI updates\n• Seamless Razorpay UPI instant checkout & live order tracking\n• Automatic refund tracking for cancelled prepaid orders',
+    releaseNotes: '• Product photo slideshow carousel with smooth touch swipe gestures, navigation arrows, and interactive thumbnails\n• Support for raw Base64 and remote product images\n• Real-time stock availability and dynamic variants',
     downloadUrl: 'https://raw.githubusercontent.com/NarayanPhukan/SimpleCo/main/android-customer/babyygurll-boutique.apk',
     releaseDate: '2026-11-06',
     critical: false
