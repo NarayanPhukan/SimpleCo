@@ -255,3 +255,4 @@ export const NotificationDrawer = ({ isOpen, onClose, onShowToast, onOpenOrder }
     </div>
   );
 };
+

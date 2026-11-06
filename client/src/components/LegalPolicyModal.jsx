@@ -16,7 +16,7 @@ export const LegalPolicyModal = ({ isOpen, onClose, initialTab = 'terms' }) => {
         <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#F8FAFC' }}>
           <div>
             <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 800, color: '#0F172A' }}>
-              BabyyGurll Studio Policies & Compliance
+              BabyyGurll Boutique Policies & Compliance
             </h3>
             <p style={{ margin: '0.2rem 0 0', fontSize: '0.8rem', color: '#64748B' }}>
               Razorpay merchant verified • Slow-craft handmade atelier in India
@@ -69,7 +69,7 @@ export const LegalPolicyModal = ({ isOpen, onClose, initialTab = 'terms' }) => {
                 Cancellation & Refund Policy
               </h4>
               <p>
-                At <strong>BabyyGurll Crochet</strong>, every bouquet, amigurumi plushie, and handbag is meticulously crafted by hand with premium milk cotton yarn. We value transparency and fairness in our customer service.
+                At <strong>BabyyGurll Boutique</strong>, every bouquet, amigurumi plushie, and handbag is meticulously crafted by hand with premium milk cotton yarn. We value transparency and fairness in our customer service.
               </p>
               
               <h5 style={{ fontWeight: 700, color: '#0F172A', marginTop: '1rem', marginBottom: '0.3rem' }}>1. Order Cancellation Window</h5>
@@ -126,7 +126,7 @@ export const LegalPolicyModal = ({ isOpen, onClose, initialTab = 'terms' }) => {
                 Terms and Conditions
               </h4>
               <p>
-                Welcome to <strong>BabyyGurll Crochet Studio</strong> (accessible at <a href="https://babyygurlcrochet.vercel.app/" target="_blank" rel="noopener noreferrer">https://babyygurlcrochet.vercel.app/</a> and the BabyyGurll Boutique Android App). By placing an order, browsing our collection, or making a payment, you agree to the following terms:
+                Welcome to <strong>BabyyGurll Boutique</strong> (accessible at <a href="https://babyygurlcrochet.vercel.app/" target="_blank" rel="noopener noreferrer">https://babyygurlcrochet.vercel.app/</a> and the BabyyGurll Boutique Android App). By placing an order, browsing our collection, or making a payment, you agree to the following terms:
               </p>
               <ul>
                 <li>All products displayed are handmade; slight variations in yarn dye lots, stitching tension, and handcrafted nuances are inherent characteristics of artisan crochet.</li>
@@ -143,7 +143,7 @@ export const LegalPolicyModal = ({ isOpen, onClose, initialTab = 'terms' }) => {
                 Privacy & Data Protection Policy
               </h4>
               <p>
-                Your privacy is paramount to us. This policy details how <strong>BabyyGurll Crochet</strong> collects and protects your personal information:
+                Your privacy is paramount to us. This policy details how <strong>BabyyGurll Boutique</strong> collects and protects your personal information:
               </p>
               <ul>
                 <li><strong>Information Collected:</strong> Name, contact telephone number, shipping address, and email address strictly for order fulfillment and dispatch notification.</li>
@@ -163,7 +163,7 @@ export const LegalPolicyModal = ({ isOpen, onClose, initialTab = 'terms' }) => {
               </p>
               
               <div style={{ background: '#F8FAFC', padding: '1.25rem', borderRadius: '12px', border: '1px solid #E2E8F0', marginTop: '1rem' }}>
-                <p style={{ margin: '0.4rem 0' }}><strong>Business Name:</strong> BabyyGurll Crochet Studio</p>
+                <p style={{ margin: '0.4rem 0' }}><strong>Business Name:</strong> BabyyGurll Boutique</p>
                 <p style={{ margin: '0.4rem 0' }}><strong>Registered Domain:</strong> <a href="https://babyygurlcrochet.vercel.app/" target="_blank" rel="noopener noreferrer">https://babyygurlcrochet.vercel.app/</a></p>
                 <p style={{ margin: '0.4rem 0' }}><strong>Customer Support Email:</strong> <a href="mailto:hello@babyygurll.in">hello@babyygurll.in</a> / <a href="mailto:tanayaburagohain2244@gmail.com">tanayaburagohain2244@gmail.com</a></p>
                 <p style={{ margin: '0.4rem 0' }}><strong>Customer Support Phone:</strong> +91 98200 12345 / +91 98640 12345</p>

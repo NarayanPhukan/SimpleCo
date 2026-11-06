@@ -9,7 +9,7 @@ const storeSettingSchema = new mongoose.Schema({
   },
   storeName: {
     type: String,
-    default: 'BabyyGurll Crochet Studio'
+    default: 'BabyyGurll Boutique'
   },
   tagline: {
     type: String,

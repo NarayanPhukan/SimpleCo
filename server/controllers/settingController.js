@@ -5,7 +5,7 @@ const StoreSetting = require('../models/StoreSetting');
 
 const DEFAULT_CONFIG = {
   key: 'main_store_config',
-  storeName: 'BabyyGurll Crochet Studio',
+  storeName: 'BabyyGurll Boutique',
   tagline: 'Bespoke Handmade Crochet Creations',
   announcementText: 'Free delivery across India on all orders • Handcrafted with 100% milk cotton yarn',
   announcementBadge: 'Code: BABYYGURLL for 15% OFF',

@@ -65,14 +65,14 @@ export const openRazorpayStandardCheckout = async ({
     // 4. Configure Razorpay Standard Checkout Options
     // Razorpay requires a public HTTPS URL for the merchant avatar.
     // Local relative paths resolve to http://localhost and trigger Chrome Private Network Access (PNA) & Mixed Content blocks.
-    const checkoutLogo = 'https://images.unsplash.com/photo-1584917865442-de89df76afd3?auto=format&fit=crop&w=200&q=80';
+    const checkoutLogo = 'https://babyygurlcrochet.vercel.app/apple-touch-icon.png';
 
     const options = {
       key: razorpayKey,
       amount: orderRes.amount,
       currency: orderRes.currency || 'INR',
-      name: 'BabyyGurll Crochet',
-      description: 'Artisanal Handmade Crochet Order',
+      name: 'BabyyGurll Boutique',
+      description: 'Bespoke Handmade Crochet Order',
       image: checkoutLogo,
       order_id: orderId,
       prefill: {
@@ -81,11 +81,11 @@ export const openRazorpayStandardCheckout = async ({
         contact: prefill.contact || ''
       },
       notes: {
-        store: 'BabyyGurll Crochet India',
+        store: 'BabyyGurll Boutique India',
         category: 'Artisanal Handcrafts'
       },
       theme: {
-        color: '#FF7B9C' // Brand signature pastel pink/rose
+        color: '#091E61' // Brand signature deep navy
       },
       modal: {
         ondismiss: function () {

@@ -23,6 +23,7 @@ import { WhatsAppConcierge } from './components/WhatsAppConcierge';
 import { RecentlyViewedBar } from './components/RecentlyViewedBar';
 import { LegalPolicyModal } from './components/LegalPolicyModal';
 import { AppDownloadModal } from './components/AppDownloadModal';
+import { AppDownloadPage } from './components/AppDownloadPage';
 import { NotificationDrawer } from './components/NotificationDrawer';
 import { IconSearch, IconPackage, IconSparkles } from './components/Icons';
 
@@ -56,6 +57,15 @@ export const App = () => {
   const [isPolicyModalOpen, setIsPolicyModalOpen] = useState(false);
   const [policyInitialTab, setPolicyInitialTab] = useState('terms');
   const [isAppDownloadOpen, setIsAppDownloadOpen] = useState(false);
+  const [isAppLandingView, setIsAppLandingView] = useState(() => {
+    try {
+      const path = (window.location.pathname || '').toLowerCase();
+      const hash = (window.location.hash || '').toLowerCase();
+      return path === '/app' || path === '/download' || hash === '#app-page';
+    } catch (e) {
+      return false;
+    }
+  });
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
 
   // Toasts
@@ -157,6 +167,12 @@ export const App = () => {
       const hash = (window.location.hash || '').toLowerCase();
       const path = (window.location.pathname || '').toLowerCase();
 
+      if (path === '/app' || path === '/download' || hash === '#app-page') {
+        setIsAppLandingView(true);
+      } else {
+        setIsAppLandingView(false);
+      }
+
       if (hash === '#admin' || path === '/admin') {
         setIsAdminOpen(true);
       } else if (hash === '#studio' || hash === '#custom' || hash === '#builder' || path === '/custom' || path === '/studio') {
@@ -167,7 +183,7 @@ export const App = () => {
         setIsAccountOpen(true);
       } else if (hash === '#checkout' || path === '/checkout') {
         setIsCheckoutOpen(true);
-      } else if (hash === '#app' || hash === '#download' || path === '/app' || path === '/download') {
+      } else if (hash === '#app' || hash === '#download') {
         setIsAppDownloadOpen(true);
       } else if (hash === '#notifications' || hash === '#alerts' || path === '/notifications' || path === '/alerts') {
         setIsNotificationOpen(true);
@@ -259,6 +275,17 @@ export const App = () => {
     const elem = document.getElementById('catalog');
     if (elem) elem.scrollIntoView({ behavior: 'smooth' });
   };
+
+  if (isAppLandingView) {
+    return (
+      <AppDownloadPage 
+        onBackToStore={() => {
+          window.history.pushState({}, '', '/');
+          setIsAppLandingView(false);
+        }} 
+      />
+    );
+  }
 
   return (
     <>

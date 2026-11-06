@@ -46,18 +46,11 @@ export const Navbar = ({
       <div className="nav-container">
         {/* Brand Logo */}
         <a href="#hero" className="brand-logo" id="brandLogo">
-          <div className="brand-icon-wrapper" aria-hidden="true">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="11" cy="13" r="8" />
-              <path d="M5.5 8.5C8 10 13 10.5 16.5 14" />
-              <path d="M7 16c2.5-.5 6.5.5 9.5 3" />
-              <path d="M8 6c2.5 1 5 4 6 7.5" />
-              <path d="M15 5l6-3c.5-.2 1 .3.8.8l-3 6" />
-              <circle cx="19" cy="4" r="1" fill="currentColor" />
-            </svg>
+          <div className="brand-icon-wrapper" aria-hidden="true" style={{ background: '#091E61', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', width: '34px', height: '34px', color: '#FFFFFF', fontFamily: "'Times New Roman', serif", fontWeight: 700, fontSize: '18px', letterSpacing: '-0.5px' }}>
+            BG
           </div>
           <div className="brand-text">
-            <span className="brand-title">BabyyGurll <span className="brand-accent">Crochet</span></span>
+            <span className="brand-title">BabyyGurll <span className="brand-accent">Boutique</span></span>
             <span className="brand-subtitle">Artisanal Studio • India</span>
           </div>
         </a>
@@ -228,16 +221,11 @@ export const Navbar = ({
         {/* Drawer Header */}
         <div className="mobile-drawer-header">
           <div className="mobile-drawer-brand">
-            <div className="drawer-brand-icon-wrapper" aria-hidden="true">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="11" cy="13" r="8" />
-                <path d="M5.5 8.5C8 10 13 10.5 16.5 14" />
-                <path d="M7 16c2.5-.5 6.5.5 9.5 3" />
-                <path d="M8 6c2.5 1 5 4 6 7.5" />
-              </svg>
+            <div className="drawer-brand-icon-wrapper" aria-hidden="true" style={{ background: '#091E61', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', width: '30px', height: '30px', color: '#FFFFFF', fontFamily: "'Times New Roman', serif", fontWeight: 700, fontSize: '15px' }}>
+              BG
             </div>
             <div>
-              <span className="drawer-brand-title">BabyyGurll <span style={{ color: 'var(--primary)' }}>Crochet</span></span>
+              <span className="drawer-brand-title">BabyyGurll <span style={{ color: '#091E61' }}>Boutique</span></span>
               <span className="drawer-brand-subtitle">Artisanal Studio • India</span>
             </div>
           </div>
