@@ -7,18 +7,16 @@ import android.util.Base64
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.*
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
@@ -28,13 +26,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
@@ -46,6 +41,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
 import java.io.InputStream
+import java.text.NumberFormat
+import java.util.Locale
 import kotlin.math.min
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -58,81 +55,54 @@ fun ProductEditScreen(
 ) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
+    val scrollState = rememberScrollState()
 
-    var name by remember(product?.id) { mutableStateOf(product?.name ?: "") }
-    var category by remember(product?.id) { mutableStateOf(product?.category ?: "plushies") }
-    var priceText by remember(product?.id) { mutableStateOf(product?.price?.takeIf { it > 0 }?.toInt()?.toString() ?: "") }
-    var origPriceText by remember(product?.id) { mutableStateOf(product?.originalPrice?.takeIf { it > 0 }?.toInt()?.toString() ?: "") }
-    var badge by remember(product?.id) { mutableStateOf(product?.badge ?: "Handcrafted") }
-    var leadTime by remember(product?.id) { mutableStateOf(product?.leadTime ?: "Ready to ship (1-2 days)") }
-    var description by remember(product?.id) { mutableStateOf(product?.description ?: "") }
-    var inStock by remember(product?.id) { mutableStateOf(product?.inStock ?: true) }
-
-    // Multi-photo gallery state
-    val initialImages = remember(product?.id, product?.images, product?.image) {
-        if (product != null) {
-            when {
-                product.images.isNotEmpty() -> product.images
-                product.image.isNotBlank() -> listOf(product.image)
-                else -> emptyList()
-            }
-        } else {
-            emptyList()
+    val currencyFormat = remember {
+        NumberFormat.getCurrencyInstance(Locale("en", "IN")).apply {
+            maximumFractionDigits = 0
         }
     }
 
+    // Step state (1 to 9)
+    var currentStep by remember { mutableIntStateOf(1) }
+
+    val stepTitles = listOf(
+        "Basic info",
+        "Images",
+        "Pricing",
+        "Inventory",
+        "Variants",
+        "Shipping",
+        "Materials",
+        "SEO",
+        "Review"
+    )
+
+    // Step 1: Basic info
+    var productName by remember(product?.id) { mutableStateOf(product?.name ?: "Ocean Bloom Crochet Bag") }
+    var shortDescription by remember(product?.id) { mutableStateOf(product?.description?.take(100) ?: "A structured hand-crocheted shoulder bag") }
+    var category by remember(product?.id) { mutableStateOf(product?.categoryName ?: "Handbags") }
+    var subcategory by remember(product?.id) { mutableStateOf("Shoulder bags") }
+    var sku by remember(product?.id) { mutableStateOf(product?.sku ?: "BGB-OCB-042") }
+    var productTags by remember(product?.id) { mutableStateOf("crochet, handmade, blue, shoulder bag") }
+
+    var showCategoryMenu by remember { mutableStateOf(false) }
+    var showSubcategoryMenu by remember { mutableStateOf(false) }
+
+    val categoryOptions = listOf("Handbags", "Plushies", "Floral & Home", "Apparel", "Accessories")
+    val subcategoryOptions = listOf("Shoulder bags", "Totes & Baskets", "Mini Pouches", "Plush Amigurumi", "Sweaters & Tops", "Keychains")
+
+    // Step 2: Images
+    val initialImages = remember(product?.id, product?.images, product?.image) {
+        when {
+            product != null && product.images.isNotEmpty() -> product.images
+            product != null && product.image.isNotBlank() -> listOf(product.image)
+            else -> listOf("/assets/images/granny-bag.jpg")
+        }
+    }
     var imagesList by remember(product?.id) { mutableStateOf<List<String>>(initialImages) }
-    var localBitmapsList by remember(product?.id) { mutableStateOf<List<Bitmap?>>(List(initialImages.size) { null }) }
-    var activePreviewIndex by remember(product?.id) { mutableStateOf(0) }
     var isProcessingImages by remember { mutableStateOf(false) }
 
-    // Sync product data if product arrives asynchronously or updates
-    LaunchedEffect(product) {
-        if (product != null) {
-            name = product.name
-            category = product.category
-            priceText = product.price.takeIf { it > 0 }?.toInt()?.toString() ?: ""
-            origPriceText = product.originalPrice?.takeIf { it > 0 }?.toInt()?.toString() ?: ""
-            badge = product.badge ?: "Handcrafted"
-            leadTime = product.leadTime
-            description = product.description
-            inStock = product.inStock
-
-            val imgs = when {
-                product.images.isNotEmpty() -> product.images
-                product.image.isNotBlank() -> listOf(product.image)
-                else -> emptyList()
-            }
-            if (imgs.isNotEmpty() && (imagesList.isEmpty() || imagesList != imgs)) {
-                imagesList = imgs
-                localBitmapsList = List(imgs.size) { null }
-            }
-        }
-    }
-
-    // Active mode: 0 = Edit Details Form, 1 = Customer Point of View Preview
-    var selectedTab by remember { mutableStateOf(0) }
-
-    val categories = listOf(
-        "plushies" to "Amigurumi Plushies",
-        "floral" to "Floral & Home",
-        "bags" to "Bags & Totes",
-        "wearables" to "Wearables",
-        "accessories" to "Accessories"
-    )
-
-    val photoPresets = listOf(
-        "Strawberry Cow" to "/assets/images/strawberry-cow.jpg",
-        "Tulip Bouquet" to "/assets/images/tulip-bouquet.jpg",
-        "Granny Bag" to "/assets/images/granny-bag.jpg",
-        "Cardigan" to "/assets/images/crochet-cardigan.jpg",
-        "Lavender Bunny" to "/assets/images/lavender-bunny.jpg",
-        "Coasters Set" to "/assets/images/crochet-coasters.jpg",
-        "Bucket Hat" to "/assets/images/bucket-hat.jpg",
-        "Berry Keychain" to "/assets/images/strawberry-keychain.jpg"
-    )
-
-    // Local Device Multi-Photo Picker Launcher
     val photoPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetMultipleContents()
     ) { uris: List<Uri> ->
@@ -140,8 +110,6 @@ fun ProductEditScreen(
             coroutineScope.launch(Dispatchers.IO) {
                 isProcessingImages = true
                 val newImages = mutableListOf<String>()
-                val newBitmaps = mutableListOf<Bitmap>()
-
                 for (uri in uris) {
                     try {
                         val inputStream: InputStream? = context.contentResolver.openInputStream(uri)
@@ -169,1207 +137,837 @@ fun ProductEditScreen(
                             scaledBitmap.compress(Bitmap.CompressFormat.JPEG, 80, outputStream)
                             val byteArray = outputStream.toByteArray()
                             val base64String = Base64.encodeToString(byteArray, Base64.NO_WRAP)
-
-                            newBitmaps.add(scaledBitmap)
                             newImages.add("data:image/jpeg;base64,$base64String")
                         }
                     } catch (e: Exception) {
                         // Skip unreadable files
                     }
                 }
-
                 withContext(Dispatchers.Main) {
                     imagesList = imagesList + newImages
-                    localBitmapsList = localBitmapsList + newBitmaps
                     isProcessingImages = false
                 }
             }
         }
     }
 
-    // Photo Management Callbacks
-    val removeImageAt: (Int) -> Unit = { index ->
-        if (index in imagesList.indices) {
-            val updatedImages = imagesList.toMutableList().apply { removeAt(index) }
-            val updatedBitmaps = localBitmapsList.toMutableList().apply {
-                if (index < size) removeAt(index)
-            }
-            imagesList = updatedImages
-            localBitmapsList = updatedBitmaps
-            if (activePreviewIndex >= updatedImages.size) {
-                activePreviewIndex = (updatedImages.size - 1).coerceAtLeast(0)
-            }
-        }
+    // Step 3: Pricing
+    var sellingPriceText by remember(product?.id) {
+        mutableStateOf(product?.price?.takeIf { it > 0 }?.toInt()?.toString() ?: "2499")
+    }
+    var originalPriceText by remember(product?.id) {
+        mutableStateOf(product?.originalPrice?.takeIf { it > 0 }?.toInt()?.toString() ?: "2899")
+    }
+    var costPriceText by remember(product?.id) { mutableStateOf("1120") }
+
+    val sellingPrice = sellingPriceText.toDoubleOrNull() ?: 2499.0
+    val costPrice = costPriceText.toDoubleOrNull() ?: 1120.0
+    val estimatedProfit = (sellingPrice - costPrice).coerceAtLeast(0.0)
+    val profitMargin = if (sellingPrice > 0) ((estimatedProfit / sellingPrice) * 100) else 0.0
+
+    // Step 4: Inventory
+    var trackInventory by remember { mutableStateOf(true) }
+    var availableQuantityText by remember(product?.id) {
+        mutableStateOf(product?.stockCount?.toString() ?: "8")
+    }
+    var lowStockThresholdText by remember { mutableStateOf("4") }
+    var allowBackorders by remember { mutableStateOf(false) }
+
+    // Step 5: Variants
+    var colorChips by remember { mutableStateOf(listOf("Ocean Blue", "Cloud White", "Soft Grey")) }
+    var sizeChips by remember { mutableStateOf(listOf("Small", "Medium", "Large")) }
+    var newColorInput by remember { mutableStateOf("") }
+    var newSizeInput by remember { mutableStateOf("") }
+
+    // Step 6: Shipping
+    var leadTime by remember(product?.id) {
+        mutableStateOf(product?.leadTime ?: "3–5 days made to order")
+    }
+    var weightGrams by remember { mutableStateOf("350") }
+    var packageDimensions by remember { mutableStateOf("25 × 18 × 8") }
+    var shippingClass by remember { mutableStateOf("Standard Courier") }
+
+    // Step 7: Materials & Care
+    var materialsText by remember { mutableStateOf("Milk cotton yarn, cotton lining") }
+    var hardwareText by remember { mutableStateOf("Cotton canvas lining, magnetic brass closure") }
+    var careInstructions by remember {
+        mutableStateOf("Hand wash gently in cold water with mild detergent. Lay flat to dry in shade.")
     }
 
-    val makeCover: (Int) -> Unit = { index ->
-        if (index in 1 until imagesList.size) {
-            val targetImg = imagesList[index]
-            val targetBitmap = localBitmapsList.getOrNull(index)
-
-            val updatedImages = imagesList.toMutableList().apply {
-                removeAt(index)
-                add(0, targetImg)
-            }
-            val updatedBitmaps = localBitmapsList.toMutableList().apply {
-                if (index < size) {
-                    removeAt(index)
-                    add(0, targetBitmap)
-                }
-            }
-            imagesList = updatedImages
-            localBitmapsList = updatedBitmaps
-            activePreviewIndex = 0
-        }
+    // Step 8: SEO & Visibility
+    var storefrontStatus by remember(product?.id) {
+        mutableStateOf(if (product?.inStock == false) "Draft" else "Published")
+    }
+    var seoTitle by remember(productName) {
+        mutableStateOf("$productName | BabyyGurll Boutique")
+    }
+    var seoDescription by remember(shortDescription) {
+        mutableStateOf("Hand-crocheted piece crafted from soft milk cotton yarn. Bespoke artisanal creation.")
     }
 
-    val addPresetPhoto: (String) -> Unit = { presetUrl ->
-        imagesList = imagesList + presetUrl
-        localBitmapsList = localBitmapsList + listOf<Bitmap?>(null)
-    }
+    // Helper to submit/save product
+    val submitProduct: (Boolean) -> Unit = { isDraft ->
+        val finalPrice = sellingPriceText.toDoubleOrNull() ?: 2499.0
+        val finalOrigPrice = originalPriceText.toDoubleOrNull()
+        val primaryImg = imagesList.firstOrNull() ?: "/assets/images/granny-bag.jpg"
 
-    val addAllSamplePresets: () -> Unit = {
-        val sampleSet = listOf(
-            "/assets/images/strawberry-cow.jpg",
-            "/assets/images/tulip-bouquet.jpg",
-            "/assets/images/granny-bag.jpg",
-            "/assets/images/crochet-cardigan.jpg"
+        val req = ProductCreateRequest(
+            name = productName.trim().ifBlank { "Ocean Bloom Crochet Bag" },
+            category = when {
+                category.contains("Handbag", true) || category.contains("Bag", true) -> "bags"
+                category.contains("Plush", true) -> "plushies"
+                category.contains("Floral", true) -> "floral"
+                category.contains("Apparel", true) -> "wearables"
+                else -> "accessories"
+            },
+            categoryName = category,
+            price = finalPrice,
+            originalPrice = finalOrigPrice,
+            image = primaryImg,
+            images = imagesList,
+            badge = if (isDraft) "Draft" else "Published",
+            leadTime = leadTime,
+            description = shortDescription.trim().ifBlank {
+                "A structured hand-crocheted shoulder bag made with premium milk cotton yarn. Finished with a lined interior, magnetic closure and adjustable strap."
+            },
+            inStock = !isDraft && (availableQuantityText.toIntOrNull() ?: 1) > 0
         )
-        imagesList = imagesList + sampleSet
-        localBitmapsList = localBitmapsList + List(sampleSet.size) { null }
+        onSave(req, product?.id ?: product?.mongoId)
     }
-
-    // Active image resolver for Customer POV preview
-    val activeImgUrl = imagesList.getOrNull(activePreviewIndex) ?: ""
-    val activeLocalBitmap = localBitmapsList.getOrNull(activePreviewIndex)
-
-    val parsedActiveBase64Bitmap: Bitmap? = remember(activeImgUrl) {
-        if (activeLocalBitmap == null && activeImgUrl.startsWith("data:image/") && activeImgUrl.contains(";base64,")) {
-            try {
-                val base64Data = activeImgUrl.substringAfter(";base64,")
-                val bytes = Base64.decode(base64Data, Base64.DEFAULT)
-                BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
-            } catch (e: Exception) {
-                null
-            }
-        } else null
-    }
-
-    val activeDisplayBitmap = activeLocalBitmap ?: parsedActiveBase64Bitmap
-
-    val resolvedActiveUrl = remember(activeImgUrl, serverUrl) {
-        when {
-            activeImgUrl.isBlank() -> ""
-            activeImgUrl.startsWith("data:") -> activeImgUrl
-            activeImgUrl.startsWith("http://") || activeImgUrl.startsWith("https://") -> activeImgUrl
-            else -> "${serverUrl.trimEnd('/')}/${activeImgUrl.trimStart('/')}"
-        }
-    }
-
-    val priceVal = priceText.toDoubleOrNull() ?: 0.0
-    val origPriceVal = origPriceText.toDoubleOrNull()
-    val discountPercent = if (origPriceVal != null && origPriceVal > priceVal && priceVal > 0) {
-        (((origPriceVal - priceVal) / origPriceVal) * 100).toInt()
-    } else 0
-
-    // Validation: Minimum 4 photos required for new creations; existing pieces can be updated with current photos
-    val hasMinPhotos = if (product != null) imagesList.isNotEmpty() else imagesList.size >= 4
-    val isPublishEnabled = name.isNotBlank() && priceVal > 0 && hasMinPhotos && !isProcessingImages
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        text = if (product != null) "Edit Piece" else "Add New Piece",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = Color.White)
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                color = SoftIvory
+            ) {
+                Column {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 10.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(
+                                modifier = Modifier
+                                    .size(42.dp)
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(Color.White)
+                                    .border(1.dp, BrandBorder, RoundedCornerShape(12.dp))
+                                    .clickable {
+                                        if (currentStep > 1) {
+                                            currentStep--
+                                        } else {
+                                            onBack()
+                                        }
+                                    },
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.ArrowBack,
+                                    contentDescription = "Back",
+                                    tint = MidnightNavy,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.width(14.dp))
+
+                            Column {
+                                Text(
+                                    text = if (product != null) "Edit product" else "Add product",
+                                    style = MaterialTheme.typography.titleLarge,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MidnightNavy,
+                                    fontSize = 20.sp
+                                )
+                                Text(
+                                    text = "Step $currentStep of 9 · ${stepTitles[currentStep - 1]}",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = TextMuted,
+                                    fontSize = 12.sp
+                                )
+                            }
+                        }
+
+                        // Top Right Saved Indicator
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(
+                                modifier = Modifier
+                                    .size(7.dp)
+                                    .clip(CircleShape)
+                                    .background(Color(0xFF16A34A))
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = "Saved",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = Color(0xFF16A34A)
+                            )
+                        }
                     }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = BrandSecondary)
-            )
+
+                    // Progress Bar
+                    LinearProgressIndicator(
+                        progress = { currentStep / 9f },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(3.dp),
+                        color = RoyalBlue,
+                        trackColor = Color(0xFFE2E8F0)
+                    )
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    // Step Indicator Pills Row
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .horizontalScroll(rememberScrollState())
+                            .padding(horizontal = 16.dp, vertical = 2.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        for (i in 1..9) {
+                            val title = stepTitles[i - 1]
+                            when {
+                                i < currentStep -> {
+                                    // Completed Step (Checkmark Circle)
+                                    Box(
+                                        modifier = Modifier
+                                            .size(28.dp)
+                                            .clip(CircleShape)
+                                            .background(Color(0xFFDBEAFE))
+                                            .clickable { currentStep = i },
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Check,
+                                            contentDescription = "Completed",
+                                            tint = RoyalBlue,
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                    }
+                                }
+                                i == currentStep -> {
+                                    // Active Step Pill
+                                    Surface(
+                                        shape = RoundedCornerShape(16.dp),
+                                        color = RoyalBlue,
+                                        modifier = Modifier.clip(RoundedCornerShape(16.dp))
+                                    ) {
+                                        Text(
+                                            text = "$i  $title",
+                                            color = Color.White,
+                                            fontSize = 12.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)
+                                        )
+                                    }
+                                }
+                                else -> {
+                                    // Inactive Future Step Circle
+                                    Box(
+                                        modifier = Modifier
+                                            .size(28.dp)
+                                            .clip(CircleShape)
+                                            .background(Color(0xFFE2E8F0))
+                                            .clickable { currentStep = i },
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(
+                                            text = "$i",
+                                            color = TextMuted,
+                                            fontSize = 11.sp,
+                                            fontWeight = FontWeight.SemiBold
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
+            }
         },
-        containerColor = BrandBackground
+        bottomBar = {
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                color = Color.White,
+                shadowElevation = 10.dp,
+                border = androidx.compose.foundation.BorderStroke(1.dp, BrandBorder)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    OutlinedButton(
+                        onClick = { submitProduct(true) },
+                        shape = RoundedCornerShape(14.dp),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, BrandBorder),
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(50.dp)
+                    ) {
+                        Text(
+                            text = "Save draft",
+                            fontWeight = FontWeight.Bold,
+                            color = MidnightNavy,
+                            fontSize = 15.sp
+                        )
+                    }
+
+                    Button(
+                        onClick = {
+                            if (currentStep < 9) {
+                                currentStep++
+                            } else {
+                                submitProduct(false)
+                            }
+                        },
+                        shape = RoundedCornerShape(14.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = RoyalBlue),
+                        modifier = Modifier
+                            .weight(1.2f)
+                            .height(50.dp)
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = if (currentStep < 9) "Continue" else "Publish product",
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White,
+                                fontSize = 15.sp
+                            )
+                            if (currentStep < 9) {
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Icon(
+                                    imageVector = Icons.Default.ChevronRight,
+                                    contentDescription = null,
+                                    tint = Color.White,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        containerColor = SoftIvory
     ) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
+                .verticalScroll(scrollState)
+                .padding(horizontal = 16.dp, vertical = 10.dp)
         ) {
-            // Segmented Tab Switcher: [ Edit Details ] | [ Customer Preview ]
-            Surface(
-                color = Color.White,
-                shadowElevation = 2.dp,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                TabRow(
-                    selectedTabIndex = selectedTab,
-                    containerColor = Color.White,
-                    contentColor = RoyalBlue
-                ) {
-                    Tab(
-                        selected = selectedTab == 0,
-                        onClick = { selectedTab = 0 },
-                        text = {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(16.dp))
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text(
-                                    text = "Edit Details",
-                                    fontWeight = if (selectedTab == 0) FontWeight.Bold else FontWeight.Normal
-                                )
-                            }
-                        }
-                    )
-                    Tab(
-                        selected = selectedTab == 1,
-                        onClick = { selectedTab = 1 },
-                        text = {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Default.Visibility, contentDescription = null, modifier = Modifier.size(16.dp))
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text(
-                                    text = "Customer Preview",
-                                    fontWeight = if (selectedTab == 1) FontWeight.Bold else FontWeight.Normal
-                                )
-                            }
-                        }
-                    )
-                }
-            }
-
-            if (selectedTab == 0) {
-                // EDIT DETAILS FORM
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(horizontal = 16.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    item {
-                        Spacer(modifier = Modifier.height(4.dp))
-                    }
-
-                    // Product Photography Card (Multi-Photo, Minimum 4)
-                    item {
-                        Card(
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(16.dp),
-                            colors = CardDefaults.cardColors(containerColor = BrandSurface)
-                        ) {
-                            Column(
-                                modifier = Modifier.padding(16.dp),
-                                verticalArrangement = Arrangement.spacedBy(12.dp)
-                            ) {
-                                // Header with photo count requirement badge
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Text(
-                                        text = "Product Photography",
-                                        style = MaterialTheme.typography.titleMedium,
-                                        fontWeight = FontWeight.Bold,
-                                        color = TextPrimary
-                                    )
-
-                                    Surface(
-                                        color = if (hasMinPhotos) Color(0xFFE8F5E9) else Color(0xFFFFF3E0),
-                                        shape = RoundedCornerShape(8.dp),
-                                        border = BorderStroke(
-                                            1.dp,
-                                            if (hasMinPhotos) Color(0xFF81C784) else Color(0xFFFFB74D)
-                                        )
-                                    ) {
-                                        Text(
-                                            text = if (hasMinPhotos) "✓ ${imagesList.size} Photos (Ready)" else "${imagesList.size}/4 Required",
-                                            fontSize = 11.sp,
-                                            fontWeight = FontWeight.Bold,
-                                            color = if (hasMinPhotos) Color(0xFF2E7D32) else Color(0xFFE65100),
-                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                                        )
-                                    }
-                                }
-
-                                // Minimum 4 Warning / Success Banner
-                                if (!hasMinPhotos) {
-                                    Surface(
-                                        color = Color(0xFFFFF8E1),
-                                        shape = RoundedCornerShape(10.dp),
-                                        border = BorderStroke(1.dp, Color(0xFFFFD54F)),
-                                        modifier = Modifier.fillMaxWidth()
-                                    ) {
-                                        Row(
-                                            modifier = Modifier.padding(10.dp),
-                                            verticalAlignment = Alignment.CenterVertically
-                                        ) {
-                                            Icon(
-                                                Icons.Default.Warning,
-                                                contentDescription = null,
-                                                tint = Color(0xFFF57F17),
-                                                modifier = Modifier.size(20.dp)
-                                            )
-                                            Spacer(modifier = Modifier.width(8.dp))
-                                            Column {
-                                                Text(
-                                                    text = "Minimum 4 Product Photos Required",
-                                                    fontSize = 12.sp,
-                                                    fontWeight = FontWeight.Bold,
-                                                    color = Color(0xFFBF360C)
-                                                )
-                                                Text(
-                                                    text = "Please add ${4 - imagesList.size} more photo${if (4 - imagesList.size > 1) "s" else ""} from different angles to showcase your handcrafted piece.",
-                                                    fontSize = 11.sp,
-                                                    color = Color(0xFF4E342E)
-                                                )
-                                            }
-                                        }
-                                    }
-                                } else {
-                                    Surface(
-                                        color = Color(0xFFE8F5E9),
-                                        shape = RoundedCornerShape(10.dp),
-                                        border = BorderStroke(1.dp, Color(0xFF81C784)),
-                                        modifier = Modifier.fillMaxWidth()
-                                    ) {
-                                        Row(
-                                            modifier = Modifier.padding(10.dp),
-                                            verticalAlignment = Alignment.CenterVertically
-                                        ) {
-                                            Icon(
-                                                Icons.Default.CheckCircle,
-                                                contentDescription = null,
-                                                tint = Color(0xFF2E7D32),
-                                                modifier = Modifier.size(20.dp)
-                                            )
-                                            Spacer(modifier = Modifier.width(8.dp))
-                                            Text(
-                                                text = "✓ Ready: ${imagesList.size} photos selected. First photo will be your boutique cover.",
-                                                fontSize = 11.sp,
-                                                fontWeight = FontWeight.Medium,
-                                                color = Color(0xFF1B5E20)
-                                            )
-                                        }
-                                    }
-                                }
-
-                                // Primary Button: Pick from Local Device
-                                Button(
-                                    onClick = { photoPickerLauncher.launch("image/*") },
-                                    colors = ButtonDefaults.buttonColors(
-                                        containerColor = RoyalBlue,
-                                        contentColor = Color.White
-                                    ),
-                                    shape = RoundedCornerShape(12.dp),
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    Icon(
-                                        Icons.Default.AddPhotoAlternate,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(20.dp),
-                                        tint = Color.White
-                                    )
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Text(
-                                        text = if (imagesList.isEmpty()) "Choose Photos from Device (Min 4)" else "+ Add More Photos from Device",
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 13.sp,
-                                        color = Color.White
-                                    )
-                                }
-
-                                if (isProcessingImages) {
-                                    Column(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalAlignment = Alignment.CenterHorizontally
-                                    ) {
-                                        LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
-                                        Spacer(modifier = Modifier.height(4.dp))
-                                        Text(
-                                            text = "Optimizing and encoding photos...",
-                                            fontSize = 11.sp,
-                                            color = CharcoalGray.copy(alpha = 0.7f)
-                                        )
-                                    }
-                                }
-
-                                // Photo Management Strip / Gallery
-                                if (imagesList.isNotEmpty()) {
-                                    Text(
-                                        text = "Selected Photos (${imagesList.size}) — Tap to preview, #1 is boutique Cover:",
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = CharcoalGray
-                                    )
-
-                                    Row(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .horizontalScroll(rememberScrollState()),
-                                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                                    ) {
-                                        imagesList.forEachIndexed { index, imgUrl ->
-                                            val isCover = index == 0
-                                            val isSelected = activePreviewIndex == index
-                                            val itemBitmap = localBitmapsList.getOrNull(index)
-                                            val parsedThumbBitmap: Bitmap? = remember(imgUrl, itemBitmap) {
-                                                if (itemBitmap != null) itemBitmap
-                                                else if (imgUrl.startsWith("data:image/") && imgUrl.contains(";base64,")) {
-                                                    try {
-                                                        val base64Data = imgUrl.substringAfter(";base64,")
-                                                        val bytes = Base64.decode(base64Data, Base64.DEFAULT)
-                                                        BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
-                                                    } catch (e: Exception) {
-                                                        null
-                                                    }
-                                                } else null
-                                            }
-                                            val resolvedThumb = remember(imgUrl, serverUrl) {
-                                                when {
-                                                    imgUrl.isBlank() -> ""
-                                                    imgUrl.startsWith("data:") -> imgUrl
-                                                    imgUrl.startsWith("http://") || imgUrl.startsWith("https://") -> imgUrl
-                                                    else -> "${serverUrl.trimEnd('/')}/${imgUrl.trimStart('/')}"
-                                                 }
-                                             }
-
-                                             Card(
-                                                 modifier = Modifier
-                                                     .width(105.dp)
-                                                     .height(135.dp),
-                                                 shape = RoundedCornerShape(12.dp),
-                                                 colors = CardDefaults.cardColors(containerColor = Color.White),
-                                                 border = BorderStroke(
-                                                     width = if (isSelected) 2.5.dp else 1.dp,
-                                                     color = if (isSelected) RoyalBlue else Color(0xFFE2E8F0)
-                                                 ),
-                                                 elevation = CardDefaults.cardElevation(defaultElevation = if (isSelected) 4.dp else 1.dp)
-                                             ) {
-                                                 Column(modifier = Modifier.fillMaxSize()) {
-                                                     Box(
-                                                         modifier = Modifier
-                                                             .fillMaxWidth()
-                                                             .height(98.dp)
-                                                             .clickable { activePreviewIndex = index }
-                                                     ) {
-                                                         if (parsedThumbBitmap != null) {
-                                                             Image(
-                                                                 bitmap = parsedThumbBitmap.asImageBitmap(),
-                                                                 contentDescription = "Photo ${index + 1}",
-                                                                 modifier = Modifier.fillMaxSize(),
-                                                                 contentScale = ContentScale.Crop
-                                                             )
-                                                         } else {
-                                                             AsyncImage(
-                                                                 model = resolvedThumb,
-                                                                 contentDescription = "Photo ${index + 1}",
-                                                                 modifier = Modifier.fillMaxSize(),
-                                                                 contentScale = ContentScale.Crop
-                                                             )
-                                                         }
-
-                                                        // Tag: Cover vs Index
-                                                        Surface(
-                                                            color = if (isCover) BrandPrimary else Color.Black.copy(alpha = 0.65f),
-                                                            shape = RoundedCornerShape(bottomEnd = 8.dp),
-                                                            modifier = Modifier.align(Alignment.TopStart)
-                                                        ) {
-                                                            Text(
-                                                                text = if (isCover) "★ COVER" else "#${index + 1}",
-                                                                fontSize = 9.sp,
-                                                                fontWeight = FontWeight.Bold,
-                                                                color = Color.White,
-                                                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                                                            )
-                                                        }
-
-                                                        // Delete Button
-                                                        IconButton(
-                                                            onClick = { removeImageAt(index) },
-                                                            modifier = Modifier
-                                                                .size(24.dp)
-                                                                .align(Alignment.TopEnd)
-                                                                .padding(2.dp)
-                                                                .background(Color.White.copy(alpha = 0.9f), CircleShape)
-                                                        ) {
-                                                            Icon(
-                                                                Icons.Default.Close,
-                                                                contentDescription = "Remove photo",
-                                                                tint = CrimsonAccent,
-                                                                modifier = Modifier.size(14.dp)
-                                                            )
-                                                        }
-                                                    }
-
-                                                    // Bottom Action Slot
-                                                    if (isCover) {
-                                                        Box(
-                                                            modifier = Modifier
-                                                                .fillMaxSize()
-                                                                .background(Color(0xFFE8F5E9)),
-                                                            contentAlignment = Alignment.Center
-                                                        ) {
-                                                            Text(
-                                                                text = "Main Cover",
-                                                                fontSize = 10.sp,
-                                                                fontWeight = FontWeight.Bold,
-                                                                color = Color(0xFF2E7D32)
-                                                            )
-                                                        }
-                                                    } else {
-                                                        Box(
-                                                            modifier = Modifier
-                                                                .fillMaxSize()
-                                                                .background(BrandPrimaryLight.copy(alpha = 0.4f))
-                                                                .clickable { makeCover(index) },
-                                                            contentAlignment = Alignment.Center
-                                                        ) {
-                                                            Text(
-                                                                text = "Make Cover",
-                                                                fontSize = 10.sp,
-                                                                fontWeight = FontWeight.Bold,
-                                                                color = RoyalBlue
-                                                            )
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-
-                                        // Dashed "+ Add More" card slot
-                                        Box(
-                                            modifier = Modifier
-                                                .width(105.dp)
-                                                .height(135.dp)
-                                                .clip(RoundedCornerShape(12.dp))
-                                                .background(BrandPrimaryLight.copy(alpha = 0.25f))
-                                                .border(
-                                                    1.5.dp,
-                                                    RoyalBlue.copy(alpha = 0.4f),
-                                                    RoundedCornerShape(12.dp)
-                                                )
-                                                .clickable { photoPickerLauncher.launch("image/*") },
-                                            contentAlignment = Alignment.Center
-                                        ) {
-                                            Column(
-                                                horizontalAlignment = Alignment.CenterHorizontally,
-                                                verticalArrangement = Arrangement.Center
-                                            ) {
-                                                Icon(
-                                                    imageVector = Icons.Default.AddPhotoAlternate,
-                                                    contentDescription = "Add More",
-                                                    tint = RoyalBlue,
-                                                    modifier = Modifier.size(26.dp)
-                                                )
-                                                Spacer(modifier = Modifier.height(4.dp))
-                                                Text(
-                                                    text = "+ Add More",
-                                                    fontSize = 11.sp,
-                                                    fontWeight = FontWeight.Bold,
-                                                    color = RoyalBlue
-                                                )
-                                                Text(
-                                                    text = "from device",
-                                                    fontSize = 9.sp,
-                                                    color = CharcoalGray.copy(alpha = 0.7f)
-                                                )
-                                            }
-                                        }
-                                    }
-                                } else {
-                                    // Empty state helper box
-                                    Surface(
-                                        shape = RoundedCornerShape(12.dp),
-                                        color = Color(0xFFFAFAFA),
-                                        border = BorderStroke(1.dp, Color(0xFFEEEEEE)),
-                                        modifier = Modifier.fillMaxWidth()
-                                    ) {
-                                        Column(
-                                            modifier = Modifier.padding(16.dp),
-                                            horizontalAlignment = Alignment.CenterHorizontally
-                                        ) {
-                                            Icon(
-                                                Icons.Default.Collections,
-                                                contentDescription = null,
-                                                tint = CharcoalGray.copy(alpha = 0.4f),
-                                                modifier = Modifier.size(36.dp)
-                                            )
-                                            Spacer(modifier = Modifier.height(6.dp))
-                                            Text(
-                                                text = "No photos added yet",
-                                                fontWeight = FontWeight.Bold,
-                                                fontSize = 13.sp,
-                                                color = CharcoalGray
-                                            )
-                                            Text(
-                                                text = "Tap 'Choose Photos from Device' above or select studio presets below. Minimum 4 required to publish.",
-                                                fontSize = 11.sp,
-                                                color = CharcoalGray.copy(alpha = 0.7f),
-                                                textAlign = TextAlign.Center,
-                                                modifier = Modifier.padding(horizontal = 8.dp)
-                                            )
-                                        }
-                                    }
-                                }
-
-                                // Quick Studio Presets
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Text("Or Add Studio Presets (+):", style = MaterialTheme.typography.labelSmall)
-                                    TextButton(
-                                        onClick = { addAllSamplePresets() },
-                                        contentPadding = PaddingValues(horizontal = 6.dp, vertical = 2.dp)
-                                    ) {
-                                        Text("+ Add 4 Sample Photos", fontSize = 11.sp, color = RoyalBlue)
-                                    }
-                                }
-
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .horizontalScroll(rememberScrollState()),
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                ) {
-                                    photoPresets.forEach { (title, url) ->
-                                        FilterChip(
-                                            selected = false,
-                                            onClick = { addPresetPhoto(url) },
-                                            label = { Text("+ $title") },
-                                            colors = FilterChipDefaults.filterChipColors(
-                                                containerColor = Color.White,
-                                                labelColor = CharcoalGray
-                                            )
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    // Product Details Card
-                    item {
-                        Card(
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(16.dp),
-                            colors = CardDefaults.cardColors(containerColor = BrandSurface)
-                        ) {
-                            Column(
-                                modifier = Modifier.padding(16.dp),
-                                verticalArrangement = Arrangement.spacedBy(12.dp)
-                            ) {
-                                Text(
-                                    text = "Piece Details",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    color = TextPrimary
-                                )
-
-                                OutlinedTextField(
-                                    value = name,
-                                    onValueChange = { name = it },
-                                    label = { Text("Product Title *") },
-                                    placeholder = { Text("e.g. Pastel Blossom Coaster Set") },
-                                    singleLine = true,
-                                    modifier = Modifier.fillMaxWidth()
-                                )
-
-                                // Category Chips
-                                Text("Category", style = MaterialTheme.typography.labelSmall)
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .horizontalScroll(rememberScrollState()),
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                ) {
-                                    categories.forEach { (catId, catLabel) ->
-                                        FilterChip(
-                                            selected = category == catId,
-                                            onClick = { category = catId },
-                                            label = { Text(catLabel) },
-                                            colors = FilterChipDefaults.filterChipColors(
-                                                selectedContainerColor = RoyalBlue,
-                                                selectedLabelColor = Color.White,
-                                                containerColor = Color.White,
-                                                labelColor = CharcoalGray
-                                            )
-                                        )
-                                    }
-                                }
-
-                                // Price and Compare Price
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                                ) {
-                                    OutlinedTextField(
-                                        value = priceText,
-                                        onValueChange = { priceText = it },
-                                        label = { Text("Price (₹) *") },
-                                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                        singleLine = true,
-                                        modifier = Modifier.weight(1f)
-                                    )
-                                    OutlinedTextField(
-                                        value = origPriceText,
-                                        onValueChange = { origPriceText = it },
-                                        label = { Text("Compare Price (₹)") },
-                                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                        singleLine = true,
-                                        modifier = Modifier.weight(1f)
-                                    )
-                                }
-
-                                OutlinedTextField(
-                                    value = badge,
-                                    onValueChange = { badge = it },
-                                    label = { Text("Badge Label") },
-                                    placeholder = { Text("Bestseller, Top Gift, Handcrafted...") },
-                                    singleLine = true,
-                                    modifier = Modifier.fillMaxWidth()
-                                )
-
-                                OutlinedTextField(
-                                    value = leadTime,
-                                    onValueChange = { leadTime = it },
-                                    label = { Text("Lead Time") },
-                                    placeholder = { Text("Ready to ship (1-2 days)") },
-                                    singleLine = true,
-                                    modifier = Modifier.fillMaxWidth()
-                                )
-
-                                OutlinedTextField(
-                                    value = description,
-                                    onValueChange = { description = it },
-                                    label = { Text("Description & Artisan Story") },
-                                    minLines = 3,
-                                    modifier = Modifier.fillMaxWidth()
-                                )
-
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Column {
-                                        Text("Inventory In Stock", fontWeight = FontWeight.Medium)
-                                        Text(
-                                            text = if (inStock) "Customers can order this item" else "Marked as sold out",
-                                            style = MaterialTheme.typography.labelSmall,
-                                            color = CharcoalGray.copy(alpha = 0.6f)
-                                        )
-                                    }
-                                    Switch(checked = inStock, onCheckedChange = { inStock = it })
-                                }
-                            }
-                        }
-                    }
-
-                    // Button to Preview from Customer Point of View
-                    item {
-                        OutlinedButton(
-                            onClick = { selectedTab = 1 },
-                            shape = RoundedCornerShape(12.dp),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Icon(Icons.Default.Visibility, contentDescription = null, modifier = Modifier.size(18.dp))
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text("Preview Customer Point of View (${imagesList.size} Photos) 👁️", fontWeight = FontWeight.SemiBold)
-                        }
-                    }
-
-                    // Save / Publish Button
-                    item {
-                        Button(
-                            onClick = {
-                                val catObj = categories.find { it.first == category }
-                                val primaryImage = imagesList.firstOrNull() ?: "/assets/images/strawberry-cow.jpg"
-                                val req = ProductCreateRequest(
-                                    name = name.trim(),
-                                    category = category,
-                                    categoryName = catObj?.second,
-                                    price = priceVal,
-                                    originalPrice = origPriceVal,
-                                    image = primaryImage,
-                                    images = imagesList,
-                                    badge = badge.trim().ifBlank { null },
-                                    leadTime = leadTime.trim().ifBlank { null },
-                                    description = description.trim(),
-                                    inStock = inStock
-                                )
-                                val effectiveId = product?.id?.trim()?.ifBlank { null } ?: product?.mongoId?.trim()?.ifBlank { null }
-                                onSave(req, effectiveId)
-                            },
-                            enabled = isPublishEnabled,
-                            shape = RoundedCornerShape(12.dp),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = BrandPrimary,
-                                contentColor = Color.White,
-                                disabledContainerColor = Color(0xFFCCCCCC),
-                                disabledContentColor = Color(0xFF666666)
-                            ),
+            when (currentStep) {
+                // ==========================================
+                // STEP 1: Basic Information
+                // ==========================================
+                1 -> {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color.White),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, BrandBorder)
+                    ) {
+                        Column(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(50.dp)
+                                .padding(18.dp),
+                            verticalArrangement = Arrangement.spacedBy(14.dp)
                         ) {
-                            Icon(Icons.Default.Check, contentDescription = null, tint = Color.White)
-                            Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                text = if (hasMinPhotos) {
-                                    if (product != null) "Save Changes ✓" else "Publish Piece to Boutique (${imagesList.size} Photos) ✓"
-                                } else {
-                                    "Add ${4 - imagesList.size} More Photo${if (4 - imagesList.size > 1) "s" else ""} to Launch"
-                                },
+                                text = "Basic information",
+                                style = MaterialTheme.typography.titleLarge,
                                 fontWeight = FontWeight.Bold,
-                                color = Color.White
+                                color = MidnightNavy,
+                                fontSize = 20.sp
                             )
-                        }
-
-                        if (!hasMinPhotos && product == null) {
                             Text(
-                                text = "⚠️ A minimum of 4 photos is required to launch a new product in the boutique.",
-                                fontSize = 11.sp,
-                                color = CrimsonAccent,
-                                textAlign = TextAlign.Center,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(top = 4.dp)
+                                text = "Tell customers what makes this handmade piece special.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = TextMuted,
+                                fontSize = 13.sp
                             )
-                        }
 
-                        Spacer(modifier = Modifier.height(24.dp))
-                    }
-                }
-            } else {
-                // CUSTOMER POINT OF VIEW PREVIEW
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(horizontal = 16.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    item {
-                        Spacer(modifier = Modifier.height(4.dp))
-                        // Customer View Explanation Banner
-                        Surface(
-                            shape = RoundedCornerShape(12.dp),
-                            color = BrandPrimaryLight,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(12.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Icon(Icons.Default.Storefront, contentDescription = null, tint = BrandPrimary)
-                                Spacer(modifier = Modifier.width(10.dp))
-                                Column {
-                                    Text(
-                                        text = "Customer Point of View Preview",
-                                        fontWeight = FontWeight.Bold,
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = BrandSecondary
-                                    )
-                                    Text(
-                                        text = "Experience your multi-photo gallery exactly as buyers see it in the online store.",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = CharcoalGray
-                                    )
-                                }
-                            }
-                        }
-                    }
+                            // Product name
+                            FieldHeader("Product name", isRequired = true)
+                            OutlinedTextField(
+                                value = productName,
+                                onValueChange = { productName = it },
+                                placeholder = { Text("e.g. Ocean Bloom Crochet Bag") },
+                                singleLine = true,
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(10.dp),
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedBorderColor = RoyalBlue,
+                                    unfocusedBorderColor = BrandBorder
+                                )
+                            )
 
-                    // Realistic Customer Boutique Product Card
-                    item {
-                        Card(
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(20.dp),
-                            colors = CardDefaults.cardColors(containerColor = Color.White),
-                            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-                        ) {
-                            Column(modifier = Modifier.fillMaxWidth()) {
-                                // Product Hero Image Showcase
-                                Box(
+                            // Short description
+                            FieldHeader("Short description", isRequired = false)
+                            OutlinedTextField(
+                                value = shortDescription,
+                                onValueChange = { shortDescription = it },
+                                placeholder = { Text("A structured hand-crocheted shoulder bag") },
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(10.dp),
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedBorderColor = RoyalBlue,
+                                    unfocusedBorderColor = BrandBorder
+                                )
+                            )
+
+                            // Category
+                            FieldHeader("Category", isRequired = true)
+                            Box {
+                                Surface(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .height(260.dp)
-                                        .background(Color(0xFFF9F7F5)),
-                                    contentAlignment = Alignment.Center
+                                        .clip(RoundedCornerShape(10.dp))
+                                        .clickable { showCategoryMenu = true },
+                                    shape = RoundedCornerShape(10.dp),
+                                    border = androidx.compose.foundation.BorderStroke(1.dp, BrandBorder),
+                                    color = Color.White
                                 ) {
-                                    when {
-                                        activeDisplayBitmap != null -> {
-                                            Image(
-                                                bitmap = activeDisplayBitmap.asImageBitmap(),
-                                                contentDescription = name,
-                                                contentScale = ContentScale.Crop,
-                                                modifier = Modifier.fillMaxSize()
-                                            )
-                                        }
-                                        resolvedActiveUrl.isNotBlank() -> {
-                                            AsyncImage(
-                                                model = resolvedActiveUrl,
-                                                contentDescription = name,
-                                                contentScale = ContentScale.Crop,
-                                                modifier = Modifier.fillMaxSize()
-                                            )
-                                        }
-                                        else -> {
-                                            Column(
-                                                horizontalAlignment = Alignment.CenterHorizontally,
-                                                verticalArrangement = Arrangement.Center,
-                                                modifier = Modifier.padding(24.dp)
-                                            ) {
-                                                Box(
-                                                    modifier = Modifier
-                                                        .size(60.dp)
-                                                        .clip(CircleShape)
-                                                        .background(BrandPrimaryLight),
-                                                    contentAlignment = Alignment.Center
-                                                ) {
-                                                    Icon(
-                                                        imageVector = Icons.Default.AddPhotoAlternate,
-                                                        contentDescription = null,
-                                                        tint = BrandPrimary,
-                                                        modifier = Modifier.size(30.dp)
-                                                    )
-                                                }
-                                                Spacer(modifier = Modifier.height(10.dp))
-                                                Text(
-                                                    text = "Piece Showcase Preview",
-                                                    style = MaterialTheme.typography.titleMedium,
-                                                    fontWeight = FontWeight.Bold,
-                                                    color = MidnightNavy
-                                                )
-                                                Spacer(modifier = Modifier.height(4.dp))
-                                                Text(
-                                                    text = "Select at least 4 photos from device to preview customer angles.",
-                                                    style = MaterialTheme.typography.bodySmall,
-                                                    color = CharcoalGray.copy(alpha = 0.7f),
-                                                    textAlign = TextAlign.Center,
-                                                    modifier = Modifier.padding(horizontal = 16.dp)
-                                                )
-                                            }
-                                        }
-                                    }
-
-                                    // Badge in Top-Left
-                                    if (badge.isNotBlank()) {
-                                        Surface(
-                                            color = BrandPrimary,
-                                            shape = RoundedCornerShape(bottomEnd = 12.dp, topStart = 20.dp),
-                                            modifier = Modifier.align(Alignment.TopStart)
-                                        ) {
-                                            Text(
-                                                text = badge,
-                                                color = Color.White,
-                                                fontWeight = FontWeight.Bold,
-                                                fontSize = 11.sp,
-                                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
-                                            )
-                                        }
-                                    }
-
-                                    // Multi-photo count indicator in Top-Right
-                                    if (imagesList.isNotEmpty()) {
-                                        Surface(
-                                            shape = RoundedCornerShape(bottomStart = 10.dp),
-                                            color = Color.Black.copy(alpha = 0.65f),
-                                            modifier = Modifier.align(Alignment.TopEnd)
-                                        ) {
-                                            Row(
-                                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                                                verticalAlignment = Alignment.CenterVertically
-                                            ) {
-                                                Icon(
-                                                    Icons.Default.PhotoCamera,
-                                                    contentDescription = null,
-                                                    tint = Color.White,
-                                                    modifier = Modifier.size(12.dp)
-                                                )
-                                                Spacer(modifier = Modifier.width(4.dp))
-                                                Text(
-                                                    text = "${activePreviewIndex + 1} / ${imagesList.size}",
-                                                    color = Color.White,
-                                                    fontWeight = FontWeight.Bold,
-                                                    fontSize = 11.sp
-                                                )
-                                            }
-                                        }
-                                    }
-
-                                    // Wishlist icon (Customer UI imitation)
-                                    Surface(
-                                        shape = CircleShape,
-                                        color = Color.White.copy(alpha = 0.9f),
-                                        shadowElevation = 2.dp,
-                                        modifier = Modifier
-                                            .align(Alignment.BottomEnd)
-                                            .padding(12.dp)
-                                            .size(36.dp)
-                                    ) {
-                                        Box(contentAlignment = Alignment.Center) {
-                                            Icon(
-                                                Icons.Outlined.FavoriteBorder,
-                                                contentDescription = "Save",
-                                                tint = CrimsonAccent,
-                                                modifier = Modifier.size(20.dp)
-                                            )
-                                        }
-                                    }
-
-                                    // Out of Stock Overlay
-                                    if (!inStock) {
-                                        Surface(
-                                            color = Color.Black.copy(alpha = 0.65f),
-                                            modifier = Modifier.fillMaxSize()
-                                        ) {
-                                            Box(contentAlignment = Alignment.Center) {
-                                                Surface(
-                                                    color = Color.White,
-                                                    shape = RoundedCornerShape(8.dp)
-                                                ) {
-                                                    Text(
-                                                        text = "SOLD OUT • PRE-ORDER ONLY",
-                                                        fontWeight = FontWeight.Bold,
-                                                        fontSize = 12.sp,
-                                                        color = CrimsonAccent,
-                                                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)
-                                                    )
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-
-                                // Interactive Customer Multi-Photo Thumbnail Strip
-                                if (imagesList.isNotEmpty()) {
-                                    Column(
+                                    Row(
                                         modifier = Modifier
                                             .fillMaxWidth()
-                                            .background(Color(0xFFF1F5F9))
-                                            .padding(vertical = 8.dp, horizontal = 12.dp)
-                                    ) {
-                                        Text(
-                                            text = "Customer Gallery Views (tap thumbnail to switch angle):",
-                                            style = MaterialTheme.typography.labelSmall,
-                                            color = CharcoalGray.copy(alpha = 0.8f),
-                                            modifier = Modifier.padding(bottom = 6.dp)
-                                        )
-
-                                        Row(
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .horizontalScroll(rememberScrollState()),
-                                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                        ) {
-                                            imagesList.forEachIndexed { idx, url ->
-                                                val isSelectedAngle = activePreviewIndex == idx
-                                                val thumbBm = localBitmapsList.getOrNull(idx)
-                                                val parsedAngleBitmap: Bitmap? = remember(url, thumbBm) {
-                                                    if (thumbBm != null) thumbBm
-                                                    else if (url.startsWith("data:image/") && url.contains(";base64,")) {
-                                                        try {
-                                                            val base64Data = url.substringAfter(";base64,")
-                                                            val bytes = Base64.decode(base64Data, Base64.DEFAULT)
-                                                            BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
-                                                        } catch (e: Exception) {
-                                                            null
-                                                        }
-                                                    } else null
-                                                }
-                                                val resUrl = remember(url, serverUrl) {
-                                                    when {
-                                                        url.isBlank() -> ""
-                                                        url.startsWith("data:") -> url
-                                                        url.startsWith("http://") || url.startsWith("https://") -> url
-                                                        else -> "${serverUrl.trimEnd('/')}/${url.trimStart('/')}"
-                                                    }
-                                                }
-
-                                                Surface(
-                                                    shape = RoundedCornerShape(8.dp),
-                                                    border = BorderStroke(
-                                                        width = if (isSelectedAngle) 2.5.dp else 1.dp,
-                                                        color = if (isSelectedAngle) RoyalBlue else Color(0xFFCBD5E1)
-                                                    ),
-                                                    modifier = Modifier
-                                                        .size(54.dp)
-                                                        .clickable { activePreviewIndex = idx }
-                                                ) {
-                                                    if (parsedAngleBitmap != null) {
-                                                        Image(
-                                                            bitmap = parsedAngleBitmap.asImageBitmap(),
-                                                            contentDescription = "Angle ${idx + 1}",
-                                                            modifier = Modifier.fillMaxSize(),
-                                                            contentScale = ContentScale.Crop
-                                                        )
-                                                    } else {
-                                                        AsyncImage(
-                                                            model = resUrl,
-                                                            contentDescription = "Angle ${idx + 1}",
-                                                            modifier = Modifier.fillMaxSize(),
-                                                            contentScale = ContentScale.Crop
-                                                        )
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-
-                                // Product Content
-                                Column(modifier = Modifier.padding(16.dp)) {
-                                    // Rating & Category
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
+                                            .padding(horizontal = 14.dp, vertical = 14.dp),
                                         horizontalArrangement = Arrangement.SpaceBetween,
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
-                                        Text(
-                                            text = categories.find { it.first == category }?.second ?: category,
-                                            style = MaterialTheme.typography.labelSmall,
-                                            color = RoyalBlue,
-                                            fontWeight = FontWeight.SemiBold
+                                        Text(text = category, fontSize = 14.sp, color = MidnightNavy)
+                                        Icon(Icons.Default.KeyboardArrowDown, contentDescription = null, tint = TextMuted)
+                                    }
+                                }
+
+                                DropdownMenu(
+                                    expanded = showCategoryMenu,
+                                    onDismissRequest = { showCategoryMenu = false }
+                                ) {
+                                    categoryOptions.forEach { opt ->
+                                        DropdownMenuItem(
+                                            text = { Text(opt) },
+                                            onClick = {
+                                                category = opt
+                                                showCategoryMenu = false
+                                            }
                                         )
-
-                                        Row(verticalAlignment = Alignment.CenterVertically) {
-                                            Text(
-                                                text = "★★★★★",
-                                                color = Color(0xFFFFA000),
-                                                fontSize = 13.sp
-                                            )
-                                            Spacer(modifier = Modifier.width(4.dp))
-                                            Text(
-                                                text = "5.0 (New)",
-                                                fontSize = 11.sp,
-                                                color = CharcoalGray.copy(alpha = 0.7f)
-                                            )
-                                        }
                                     }
+                                }
+                            }
 
-                                    Spacer(modifier = Modifier.height(6.dp))
-
-                                    // Product Title
-                                    Text(
-                                        text = if (name.isNotBlank()) name else "Untitled Handcrafted Creation",
-                                        style = MaterialTheme.typography.titleLarge,
-                                        fontWeight = FontWeight.Bold,
-                                        color = MidnightNavy
-                                    )
-
-                                    Spacer(modifier = Modifier.height(10.dp))
-
-                                    // Pricing & Discount
+                            // Subcategory
+                            FieldHeader("Subcategory", isRequired = false)
+                            Box {
+                                Surface(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clip(RoundedCornerShape(10.dp))
+                                        .clickable { showSubcategoryMenu = true },
+                                    shape = RoundedCornerShape(10.dp),
+                                    border = androidx.compose.foundation.BorderStroke(1.dp, BrandBorder),
+                                    color = Color.White
+                                ) {
                                     Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                    ) {
-                                        Text(
-                                            text = "₹${priceVal.toInt()}",
-                                            style = MaterialTheme.typography.headlineSmall,
-                                            fontWeight = FontWeight.Bold,
-                                            color = BrandPrimary
-                                        )
-
-                                        if (origPriceVal != null && origPriceVal > priceVal) {
-                                            Text(
-                                                text = "₹${origPriceVal.toInt()}",
-                                                style = MaterialTheme.typography.bodyMedium.copy(
-                                                    textDecoration = TextDecoration.LineThrough
-                                                ),
-                                                color = CharcoalGray.copy(alpha = 0.5f)
-                                            )
-
-                                            Surface(
-                                                color = Color(0xFFE8F5E9),
-                                                shape = RoundedCornerShape(4.dp)
-                                            ) {
-                                                Text(
-                                                    text = "$discountPercent% OFF",
-                                                    color = Color(0xFF2E7D32),
-                                                    fontSize = 11.sp,
-                                                    fontWeight = FontWeight.Bold,
-                                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                                                )
-                                            }
-                                        }
-                                    }
-
-                                    Spacer(modifier = Modifier.height(10.dp))
-
-                                    // Lead Time & Shipping Pills
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                    ) {
-                                        Surface(
-                                            shape = RoundedCornerShape(6.dp),
-                                            color = Color(0xFFF6F8FC)
-                                        ) {
-                                            Row(
-                                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                                                verticalAlignment = Alignment.CenterVertically
-                                            ) {
-                                                Icon(Icons.Default.AccessTime, contentDescription = null, modifier = Modifier.size(13.dp), tint = RoyalBlue)
-                                                Spacer(modifier = Modifier.width(4.dp))
-                                                Text(text = leadTime, fontSize = 11.sp, color = RoyalBlue, fontWeight = FontWeight.Medium)
-                                            }
-                                        }
-
-                                        Surface(
-                                            shape = RoundedCornerShape(6.dp),
-                                            color = Color(0xFFE8F5E9)
-                                        ) {
-                                            Row(
-                                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                                                verticalAlignment = Alignment.CenterVertically
-                                            ) {
-                                                Icon(Icons.Default.LocalShipping, contentDescription = null, modifier = Modifier.size(13.dp), tint = Color(0xFF2E7D32))
-                                                Spacer(modifier = Modifier.width(4.dp))
-                                                Text(text = "Free Delivery", fontSize = 11.sp, color = Color(0xFF2E7D32), fontWeight = FontWeight.Medium)
-                                            }
-                                        }
-                                    }
-
-                                    Spacer(modifier = Modifier.height(12.dp))
-
-                                    // Description snippet
-                                    Text(
-                                        text = if (description.isNotBlank()) description else "Each bespoke piece is handcrafted individually with 100% milk cotton yarn.",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = CharcoalGray,
-                                        lineHeight = 18.sp
-                                    )
-
-                                    Spacer(modifier = Modifier.height(16.dp))
-
-                                    // Customer CTA Simulation
-                                    Button(
-                                        onClick = {},
-                                        enabled = inStock,
-                                        colors = ButtonDefaults.buttonColors(
-                                            containerColor = BrandPrimary,
-                                            contentColor = Color.White,
-                                            disabledContainerColor = Color.LightGray,
-                                            disabledContentColor = Color.DarkGray
-                                        ),
-                                        shape = RoundedCornerShape(12.dp),
                                         modifier = Modifier
                                             .fillMaxWidth()
-                                            .height(48.dp)
+                                            .padding(horizontal = 14.dp, vertical = 14.dp),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
                                     ) {
-                                        Icon(Icons.Default.ShoppingBag, contentDescription = null, modifier = Modifier.size(18.dp), tint = Color.White)
-                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Text(text = subcategory, fontSize = 14.sp, color = MidnightNavy)
+                                        Icon(Icons.Default.KeyboardArrowDown, contentDescription = null, tint = TextMuted)
+                                    }
+                                }
+
+                                DropdownMenu(
+                                    expanded = showSubcategoryMenu,
+                                    onDismissRequest = { showSubcategoryMenu = false }
+                                ) {
+                                    subcategoryOptions.forEach { opt ->
+                                        DropdownMenuItem(
+                                            text = { Text(opt) },
+                                            onClick = {
+                                                subcategory = opt
+                                                showSubcategoryMenu = false
+                                            }
+                                        )
+                                    }
+                                }
+                            }
+
+                            // SKU with Generate button
+                            FieldHeader("SKU", isRequired = true)
+                            Surface(
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(10.dp),
+                                border = androidx.compose.foundation.BorderStroke(1.dp, BrandBorder),
+                                color = Color.White
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 14.dp, vertical = 6.dp),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    TextField(
+                                        value = sku,
+                                        onValueChange = { sku = it },
+                                        placeholder = { Text("e.g. BGB-OCB-042") },
+                                        singleLine = true,
+                                        colors = TextFieldDefaults.colors(
+                                            focusedContainerColor = Color.Transparent,
+                                            unfocusedContainerColor = Color.Transparent,
+                                            focusedIndicatorColor = Color.Transparent,
+                                            unfocusedIndicatorColor = Color.Transparent
+                                        ),
+                                        modifier = Modifier.weight(1f)
+                                    )
+                                    Surface(
+                                        shape = RoundedCornerShape(8.dp),
+                                        color = Color(0xFFEFF6FF),
+                                        modifier = Modifier
+                                            .clip(RoundedCornerShape(8.dp))
+                                            .clickable {
+                                                val prefix = when {
+                                                    category.contains("Bag", true) -> "BGB-OCB"
+                                                    category.contains("Plush", true) -> "BGB-PLS"
+                                                    category.contains("Floral", true) -> "BGB-FLR"
+                                                    category.contains("Apparel", true) -> "BGB-CKC"
+                                                    else -> "BGB-PWS"
+                                                }
+                                                sku = "$prefix-0${(10..99).random()}"
+                                            }
+                                    ) {
                                         Text(
-                                            text = if (inStock) "Add to Bag • ₹${priceVal.toInt()}" else "Currently Sold Out",
+                                            text = "Generate",
+                                            fontSize = 12.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = RoyalBlue,
+                                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                                        )
+                                    }
+                                }
+                            }
+                            Text(
+                                text = "Unique stock keeping unit for this product.",
+                                fontSize = 11.sp,
+                                color = TextMuted
+                            )
+
+                            // Product tags
+                            FieldHeader("Product tags", isRequired = false)
+                            OutlinedTextField(
+                                value = productTags,
+                                onValueChange = { productTags = it },
+                                placeholder = { Text("crochet, handmade, blue, shoulder bag") },
+                                singleLine = true,
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(10.dp),
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedBorderColor = RoyalBlue,
+                                    unfocusedBorderColor = BrandBorder
+                                )
+                            )
+                        }
+                    }
+                }
+
+                // ==========================================
+                // STEP 2: Images
+                // ==========================================
+                2 -> {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color.White),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, BrandBorder)
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(18.dp),
+                            verticalArrangement = Arrangement.spacedBy(14.dp)
+                        ) {
+                            Text(
+                                text = "Product images",
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold,
+                                color = MidnightNavy,
+                                fontSize = 20.sp
+                            )
+                            Text(
+                                text = "Add up to 8 high-quality images. Drag to reorder.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = TextMuted,
+                                fontSize = 13.sp
+                            )
+
+                            // Large Primary Image Preview
+                            val primaryImg = imagesList.firstOrNull() ?: ""
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(260.dp)
+                                    .clip(RoundedCornerShape(16.dp))
+                                    .background(Color(0xFFF1F5F9))
+                            ) {
+                                val fullUrl = if (primaryImg.startsWith("http") || primaryImg.startsWith("data:")) {
+                                    primaryImg
+                                } else if (primaryImg.isNotBlank()) {
+                                    "${serverUrl.trimEnd('/')}${if (primaryImg.startsWith("/")) "" else "/"}$primaryImg"
+                                } else ""
+
+                                if (fullUrl.isNotBlank()) {
+                                    AsyncImage(
+                                        model = fullUrl,
+                                        contentDescription = "Primary Image",
+                                        contentScale = ContentScale.Crop,
+                                        modifier = Modifier.fillMaxSize()
+                                    )
+                                } else {
+                                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                        Icon(Icons.Outlined.PhotoCamera, contentDescription = null, tint = TextMuted, modifier = Modifier.size(48.dp))
+                                    }
+                                }
+
+                                // PRIMARY Badge
+                                Surface(
+                                    shape = RoundedCornerShape(6.dp),
+                                    color = RoyalBlue,
+                                    modifier = Modifier
+                                        .align(Alignment.TopStart)
+                                        .padding(12.dp)
+                                ) {
+                                    Text(
+                                        text = "PRIMARY",
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color.White,
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                    )
+                                }
+
+                                // Change Button
+                                Surface(
+                                    shape = RoundedCornerShape(8.dp),
+                                    color = Color.White,
+                                    shadowElevation = 2.dp,
+                                    modifier = Modifier
+                                        .align(Alignment.BottomEnd)
+                                        .padding(12.dp)
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .clickable { photoPickerLauncher.launch("image/*") }
+                                ) {
+                                    Row(
+                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Icon(Icons.Outlined.Edit, contentDescription = null, tint = MidnightNavy, modifier = Modifier.size(14.dp))
+                                        Spacer(modifier = Modifier.width(4.dp))
+                                        Text(text = "Change", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = MidnightNavy)
+                                    }
+                                }
+                            }
+
+                            // Secondary Thumbnails Row
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                            ) {
+                                imagesList.drop(1).take(2).forEachIndexed { idx, img ->
+                                    val realIdx = idx + 1
+                                    Box(
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .height(86.dp)
+                                            .clip(RoundedCornerShape(12.dp))
+                                            .background(Color(0xFFF1F5F9))
+                                    ) {
+                                        val u = if (img.startsWith("http") || img.startsWith("data:")) img else "${serverUrl.trimEnd('/')}$img"
+                                        AsyncImage(model = u, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
+
+                                        // Close/Delete Badge
+                                        Box(
+                                            modifier = Modifier
+                                                .align(Alignment.TopEnd)
+                                                .padding(4.dp)
+                                                .size(20.dp)
+                                                .clip(CircleShape)
+                                                .background(Color.White.copy(alpha = 0.9f))
+                                                .clickable {
+                                                    imagesList = imagesList.toMutableList().apply { removeAt(realIdx) }
+                                                },
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Icon(Icons.Default.Close, contentDescription = "Remove", tint = MidnightNavy, modifier = Modifier.size(12.dp))
+                                        }
+                                    }
+                                }
+
+                                // Add Image Slot
+                                Surface(
+                                    shape = RoundedCornerShape(12.dp),
+                                    color = Color(0xFFEFF6FF),
+                                    border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFBFDBFE)),
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .height(86.dp)
+                                        .clip(RoundedCornerShape(12.dp))
+                                        .clickable { photoPickerLauncher.launch("image/*") }
+                                ) {
+                                    Column(
+                                        modifier = Modifier.fillMaxSize(),
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                        verticalArrangement = Arrangement.Center
+                                    ) {
+                                        Icon(Icons.Outlined.PhotoCamera, contentDescription = null, tint = RoyalBlue, modifier = Modifier.size(20.dp))
+                                        Spacer(modifier = Modifier.height(4.dp))
+                                        Text(text = "Add image", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = RoyalBlue)
+                                    }
+                                }
+                            }
+
+                            Text(
+                                text = "Use square images at least 1200 × 1200 px. JPG, PNG up to 10 MB.",
+                                fontSize = 11.sp,
+                                color = TextMuted
+                            )
+                        }
+                    }
+                }
+
+                // ==========================================
+                // STEP 3: Pricing
+                // ==========================================
+                3 -> {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color.White),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, BrandBorder)
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(18.dp),
+                            verticalArrangement = Arrangement.spacedBy(14.dp)
+                        ) {
+                            Text(
+                                text = "Pricing",
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold,
+                                color = MidnightNavy,
+                                fontSize = 20.sp
+                            )
+                            Text(
+                                text = "Internal cost and profit details are never shown to customers.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = TextMuted,
+                                fontSize = 13.sp
+                            )
+
+                            // Selling price
+                            FieldHeader("Selling price", isRequired = true)
+                            OutlinedTextField(
+                                value = sellingPriceText,
+                                onValueChange = { sellingPriceText = it.filter { ch -> ch.isDigit() } },
+                                prefix = { Text("₹ ", fontWeight = FontWeight.SemiBold, color = MidnightNavy) },
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                singleLine = true,
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(10.dp),
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedBorderColor = RoyalBlue,
+                                    unfocusedBorderColor = BrandBorder
+                                )
+                            )
+
+                            // Original / MRP price
+                            FieldHeader("Original / MRP price", isRequired = false)
+                            OutlinedTextField(
+                                value = originalPriceText,
+                                onValueChange = { originalPriceText = it.filter { ch -> ch.isDigit() } },
+                                prefix = { Text("₹ ", fontWeight = FontWeight.SemiBold, color = MidnightNavy) },
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                singleLine = true,
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(10.dp),
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedBorderColor = RoyalBlue,
+                                    unfocusedBorderColor = BrandBorder
+                                )
+                            )
+
+                            // Cost price
+                            FieldHeader("Cost price", isRequired = false)
+                            OutlinedTextField(
+                                value = costPriceText,
+                                onValueChange = { costPriceText = it.filter { ch -> ch.isDigit() } },
+                                prefix = { Text("₹ ", fontWeight = FontWeight.SemiBold, color = MidnightNavy) },
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                singleLine = true,
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(10.dp),
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedBorderColor = RoyalBlue,
+                                    unfocusedBorderColor = BrandBorder
+                                )
+                            )
+                            Text(
+                                text = "Visible only to authorized admins.",
+                                fontSize = 11.sp,
+                                color = TextMuted
+                            )
+
+                            // Dark Navy Profit Analytics Box
+                            Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(14.dp),
+                                colors = CardDefaults.cardColors(containerColor = MidnightNavy)
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(16.dp),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(text = "Estimated profit", fontSize = 11.sp, color = Color(0xFF94A3B8))
+                                        Spacer(modifier = Modifier.height(2.dp))
+                                        Text(
+                                            text = currencyFormat.format(estimatedProfit),
+                                            fontSize = 20.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color.White
+                                        )
+                                    }
+
+                                    Box(modifier = Modifier.width(1.dp).height(32.dp).background(Color.White.copy(alpha = 0.15f)))
+
+                                    Column(
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .padding(start = 16.dp)
+                                    ) {
+                                        Text(text = "Profit margin", fontSize = 11.sp, color = Color(0xFF94A3B8))
+                                        Spacer(modifier = Modifier.height(2.dp))
+                                        Text(
+                                            text = String.format(Locale.ENGLISH, "%.1f%%", profitMargin),
+                                            fontSize = 20.sp,
                                             fontWeight = FontWeight.Bold,
                                             color = Color.White
                                         )
@@ -1378,70 +976,598 @@ fun ProductEditScreen(
                             }
                         }
                     }
+                }
 
-                    // Bottom Publish Action from Preview
-                    item {
-                        Button(
-                            onClick = {
-                                val catObj = categories.find { it.first == category }
-                                val primaryImage = imagesList.firstOrNull() ?: "/assets/images/strawberry-cow.jpg"
-                                val req = ProductCreateRequest(
-                                    name = name.trim(),
-                                    category = category,
-                                    categoryName = catObj?.second,
-                                    price = priceVal,
-                                    originalPrice = origPriceVal,
-                                    image = primaryImage,
-                                    images = imagesList,
-                                    badge = badge.trim().ifBlank { null },
-                                    leadTime = leadTime.trim().ifBlank { null },
-                                    description = description.trim(),
-                                    inStock = inStock
-                                )
-                                val effectiveId = product?.id?.trim()?.ifBlank { null } ?: product?.mongoId?.trim()?.ifBlank { null }
-                                onSave(req, effectiveId)
-                            },
-                            enabled = isPublishEnabled,
-                            shape = RoundedCornerShape(12.dp),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = BrandSecondary,
-                                contentColor = Color.White,
-                                disabledContainerColor = Color(0xFFCCCCCC),
-                                disabledContentColor = Color(0xFF666666)
-                            ),
+                // ==========================================
+                // STEP 4: Inventory
+                // ==========================================
+                4 -> {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color.White),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, BrandBorder)
+                    ) {
+                        Column(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(50.dp)
+                                .padding(18.dp),
+                            verticalArrangement = Arrangement.spacedBy(14.dp)
                         ) {
-                            Icon(Icons.Default.Check, contentDescription = null, tint = Color.White)
-                            Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                text = if (hasMinPhotos) {
-                                    if (product != null) "Everything Looks Great — Save Changes ✓" else "Everything Looks Great — Publish Now (${imagesList.size} Photos) ✓"
-                                } else {
-                                    "Need ${4 - imagesList.size} More Photo${if (4 - imagesList.size > 1) "s" else ""} to Publish"
-                                },
+                                text = "Inventory",
+                                style = MaterialTheme.typography.titleLarge,
                                 fontWeight = FontWeight.Bold,
-                                color = Color.White
+                                color = MidnightNavy,
+                                fontSize = 20.sp
                             )
-                        }
-
-                        if (!hasMinPhotos && product == null) {
                             Text(
-                                text = "⚠️ Minimum 4 product photos required to launch. Switch to 'Edit Details' tab to add more photos.",
-                                fontSize = 11.sp,
-                                color = CrimsonAccent,
-                                textAlign = TextAlign.Center,
+                                text = "Track stock and get alerts before you run out.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = TextMuted,
+                                fontSize = 13.sp
+                            )
+
+                            // Track Inventory Switch
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(text = "Track inventory", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = MidnightNavy)
+                                    Text(text = "Automatically update stock when orders are confirmed", fontSize = 12.sp, color = TextMuted)
+                                }
+                                Switch(
+                                    checked = trackInventory,
+                                    onCheckedChange = { trackInventory = it },
+                                    colors = SwitchDefaults.colors(checkedThumbColor = Color.White, checkedTrackColor = RoyalBlue)
+                                )
+                            }
+
+                            // Available Quantity
+                            FieldHeader("Available quantity", isRequired = true)
+                            OutlinedTextField(
+                                value = availableQuantityText,
+                                onValueChange = { availableQuantityText = it.filter { ch -> ch.isDigit() } },
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                singleLine = true,
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(10.dp),
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedBorderColor = RoyalBlue,
+                                    unfocusedBorderColor = BrandBorder
+                                )
+                            )
+
+                            // Low-Stock Threshold
+                            FieldHeader("Low-stock threshold", isRequired = false)
+                            OutlinedTextField(
+                                value = lowStockThresholdText,
+                                onValueChange = { lowStockThresholdText = it.filter { ch -> ch.isDigit() } },
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                singleLine = true,
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(10.dp),
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedBorderColor = RoyalBlue,
+                                    unfocusedBorderColor = BrandBorder
+                                )
+                            )
+
+                            // Allow Backorders Switch
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(text = "Allow backorders", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = MidnightNavy)
+                                    Text(text = "Continue selling when this product reaches zero", fontSize = 12.sp, color = TextMuted)
+                                }
+                                Switch(
+                                    checked = allowBackorders,
+                                    onCheckedChange = { allowBackorders = it },
+                                    colors = SwitchDefaults.colors(checkedThumbColor = Color.White, checkedTrackColor = RoyalBlue)
+                                )
+                            }
+
+                            // In-Stock Status Box
+                            Surface(
+                                shape = RoundedCornerShape(12.dp),
+                                color = Color(0xFFF0FDF4),
+                                border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFBBF7D0)),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Column(modifier = Modifier.padding(14.dp)) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Box(modifier = Modifier.size(8.dp).clip(CircleShape).background(Color(0xFF16A34A)))
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Text(text = "In stock", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = Color(0xFF16A34A))
+                                    }
+                                    Spacer(modifier = Modifier.height(2.dp))
+                                    Text(
+                                        text = "We'll notify you when stock reaches ${lowStockThresholdText.ifBlank { "4" }} units.",
+                                        fontSize = 11.sp,
+                                        color = Color(0xFF16A34A)
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // ==========================================
+                // STEP 5: Variants
+                // ==========================================
+                5 -> {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color.White),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, BrandBorder)
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(18.dp),
+                            verticalArrangement = Arrangement.spacedBy(14.dp)
+                        ) {
+                            Text(
+                                text = "Product variants",
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold,
+                                color = MidnightNavy,
+                                fontSize = 20.sp
+                            )
+                            Text(
+                                text = "Offer options such as colour, size, length or style.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = TextMuted,
+                                fontSize = 13.sp
+                            )
+
+                            // Option Box 1: Colour
+                            Surface(
+                                shape = RoundedCornerShape(12.dp),
+                                border = androidx.compose.foundation.BorderStroke(1.dp, BrandBorder),
+                                color = Color.White,
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Column(modifier = Modifier.padding(14.dp)) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(text = "Colour", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = MidnightNavy)
+                                        Icon(Icons.Outlined.Delete, contentDescription = "Delete", tint = TextMuted, modifier = Modifier.size(18.dp))
+                                    }
+
+                                    Spacer(modifier = Modifier.height(10.dp))
+
+                                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                        colorChips.forEach { col ->
+                                            Surface(
+                                                shape = RoundedCornerShape(8.dp),
+                                                color = Color(0xFFEFF6FF)
+                                            ) {
+                                                Text(
+                                                    text = col,
+                                                    fontSize = 12.sp,
+                                                    fontWeight = FontWeight.Medium,
+                                                    color = MidnightNavy,
+                                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+
+                            // Option Box 2: Size
+                            Surface(
+                                shape = RoundedCornerShape(12.dp),
+                                border = androidx.compose.foundation.BorderStroke(1.dp, BrandBorder),
+                                color = Color.White,
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Column(modifier = Modifier.padding(14.dp)) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(text = "Size", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = MidnightNavy)
+                                        Icon(Icons.Outlined.Delete, contentDescription = "Delete", tint = TextMuted, modifier = Modifier.size(18.dp))
+                                    }
+
+                                    Spacer(modifier = Modifier.height(10.dp))
+
+                                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                        sizeChips.forEach { sz ->
+                                            Surface(
+                                                shape = RoundedCornerShape(8.dp),
+                                                color = Color(0xFFEFF6FF)
+                                            ) {
+                                                Text(
+                                                    text = sz,
+                                                    fontSize = 12.sp,
+                                                    fontWeight = FontWeight.Medium,
+                                                    color = MidnightNavy,
+                                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+
+                            // Add another option box
+                            Surface(
+                                shape = RoundedCornerShape(12.dp),
+                                color = Color(0xFFEFF6FF),
+                                border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFBFDBFE)),
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(top = 4.dp)
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .clickable { }
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(14.dp),
+                                    horizontalArrangement = Arrangement.Center,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(Icons.Default.Add, contentDescription = null, tint = RoyalBlue, modifier = Modifier.size(18.dp))
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text(text = "Add another option", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = RoyalBlue)
+                                }
+                            }
+
+                            // Combinations and Bulk Edit
+                            val comboCount = colorChips.size * sizeChips.size
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(text = "$comboCount variant combinations", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MidnightNavy)
+                                Text(
+                                    text = "Bulk edit stock and pricing >",
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = RoyalBlue
+                                )
+                            }
+                        }
+                    }
+                }
+
+                // ==========================================
+                // STEP 6: Shipping & Dispatch
+                // ==========================================
+                6 -> {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color.White),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, BrandBorder)
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(18.dp),
+                            verticalArrangement = Arrangement.spacedBy(14.dp)
+                        ) {
+                            Text(
+                                text = "Production & Shipping",
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold,
+                                color = MidnightNavy,
+                                fontSize = 20.sp
+                            )
+                            Text(
+                                text = "Specify handcrafting duration and dispatch dimensions.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = TextMuted,
+                                fontSize = 13.sp
+                            )
+
+                            FieldHeader("Lead time / Crafting duration", isRequired = true)
+                            OutlinedTextField(
+                                value = leadTime,
+                                onValueChange = { leadTime = it },
+                                placeholder = { Text("e.g. 3–5 days made to order") },
+                                singleLine = true,
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(10.dp)
+                            )
+
+                            FieldHeader("Weight (grams)", isRequired = false)
+                            OutlinedTextField(
+                                value = weightGrams,
+                                onValueChange = { weightGrams = it },
+                                placeholder = { Text("e.g. 350") },
+                                singleLine = true,
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(10.dp)
+                            )
+
+                            FieldHeader("Package dimensions (L × W × H cm)", isRequired = false)
+                            OutlinedTextField(
+                                value = packageDimensions,
+                                onValueChange = { packageDimensions = it },
+                                placeholder = { Text("e.g. 25 × 18 × 8") },
+                                singleLine = true,
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(10.dp)
                             )
                         }
+                    }
+                }
 
-                        Spacer(modifier = Modifier.height(24.dp))
+                // ==========================================
+                // STEP 7: Materials & Artisan Care
+                // ==========================================
+                7 -> {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color.White),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, BrandBorder)
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(18.dp),
+                            verticalArrangement = Arrangement.spacedBy(14.dp)
+                        ) {
+                            Text(
+                                text = "Materials & Artisan Care",
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold,
+                                color = MidnightNavy,
+                                fontSize = 20.sp
+                            )
+                            Text(
+                                text = "Help customers care for their handmade crochet creations.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = TextMuted,
+                                fontSize = 13.sp
+                            )
+
+                            FieldHeader("Yarn material", isRequired = true)
+                            OutlinedTextField(
+                                value = materialsText,
+                                onValueChange = { materialsText = it },
+                                placeholder = { Text("e.g. Milk cotton yarn, cotton lining") },
+                                singleLine = true,
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(10.dp)
+                            )
+
+                            FieldHeader("Lining / Hardware", isRequired = false)
+                            OutlinedTextField(
+                                value = hardwareText,
+                                onValueChange = { hardwareText = it },
+                                placeholder = { Text("e.g. Cotton lining, magnetic closure") },
+                                singleLine = true,
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(10.dp)
+                            )
+
+                            FieldHeader("Care instructions", isRequired = false)
+                            OutlinedTextField(
+                                value = careInstructions,
+                                onValueChange = { careInstructions = it },
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(10.dp)
+                            )
+                        }
+                    }
+                }
+
+                // ==========================================
+                // STEP 8: Storefront & SEO
+                // ==========================================
+                8 -> {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color.White),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, BrandBorder)
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(18.dp),
+                            verticalArrangement = Arrangement.spacedBy(14.dp)
+                        ) {
+                            Text(
+                                text = "Storefront & SEO",
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold,
+                                color = MidnightNavy,
+                                fontSize = 20.sp
+                            )
+                            Text(
+                                text = "Customize how this piece appears in search results and social links.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = TextMuted,
+                                fontSize = 13.sp
+                            )
+
+                            FieldHeader("Storefront status", isRequired = true)
+                            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                                val isPub = storefrontStatus == "Published"
+                                Surface(
+                                    shape = RoundedCornerShape(20.dp),
+                                    color = if (isPub) RoyalBlue else Color.White,
+                                    border = if (isPub) null else androidx.compose.foundation.BorderStroke(1.dp, BrandBorder),
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(20.dp))
+                                        .clickable { storefrontStatus = "Published" }
+                                ) {
+                                    Text(
+                                        text = "Published · Live on store",
+                                        color = if (isPub) Color.White else TextMuted,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 12.sp,
+                                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)
+                                    )
+                                }
+
+                                val isDraft = storefrontStatus == "Draft"
+                                Surface(
+                                    shape = RoundedCornerShape(20.dp),
+                                    color = if (isDraft) RoyalBlue else Color.White,
+                                    border = if (isDraft) null else androidx.compose.foundation.BorderStroke(1.dp, BrandBorder),
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(20.dp))
+                                        .clickable { storefrontStatus = "Draft" }
+                                ) {
+                                    Text(
+                                        text = "Draft · Private",
+                                        color = if (isDraft) Color.White else TextMuted,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 12.sp,
+                                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)
+                                    )
+                                }
+                            }
+
+                            FieldHeader("Page title", isRequired = false)
+                            OutlinedTextField(
+                                value = seoTitle,
+                                onValueChange = { seoTitle = it },
+                                singleLine = true,
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(10.dp)
+                            )
+
+                            FieldHeader("Meta description", isRequired = false)
+                            OutlinedTextField(
+                                value = seoDescription,
+                                onValueChange = { seoDescription = it },
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(10.dp)
+                            )
+                        }
+                    }
+                }
+
+                // ==========================================
+                // STEP 9: Review & Publish
+                // ==========================================
+                9 -> {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color.White),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, BrandBorder)
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(18.dp),
+                            verticalArrangement = Arrangement.spacedBy(14.dp)
+                        ) {
+                            Text(
+                                text = "Review & Publish",
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold,
+                                color = MidnightNavy,
+                                fontSize = 20.sp
+                            )
+                            Text(
+                                text = "Check all details before making this piece live for patrons.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = TextMuted,
+                                fontSize = 13.sp
+                            )
+
+                            // Summary Preview Card
+                            Surface(
+                                shape = RoundedCornerShape(14.dp),
+                                color = Color(0xFFF8FAFD),
+                                border = androidx.compose.foundation.BorderStroke(1.dp, BrandBorder),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(14.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(70.dp)
+                                            .clip(RoundedCornerShape(10.dp))
+                                            .background(Color(0xFFE2E8F0))
+                                    ) {
+                                        val u = imagesList.firstOrNull() ?: ""
+                                        if (u.isNotBlank()) {
+                                            AsyncImage(model = u, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
+                                        }
+                                    }
+
+                                    Spacer(modifier = Modifier.width(12.dp))
+
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(text = productName, fontWeight = FontWeight.Bold, fontSize = 15.sp, color = MidnightNavy)
+                                        Text(text = "$category · $sku", fontSize = 12.sp, color = TextMuted)
+                                        Spacer(modifier = Modifier.height(4.dp))
+                                        Text(text = "₹ $sellingPriceText", fontWeight = FontWeight.Bold, fontSize = 15.sp, color = RoyalBlue)
+                                    }
+                                }
+                            }
+
+                            // Green Complete Status Box
+                            Surface(
+                                shape = RoundedCornerShape(12.dp),
+                                color = Color(0xFFF0FDF4),
+                                border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFBBF7D0)),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(14.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(Icons.Default.CheckCircle, contentDescription = null, tint = Color(0xFF16A34A), modifier = Modifier.size(22.dp))
+                                    Spacer(modifier = Modifier.width(10.dp))
+                                    Column {
+                                        Text(text = "Ready to publish", fontWeight = FontWeight.Bold, fontSize = 13.sp, color = Color(0xFF16A34A))
+                                        Text(text = "All required fields completed. Ready for boutique catalogue.", fontSize = 11.sp, color = Color(0xFF16A34A))
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
+
+            Spacer(modifier = Modifier.height(24.dp))
+        }
+    }
+}
+
+@Composable
+fun FieldHeader(label: String, isRequired: Boolean) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Text(
+            text = label,
+            fontSize = 13.sp,
+            fontWeight = FontWeight.Bold,
+            color = MidnightNavy
+        )
+        if (isRequired) {
+            Spacer(modifier = Modifier.width(6.dp))
+            Text(
+                text = "Required",
+                fontSize = 10.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = Color(0xFFDC2626)
+            )
         }
     }
 }
