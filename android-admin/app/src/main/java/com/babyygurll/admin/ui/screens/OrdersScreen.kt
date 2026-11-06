@@ -28,6 +28,7 @@ import coil.compose.AsyncImage
 import com.babyygurll.admin.data.model.Order
 import com.babyygurll.admin.ui.theme.*
 import com.babyygurll.admin.ui.viewmodel.AdminUiState
+import com.babyygurll.admin.util.AdminProductImage
 import java.text.NumberFormat
 import java.util.Locale
 
@@ -269,6 +270,7 @@ fun OrdersScreen(
                         items(sortedOrders) { order ->
                             OrderCardItem(
                                 order = order,
+                                serverUrl = state.serverUrl,
                                 currencyFormat = currencyFormat,
                                 onClick = { onSelectOrder(order) }
                             )
@@ -365,6 +367,7 @@ fun OrdersScreen(
 @Composable
 fun OrderCardItem(
     order: Order,
+    serverUrl: String,
     currencyFormat: NumberFormat,
     onClick: () -> Unit
 ) {
@@ -400,14 +403,12 @@ fun OrderCardItem(
                             .background(Color(0xFFE2E8F0))
                     ) {
                         val secondImg = itemsList.getOrNull(1)?.image
-                        if (!secondImg.isNullOrBlank()) {
-                            AsyncImage(
-                                model = secondImg,
-                                contentDescription = null,
-                                contentScale = ContentScale.Crop,
-                                modifier = Modifier.fillMaxSize()
-                            )
-                        }
+                        AdminProductImage(
+                            model = secondImg,
+                            contentDescription = null,
+                            serverUrl = serverUrl,
+                            modifier = Modifier.fillMaxSize()
+                        )
                     }
                 }
 
@@ -420,18 +421,13 @@ fun OrderCardItem(
                         .background(Color(0xFFF1F5F9))
                 ) {
                     val firstImg = itemsList.firstOrNull()?.image
-                    if (!firstImg.isNullOrBlank()) {
-                        AsyncImage(
-                            model = firstImg,
-                            contentDescription = null,
-                            contentScale = ContentScale.Crop,
-                            modifier = Modifier.fillMaxSize()
-                        )
-                    } else {
-                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                            Text(text = "🧶", fontSize = 20.sp)
-                        }
-                    }
+                    AdminProductImage(
+                        model = firstImg,
+                        contentDescription = null,
+                        serverUrl = serverUrl,
+                        fallbackEmoji = "🧶",
+                        modifier = Modifier.fillMaxSize()
+                    )
                 }
             }
 

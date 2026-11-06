@@ -27,6 +27,7 @@ import coil.compose.AsyncImage
 import com.babyygurll.admin.data.model.Product
 import com.babyygurll.admin.ui.theme.*
 import com.babyygurll.admin.ui.viewmodel.AdminUiState
+import com.babyygurll.admin.util.AdminProductImage
 import java.text.NumberFormat
 import java.util.Locale
 
@@ -355,34 +356,13 @@ fun ProductCatalogueCard(
                     .clip(RoundedCornerShape(12.dp))
                     .background(Color(0xFFF1F5F9))
             ) {
-                val imageUrl = if (product.image.startsWith("http")) {
-                    product.image
-                } else if (product.image.isNotBlank()) {
-                    "${serverUrl.trimEnd('/')}${if (product.image.startsWith("/")) "" else "/"}${product.image}"
-                } else {
-                    ""
-                }
-
-                if (imageUrl.isNotBlank()) {
-                    AsyncImage(
-                        model = imageUrl,
-                        contentDescription = product.name,
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxSize()
-                    )
-                } else {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Outlined.ShoppingBag,
-                            contentDescription = null,
-                            tint = TextMuted,
-                            modifier = Modifier.size(24.dp)
-                        )
-                    }
-                }
+                AdminProductImage(
+                    model = product.image,
+                    contentDescription = product.name,
+                    serverUrl = serverUrl,
+                    fallbackEmoji = "🧶",
+                    modifier = Modifier.fillMaxSize()
+                )
             }
 
             Spacer(modifier = Modifier.width(12.dp))

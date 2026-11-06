@@ -5,6 +5,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -27,6 +28,7 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -35,6 +37,7 @@ import coil.compose.AsyncImage
 import com.babyygurll.admin.data.model.Order
 import com.babyygurll.admin.ui.theme.*
 import com.babyygurll.admin.ui.viewmodel.AdminUiState
+import com.babyygurll.admin.util.AdminProductImage
 import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import java.util.*
@@ -410,32 +413,41 @@ fun DashboardScreen(
 
                         Spacer(modifier = Modifier.height(20.dp))
 
-                        // Smooth Curved Bezier Chart with Tooltip
+                        var selectedChartIndex by remember(state.metrics.chartDays) {
+                            val nonZeroIdx = state.metrics.chartDays.indexOfLast { it.second > 0 }
+                            mutableIntStateOf(if (nonZeroIdx >= 0) nonZeroIdx else (state.metrics.chartDays.size - 1).coerceAtLeast(0))
+                        }
+                        val activePoint = state.metrics.chartDays.getOrNull(selectedChartIndex)
+
+                        // Smooth Curved Bezier Chart with Live Dynamic Tooltip
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(160.dp)
+                                .height(165.dp)
                         ) {
                             RevenueCurveChart(
                                 days = state.metrics.chartDays,
+                                selectedIndex = selectedChartIndex,
+                                onSelectIndex = { selectedChartIndex = it },
                                 modifier = Modifier.fillMaxSize()
                             )
 
-                            // Tooltip on Friday
-                            Box(
-                                modifier = Modifier
-                                    .align(Alignment.TopCenter)
-                                    .padding(start = 60.dp, top = 2.dp)
-                                    .clip(RoundedCornerShape(8.dp))
-                                    .background(MidnightNavy)
-                                    .padding(horizontal = 8.dp, vertical = 4.dp)
-                            ) {
-                                Text(
-                                    text = "FRI  ₹16,820",
-                                    color = Color.White,
-                                    fontSize = 10.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
+                            // Dynamic Live Tooltip for Selected / Active Day
+                            if (activePoint != null) {
+                                Box(
+                                    modifier = Modifier
+                                        .align(Alignment.TopCenter)
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .background(MidnightNavy)
+                                        .padding(horizontal = 10.dp, vertical = 5.dp)
+                                ) {
+                                    Text(
+                                        text = "${activePoint.first}  ${currencyFormat.format(activePoint.second)}",
+                                        color = Color.White,
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
                             }
                         }
                     }
@@ -714,6 +726,7 @@ fun DashboardScreen(
                 items(recentList) { order ->
                     RecentOrderRowCard(
                         order = order,
+                        serverUrl = state.serverUrl,
                         currencyFormat = currencyFormat,
                         onClick = { onSelectOrder(order) }
                     )
@@ -958,22 +971,42 @@ fun AttentionCard(
 @Composable
 fun RevenueCurveChart(
     days: List<Pair<String, Double>>,
+    selectedIndex: Int = -1,
+    onSelectIndex: (Int) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
+    if (days.isEmpty()) return
+
+    val maxVal = remember(days) {
+        val highest = days.maxOfOrNull { it.second } ?: 0.0
+        if (highest > 0.0) highest else 1000.0
+    }
+
     Column(modifier = modifier) {
         Canvas(
             modifier = Modifier
                 .fillMaxWidth()
                 .weight(1f)
+                .pointerInput(days) {
+                    detectTapGestures { offset ->
+                        val n = days.size
+                        if (n > 0) {
+                            val segmentWidth = size.width / n
+                            val tappedIdx = (offset.x / segmentWidth).toInt().coerceIn(0, n - 1)
+                            onSelectIndex(tappedIdx)
+                        }
+                    }
+                }
         ) {
             val width = size.width
             val height = size.height
+            val n = days.size
 
-            // Y-axis guide lines at 0%, 50%, 100%
+            // Y-axis guide lines at 15%, 55%, 85%
             drawLine(
                 color = Color(0xFFF1F5F9),
-                start = Offset(0f, height * 0.1f),
-                end = Offset(width, height * 0.1f),
+                start = Offset(0f, height * 0.15f),
+                end = Offset(width, height * 0.15f),
                 strokeWidth = 1.dp.toPx()
             )
             drawLine(
@@ -982,67 +1015,112 @@ fun RevenueCurveChart(
                 end = Offset(width, height * 0.55f),
                 strokeWidth = 1.dp.toPx()
             )
-
-            // Bezier wave points
-            val points = listOf(
-                Offset(width * 0.05f, height * 0.85f),
-                Offset(width * 0.20f, height * 0.80f),
-                Offset(width * 0.35f, height * 0.65f),
-                Offset(width * 0.50f, height * 0.72f),
-                Offset(width * 0.65f, height * 0.40f),
-                Offset(width * 0.80f, height * 0.20f), // Friday peak
-                Offset(width * 0.95f, height * 0.25f)
+            drawLine(
+                color = Color(0xFFF8FAFC),
+                start = Offset(0f, height * 0.85f),
+                end = Offset(width, height * 0.85f),
+                strokeWidth = 1.dp.toPx()
             )
 
-            val path = Path().apply {
-                moveTo(points.first().x, points.first().y)
-                for (i in 0 until points.size - 1) {
-                    val p0 = points[i]
-                    val p1 = points[i + 1]
-                    val controlX = (p0.x + p1.x) / 2
-                    cubicTo(controlX, p0.y, controlX, p1.y, p1.x, p1.y)
+            val xPad = 24.dp.toPx()
+            val availableWidth = width - (xPad * 2)
+
+            val points = days.mapIndexed { idx, pair ->
+                val x = if (n <= 1) width / 2f else xPad + (idx.toFloat() / (n - 1)) * availableWidth
+                val ratio = (pair.second / maxVal).coerceIn(0.0, 1.0).toFloat()
+                val y = height * (0.85f - (ratio * 0.67f))
+                Offset(x, y)
+            }
+
+            if (points.isNotEmpty()) {
+                val path = Path().apply {
+                    moveTo(points.first().x, points.first().y)
+                    for (i in 0 until points.size - 1) {
+                        val p0 = points[i]
+                        val p1 = points[i + 1]
+                        val controlX = (p0.x + p1.x) / 2
+                        cubicTo(controlX, p0.y, controlX, p1.y, p1.x, p1.y)
+                    }
                 }
-            }
 
-            // Fill gradient under curve
-            val fillPath = Path().apply {
-                addPath(path)
-                lineTo(points.last().x, height)
-                lineTo(points.first().x, height)
-                close()
-            }
+                // Fill gradient under curve
+                val fillPath = Path().apply {
+                    addPath(path)
+                    lineTo(points.last().x, height * 0.90f)
+                    lineTo(points.first().x, height * 0.90f)
+                    close()
+                }
 
-            drawPath(
-                path = fillPath,
-                brush = Brush.verticalGradient(
-                    colors = listOf(
-                        RoyalBlue.copy(alpha = 0.25f),
-                        RoyalBlue.copy(alpha = 0.02f)
+                drawPath(
+                    path = fillPath,
+                    brush = Brush.verticalGradient(
+                        colors = listOf(
+                            RoyalBlue.copy(alpha = 0.22f),
+                            RoyalBlue.copy(alpha = 0.02f)
+                        )
                     )
                 )
-            )
 
-            // Stroke line
-            drawPath(
-                path = path,
-                color = RoyalBlue,
-                style = Stroke(width = 3.dp.toPx(), cap = StrokeCap.Round)
-            )
+                // Stroke line
+                drawPath(
+                    path = path,
+                    color = RoyalBlue,
+                    style = Stroke(width = 3.dp.toPx(), cap = StrokeCap.Round)
+                )
+
+                // Draw points / dots
+                points.forEachIndexed { i, pt ->
+                    val isSelected = (i == selectedIndex)
+                    if (isSelected) {
+                        // Outer glowing halo
+                        drawCircle(
+                            color = RoyalBlue.copy(alpha = 0.25f),
+                            radius = 9.dp.toPx(),
+                            center = pt
+                        )
+                        // Solid navy center
+                        drawCircle(
+                            color = MidnightNavy,
+                            radius = 5.dp.toPx(),
+                            center = pt
+                        )
+                        // White inner dot
+                        drawCircle(
+                            color = Color.White,
+                            radius = 2.5.dp.toPx(),
+                            center = pt
+                        )
+                    } else if (days[i].second > 0) {
+                        drawCircle(
+                            color = RoyalBlue,
+                            radius = 4.dp.toPx(),
+                            center = pt
+                        )
+                        drawCircle(
+                            color = Color.White,
+                            radius = 2.dp.toPx(),
+                            center = pt
+                        )
+                    }
+                }
+            }
         }
 
-        Spacer(modifier = Modifier.height(6.dp))
+        Spacer(modifier = Modifier.height(8.dp))
 
         // X-axis Day labels
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            days.forEach { (day, _) ->
+            days.forEachIndexed { i, (day, _) ->
+                val isSelected = (i == selectedIndex)
                 Text(
                     text = day,
                     fontSize = 11.sp,
-                    color = TextMuted,
-                    fontWeight = FontWeight.Medium
+                    color = if (isSelected) MidnightNavy else TextMuted,
+                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                    modifier = Modifier.clickable { onSelectIndex(i) }
                 )
             }
         }
@@ -1052,6 +1130,7 @@ fun RevenueCurveChart(
 @Composable
 fun RecentOrderRowCard(
     order: Order,
+    serverUrl: String,
     currencyFormat: NumberFormat,
     onClick: () -> Unit
 ) {
@@ -1078,16 +1157,13 @@ fun RecentOrderRowCard(
                     .background(Color(0xFFF1F5F9)),
                 contentAlignment = Alignment.Center
             ) {
-                if (!firstItem?.image.isNullOrBlank()) {
-                    AsyncImage(
-                        model = firstItem!!.image,
-                        contentDescription = null,
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxSize()
-                    )
-                } else {
-                    Text(text = "🧶", fontSize = 22.sp)
-                }
+                AdminProductImage(
+                    model = firstItem?.image,
+                    contentDescription = firstItem?.name,
+                    serverUrl = serverUrl,
+                    fallbackEmoji = "🧶",
+                    modifier = Modifier.fillMaxSize()
+                )
             }
 
             Spacer(modifier = Modifier.width(12.dp))

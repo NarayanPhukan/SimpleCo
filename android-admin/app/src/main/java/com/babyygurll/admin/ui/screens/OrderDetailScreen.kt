@@ -28,6 +28,7 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.babyygurll.admin.data.model.Order
 import com.babyygurll.admin.ui.theme.*
+import com.babyygurll.admin.util.AdminProductImage
 import java.text.NumberFormat
 import java.util.Locale
 
@@ -427,18 +428,13 @@ fun OrderDetailScreen(
                                             .clip(RoundedCornerShape(12.dp))
                                             .background(Color(0xFFF1F5F9))
                                     ) {
-                                        if (!item.image.isNullOrBlank()) {
-                                            AsyncImage(
-                                                model = item.image,
-                                                contentDescription = null,
-                                                contentScale = ContentScale.Crop,
-                                                modifier = Modifier.fillMaxSize()
-                                            )
-                                        } else {
-                                            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                                                Text(text = "🌸", fontSize = 24.sp)
-                                            }
-                                        }
+                                        AdminProductImage(
+                                            model = item.image,
+                                            contentDescription = item.name,
+                                            serverUrl = serverUrl,
+                                            fallbackEmoji = "🌸",
+                                            modifier = Modifier.fillMaxSize()
+                                        )
                                     }
 
                                     Spacer(modifier = Modifier.width(12.dp))

@@ -317,6 +317,8 @@ class AdminViewModel : ViewModel() {
                 val returningPct = if (custCount > 0) (returningCount * 100 / custCount) else 0
                 val avgSpend = if (custCount > 0) (customerList.sumOf { it.totalSpent } / custCount) else 0.0
 
+                val (chartDays, periodRev) = computeChartDays(orderList, _uiState.value.selectedPeriod)
+
                 val metrics = DashboardMetrics(
                     totalRevenue = revenue,
                     todayRevenue = todayRev,
@@ -328,8 +330,9 @@ class AdminViewModel : ViewModel() {
                     averageCustomerSpend = avgSpend,
                     activeProductsCount = _uiState.value.products.count { it.inStock },
                     averageOrderValue = aov,
-                    revenueGrowthPercent = if (totalCount > 0) 8.2 else 0.0,
-                    periodRevenue = revenue
+                    revenueGrowthPercent = 0.0,
+                    periodRevenue = periodRev,
+                    chartDays = chartDays
                 )
 
                 val timeStr = java.text.SimpleDateFormat("hh:mm a", java.util.Locale.getDefault()).format(java.util.Date())
@@ -355,6 +358,103 @@ class AdminViewModel : ViewModel() {
         }
     }
 
+    private fun computeChartDays(orders: List<Order>, period: String): Pair<List<Pair<String, Double>>, Double> {
+        val nonCancelled = orders.filter { it.statusCode != "cancelled" }
+        val sdfIso = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault())
+        val sdfDateFormatted = java.text.SimpleDateFormat("d MMM yyyy", java.util.Locale.ENGLISH)
+
+        fun parseOrderDate(ord: Order): java.util.Date? {
+            val created = ord.createdAt
+            if (!created.isNullOrBlank()) {
+                try {
+                    val trimmed = created.take(10)
+                    return sdfIso.parse(trimmed)
+                } catch (_: Exception) {}
+            }
+            if (!ord.dateFormatted.isNullOrBlank()) {
+                try {
+                    return sdfDateFormatted.parse(ord.dateFormatted!!)
+                } catch (_: Exception) {}
+            }
+            return null
+        }
+
+        when (period) {
+            "30 Days" -> {
+                val weeks = mutableListOf<Pair<String, Double>>()
+                var totalRev = 0.0
+                val now = java.util.Calendar.getInstance()
+                for (w in 3 downTo 0) {
+                    val startCal = java.util.Calendar.getInstance().apply {
+                        time = now.time
+                        add(java.util.Calendar.DAY_OF_YEAR, -(w + 1) * 7)
+                        set(java.util.Calendar.HOUR_OF_DAY, 0)
+                        set(java.util.Calendar.MINUTE, 0)
+                    }
+                    val endCal = java.util.Calendar.getInstance().apply {
+                        time = now.time
+                        add(java.util.Calendar.DAY_OF_YEAR, -w * 7)
+                        set(java.util.Calendar.HOUR_OF_DAY, 23)
+                        set(java.util.Calendar.MINUTE, 59)
+                    }
+                    val label = if (w == 0) "Current" else "Wk -${w}"
+                    val weekRev = nonCancelled.filter { ord ->
+                        val d = parseOrderDate(ord)
+                        d != null && d.after(startCal.time) && d.before(endCal.time)
+                    }.sumOf { it.total }
+                    weeks.add(label to weekRev)
+                    totalRev += weekRev
+                }
+                return weeks to totalRev
+            }
+            "12 Months" -> {
+                val months = mutableListOf<Pair<String, Double>>()
+                var totalRev = 0.0
+                val sdfMonthLabel = java.text.SimpleDateFormat("MMM", java.util.Locale.getDefault())
+                val sdfMonthKey = java.text.SimpleDateFormat("yyyy-MM", java.util.Locale.getDefault())
+
+                for (m in 5 downTo 0) {
+                    val mCal = java.util.Calendar.getInstance().apply {
+                        add(java.util.Calendar.MONTH, -m)
+                    }
+                    val mKey = sdfMonthKey.format(mCal.time)
+                    val label = sdfMonthLabel.format(mCal.time)
+
+                    val monthRev = nonCancelled.filter { ord ->
+                        val d = parseOrderDate(ord)
+                        d != null && sdfMonthKey.format(d) == mKey
+                    }.sumOf { it.total }
+
+                    months.add(label to monthRev)
+                    totalRev += monthRev
+                }
+                return months to totalRev
+            }
+            else -> { // Default: "7 Days"
+                val days = mutableListOf<Pair<String, Double>>()
+                var totalRev = 0.0
+                val sdfDayName = java.text.SimpleDateFormat("EEE", java.util.Locale.getDefault())
+
+                for (i in 6 downTo 0) {
+                    val dCal = java.util.Calendar.getInstance().apply {
+                        add(java.util.Calendar.DAY_OF_YEAR, -i)
+                    }
+                    val dayKey = sdfIso.format(dCal.time)
+                    val label = sdfDayName.format(dCal.time).uppercase()
+
+                    val dayRev = nonCancelled.filter { ord ->
+                        val d = parseOrderDate(ord)
+                        d != null && sdfIso.format(d) == dayKey
+                    }.sumOf { it.total }
+
+                    days.add(label to dayRev)
+                    totalRev += dayRev
+                }
+                return days to totalRev
+            }
+        }
+    }
+
     fun setOrderFilter(filter: String) {
         _uiState.update { it.copy(selectedOrderFilter = filter) }
         applyOrderFilters()
@@ -366,7 +466,17 @@ class AdminViewModel : ViewModel() {
     }
 
     fun setSelectedPeriod(period: String) {
-        _uiState.update { it.copy(selectedPeriod = period) }
+        val orders = _uiState.value.orders
+        val (chartDays, periodRev) = computeChartDays(orders, period)
+        _uiState.update { state ->
+            state.copy(
+                selectedPeriod = period,
+                metrics = state.metrics.copy(
+                    chartDays = chartDays,
+                    periodRevenue = periodRev
+                )
+            )
+        }
     }
 
     fun setCustomerFilter(filter: String) {

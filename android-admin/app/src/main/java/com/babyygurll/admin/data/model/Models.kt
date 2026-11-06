@@ -73,15 +73,11 @@ data class Product(
             if (orig != null && orig > price) {
                 return (((orig - price) / orig) * 100).toInt()
             }
-            // Fallback realistic discount if price has implicit original
-            if (price >= 1000) {
-                return 14
-            }
             return null
         }
 
     val displayOriginalPrice: Double
-        get() = originalPrice ?: if (price >= 1000) (price / 0.86).toInt().toDouble() else price
+        get() = originalPrice ?: price
 }
 
 data class ProductCreateRequest(
@@ -293,7 +289,7 @@ data class Customer(
         }
 
     val displayLastOrder: String
-        get() = if (lastOrderDate.isNotBlank() && lastOrderDate != "Recently") lastOrderDate else "18 Jun"
+        get() = if (lastOrderDate.isNotBlank() && lastOrderDate != "Recently") lastOrderDate else "Recently"
 }
 
 
@@ -392,7 +388,7 @@ data class CustomRequestItem(
     val status: String, // "New", "Reviewing", "Quoted"
     val budget: String = "₹2,500 - ₹3,500",
     val notes: String = "Bespoke color palette and personalized crochet monogram.",
-    val requestedDate: String = "18 Jun"
+    val requestedDate: String = "Recently"
 )
 
 data class ShipmentItem(

@@ -28,6 +28,7 @@ import coil.compose.AsyncImage
 import com.babyygurll.admin.data.model.*
 import com.babyygurll.admin.ui.theme.*
 import com.babyygurll.admin.ui.viewmodel.AdminUiState
+import com.babyygurll.admin.util.AdminProductImage
 import java.text.NumberFormat
 import java.util.Locale
 
@@ -494,13 +495,11 @@ fun CreateManualOrderScreen(
                                 .clip(RoundedCornerShape(10.dp))
                                 .background(Color(0xFFF1F5F9))
                         ) {
-                            val imgUrl = selectedProduct?.image?.let {
-                                if (it.startsWith("http")) it else "${state.serverUrl.trimEnd('/')}$it"
-                            } ?: ""
-                            AsyncImage(
-                                model = imgUrl,
-                                contentDescription = null,
-                                contentScale = ContentScale.Crop,
+                            AdminProductImage(
+                                model = selectedProduct?.image,
+                                contentDescription = selectedProduct?.name,
+                                serverUrl = state.serverUrl,
+                                fallbackEmoji = "🧶",
                                 modifier = Modifier.fillMaxSize()
                             )
                         }

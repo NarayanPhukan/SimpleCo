@@ -3,6 +3,7 @@ package com.babyygurll.admin.ui.screens
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -23,8 +24,10 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import com.babyygurll.admin.data.model.Order
 import com.babyygurll.admin.data.model.Product
 import com.babyygurll.admin.ui.theme.*
+import com.babyygurll.admin.util.AdminProductImage
 import java.text.NumberFormat
 import java.util.Locale
 
@@ -33,6 +36,7 @@ import java.util.Locale
 fun ProductDetailScreen(
     product: Product?,
     serverUrl: String,
+    orders: List<Order> = emptyList(),
     onBack: () -> Unit,
     onEdit: () -> Unit,
     onToggleStock: () -> Unit,
@@ -178,7 +182,16 @@ fun ProductDetailScreen(
                 .padding(horizontal = 16.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            // Hero Image Card with Counter Badge (1/4)
+            val allImages = remember(product) {
+                val list = mutableListOf<String>()
+                if (product.image.isNotBlank()) list.add(product.image)
+                product.images.forEach { if (it.isNotBlank() && !list.contains(it)) list.add(it) }
+                list
+            }
+            var selectedImageIdx by remember(product.id) { mutableIntStateOf(0) }
+            val activeImageUrl = allImages.getOrNull(selectedImageIdx) ?: product.image
+
+            // Hero Image Card with Dynamic Counter Badge
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -186,50 +199,63 @@ fun ProductDetailScreen(
                     .clip(RoundedCornerShape(20.dp))
                     .background(Color(0xFFF1F5F9))
             ) {
-                val imageUrl = if (product.image.startsWith("http")) {
-                    product.image
-                } else if (product.image.isNotBlank()) {
-                    "${serverUrl.trimEnd('/')}${if (product.image.startsWith("/")) "" else "/"}${product.image}"
-                } else {
-                    ""
-                }
+                AdminProductImage(
+                    model = activeImageUrl,
+                    contentDescription = product.name,
+                    serverUrl = serverUrl,
+                    fallbackEmoji = "🧶",
+                    modifier = Modifier.fillMaxSize()
+                )
 
-                if (imageUrl.isNotBlank()) {
-                    AsyncImage(
-                        model = imageUrl,
-                        contentDescription = product.name,
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxSize()
-                    )
-                } else {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
+                // Counter Badge (only if multiple images exist)
+                if (allImages.size > 1) {
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = Color(0xCC0B1953),
+                        modifier = Modifier
+                            .align(Alignment.BottomEnd)
+                            .padding(16.dp)
                     ) {
-                        Icon(
-                            imageVector = Icons.Outlined.ShoppingBag,
-                            contentDescription = null,
-                            tint = TextMuted,
-                            modifier = Modifier.size(64.dp)
+                        Text(
+                            text = "${selectedImageIdx + 1} / ${allImages.size}",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White,
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
                         )
                     }
                 }
+            }
 
-                // Image Counter Badge (Bottom Right: "1 / 4")
-                Surface(
-                    shape = RoundedCornerShape(12.dp),
-                    color = Color(0xCC0B1953),
+            // Thumbnail selector row if multiple images
+            if (allImages.size > 1) {
+                Row(
                     modifier = Modifier
-                        .align(Alignment.BottomEnd)
-                        .padding(16.dp)
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Text(
-                        text = "1 / 4",
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White,
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
-                    )
+                    allImages.forEachIndexed { idx, imgUrl ->
+                        val isSelected = (idx == selectedImageIdx)
+                        Box(
+                            modifier = Modifier
+                                .size(56.dp)
+                                .clip(RoundedCornerShape(10.dp))
+                                .border(
+                                    width = if (isSelected) 2.dp else 1.dp,
+                                    color = if (isSelected) RoyalBlue else BrandBorder,
+                                    shape = RoundedCornerShape(10.dp)
+                                )
+                                .clickable { selectedImageIdx = idx }
+                        ) {
+                            AdminProductImage(
+                                model = imgUrl,
+                                contentDescription = null,
+                                serverUrl = serverUrl,
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        }
+                    }
                 }
             }
 
@@ -384,7 +410,7 @@ fun ProductDetailScreen(
                         )
                         Spacer(modifier = Modifier.height(2.dp))
                         Text(
-                            text = product.productionDays,
+                            text = if (product.inStock) "${product.stockCount} units" else "Out of stock",
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color.White
@@ -398,7 +424,36 @@ fun ProductDetailScreen(
                             .background(Color.White.copy(alpha = 0.15f))
                     )
 
-                    // Units Sold
+                    // Production Time
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text(
+                            text = "Production time",
+                            fontSize = 10.sp,
+                            color = Color(0xFF94A3B8)
+                        )
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = product.leadTime.ifBlank { "Ready to ship" },
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White
+                        )
+                    }
+
+                    Box(
+                        modifier = Modifier
+                            .width(1.dp)
+                            .height(28.dp)
+                            .background(Color.White.copy(alpha = 0.15f))
+                    )
+
+                    // Real Units Sold
+                    val unitsSold = remember(product, orders) {
+                        orders.flatMap { it.items }.filter { it.productId == product.id || it.name.equals(product.name, true) }.sumOf { it.quantity }
+                    }
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         modifier = Modifier.weight(1f)
@@ -410,7 +465,7 @@ fun ProductDetailScreen(
                         )
                         Spacer(modifier = Modifier.height(2.dp))
                         Text(
-                            text = "${product.unitsSold}",
+                            text = "$unitsSold units",
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color.White
@@ -443,7 +498,7 @@ fun ProductDetailScreen(
 
                     Text(
                         text = product.description.ifBlank {
-                            "A structured hand–crocheted shoulder bag made with premium milk cotton yarn. Finished with a lined interior, magnetic closure and adjustable strap."
+                            "Handcrafted crochet boutique piece created with delicate attention to detail and premium materials."
                         },
                         fontSize = 13.sp,
                         color = MidnightNavy.copy(alpha = 0.85f),
@@ -458,7 +513,7 @@ fun ProductDetailScreen(
                             Text(text = "Materials", fontSize = 11.sp, color = TextMuted)
                             Spacer(modifier = Modifier.height(2.dp))
                             Text(
-                                text = "Milk cotton yarn, cotton lining",
+                                text = if (product.description.contains("cotton", true)) "Milk cotton yarn" else "Handmade crochet yarn",
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = MidnightNavy
@@ -469,7 +524,7 @@ fun ProductDetailScreen(
                             Text(text = "Yarn colour", fontSize = 11.sp, color = TextMuted)
                             Spacer(modifier = Modifier.height(2.dp))
                             Text(
-                                text = product.colors.firstOrNull()?.name ?: "Midnight blue",
+                                text = product.colors.joinToString(", ") { it.name }.ifBlank { "Original" },
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = MidnightNavy
@@ -484,7 +539,7 @@ fun ProductDetailScreen(
                             Text(text = "Customisation", fontSize = 11.sp, color = TextMuted)
                             Spacer(modifier = Modifier.height(2.dp))
                             Text(
-                                text = "Available",
+                                text = "Available on request",
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = MidnightNavy
@@ -492,10 +547,10 @@ fun ProductDetailScreen(
                         }
 
                         Column(modifier = Modifier.weight(1f)) {
-                            Text(text = "Last updated", fontSize = 11.sp, color = TextMuted)
+                            Text(text = "Status", fontSize = 11.sp, color = TextMuted)
                             Spacer(modifier = Modifier.height(2.dp))
                             Text(
-                                text = "18 Jun 2025",
+                                text = product.displayStatus,
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = MidnightNavy
@@ -523,7 +578,7 @@ fun ProductDetailScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "Variants",
+                            text = "Variants & Options",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                             color = MidnightNavy,
@@ -531,7 +586,7 @@ fun ProductDetailScreen(
                         )
 
                         Text(
-                            text = "View all",
+                            text = "View details",
                             fontSize = 13.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = RoyalBlue,
@@ -541,55 +596,71 @@ fun ProductDetailScreen(
 
                     Spacer(modifier = Modifier.height(12.dp))
 
-                    val colorName = product.colors.firstOrNull()?.name ?: "Ocean Blue"
-
-                    // Variant 1
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 4.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = "Small / $colorName",
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.Medium,
-                            color = MidnightNavy
-                        )
-                        Text(
-                            text = "${currencyFormat.format(product.price)} · 3 left",
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = MidnightNavy
-                        )
-                    }
-
-                    HorizontalDivider(
-                        modifier = Modifier.padding(vertical = 8.dp),
-                        color = BrandBorder.copy(alpha = 0.6f)
-                    )
-
-                    // Variant 2
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 4.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = "Medium / $colorName",
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.Medium,
-                            color = MidnightNavy
-                        )
-                        Text(
-                            text = "${currencyFormat.format(product.price + 300)} · 5 left",
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = MidnightNavy
-                        )
+                    if (product.colors.isNotEmpty()) {
+                        product.colors.forEachIndexed { idx, col ->
+                            if (idx > 0) {
+                                HorizontalDivider(
+                                    modifier = Modifier.padding(vertical = 8.dp),
+                                    color = BrandBorder.copy(alpha = 0.6f)
+                                )
+                            }
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 4.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(14.dp)
+                                            .clip(CircleShape)
+                                            .background(
+                                                try {
+                                                    Color(android.graphics.Color.parseColor(col.hex))
+                                                } catch (_: Exception) {
+                                                    RoyalBlue
+                                                }
+                                            )
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        text = col.name,
+                                        fontSize = 13.sp,
+                                        fontWeight = FontWeight.Medium,
+                                        color = MidnightNavy
+                                    )
+                                }
+                                Text(
+                                    text = currencyFormat.format(product.price),
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = MidnightNavy
+                                )
+                            }
+                        }
+                    } else {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 4.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "Standard edition",
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = MidnightNavy
+                            )
+                            Text(
+                                text = "${currencyFormat.format(product.price)} · ${if (product.inStock) "In stock" else "Out of stock"}",
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MidnightNavy
+                            )
+                        }
                     }
                 }
             }
@@ -625,15 +696,20 @@ fun ProductDetailScreen(
 
     // Variants Dialog
     if (showVariantsDialog) {
-        val colorName = product.colors.firstOrNull()?.name ?: "Ocean Blue"
         AlertDialog(
             onDismissRequest = { showVariantsDialog = false },
-            title = { Text("All SKU Variants", fontWeight = FontWeight.Bold, color = MidnightNavy) },
+            title = { Text("Product Options & Variants", fontWeight = FontWeight.Bold, color = MidnightNavy) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("• Small / $colorName: ${currencyFormat.format(product.price)} (3 units remaining)")
-                    Text("• Medium / $colorName: ${currencyFormat.format(product.price + 300)} (5 units remaining)")
-                    Text("• Large / $colorName: ${currencyFormat.format(product.price + 600)} (Pre-order / 0 units)")
+                    if (product.colors.isNotEmpty()) {
+                        product.colors.forEach { c ->
+                            Text("• ${c.name}: ${currencyFormat.format(product.price)}")
+                        }
+                    } else {
+                        Text("• Standard edition: ${currencyFormat.format(product.price)}")
+                    }
+                    Text("• Category: ${product.categoryName}", color = TextMuted, fontSize = 12.sp)
+                    Text("• Lead time: ${product.leadTime.ifBlank { "Ready to ship" }}", color = TextMuted, fontSize = 12.sp)
                 }
             },
             confirmButton = {

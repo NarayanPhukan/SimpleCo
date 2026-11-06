@@ -315,6 +315,7 @@ class MainActivity : ComponentActivity() {
                                 ProductDetailScreen(
                                     product = product,
                                     serverUrl = uiState.serverUrl,
+                                    orders = uiState.orders,
                                     onBack = { navController.popBackStack() },
                                     onEdit = {
                                         product?.let {

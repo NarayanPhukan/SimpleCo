@@ -36,6 +36,7 @@ import coil.compose.AsyncImage
 import com.babyygurll.admin.data.model.Product
 import com.babyygurll.admin.data.model.ProductCreateRequest
 import com.babyygurll.admin.ui.theme.*
+import com.babyygurll.admin.util.AdminProductImage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -85,12 +86,12 @@ fun ProductEditScreen(
     // ==========================================
 
     // Step 1: Basic info
-    var productName by remember(product?.id) { mutableStateOf(product?.name ?: "Ocean Bloom Crochet Bag") }
-    var shortDescription by remember(product?.id) { mutableStateOf(product?.description?.take(120) ?: "A structured hand-crocheted shoulder bag") }
+    var productName by remember(product?.id) { mutableStateOf(product?.name ?: "") }
+    var shortDescription by remember(product?.id) { mutableStateOf(product?.description?.take(120) ?: "") }
     var category by remember(product?.id) { mutableStateOf(product?.categoryName ?: "Handbags") }
     var subcategory by remember(product?.id) { mutableStateOf("Shoulder bags") }
-    var sku by remember(product?.id) { mutableStateOf(product?.sku ?: "BGB-OCB-042") }
-    var productTags by remember(product?.id) { mutableStateOf("crochet, handmade, blue, shoulder bag") }
+    var sku by remember(product?.id) { mutableStateOf(product?.sku ?: "") }
+    var productTags by remember(product?.id) { mutableStateOf("") }
 
     var showCategoryMenu by remember { mutableStateOf(false) }
     var showSubcategoryMenu by remember { mutableStateOf(false) }
@@ -103,7 +104,7 @@ fun ProductEditScreen(
         when {
             product != null && product.images.isNotEmpty() -> product.images
             product != null && product.image.isNotBlank() -> listOf(product.image)
-            else -> listOf("/assets/images/granny-bag.jpg", "/assets/images/crochet-cardigan.jpg", "/assets/images/tulip-bouquet.jpg")
+            else -> emptyList()
         }
     }
     var imagesList by remember(product?.id) { mutableStateOf<List<String>>(initialImages) }
@@ -151,34 +152,34 @@ fun ProductEditScreen(
 
     // Step 3: Pricing
     var sellingPriceText by remember(product?.id) {
-        mutableStateOf(product?.price?.takeIf { it > 0 }?.toInt()?.toString() ?: "2499")
+        mutableStateOf(product?.price?.takeIf { it > 0 }?.toInt()?.toString() ?: "")
     }
     var originalPriceText by remember(product?.id) {
-        mutableStateOf(product?.originalPrice?.takeIf { it > 0 }?.toInt()?.toString() ?: "2899")
+        mutableStateOf(product?.originalPrice?.takeIf { it > 0 }?.toInt()?.toString() ?: "")
     }
-    var costPriceText by remember(product?.id) { mutableStateOf("1120") }
+    var costPriceText by remember(product?.id) { mutableStateOf("") }
 
-    val sellingPrice = sellingPriceText.toDoubleOrNull() ?: 2499.0
-    val costPrice = costPriceText.toDoubleOrNull() ?: 1120.0
+    val sellingPrice = sellingPriceText.toDoubleOrNull() ?: 0.0
+    val costPrice = costPriceText.toDoubleOrNull() ?: 0.0
     val estimatedProfit = (sellingPrice - costPrice).coerceAtLeast(0.0)
     val profitMargin = if (sellingPrice > 0) ((estimatedProfit / sellingPrice) * 100) else 0.0
 
     // Step 4: Inventory
     var trackInventory by remember { mutableStateOf(true) }
     var availableQuantityText by remember(product?.id) {
-        mutableStateOf(product?.stockCount?.toString() ?: "8")
+        mutableStateOf(product?.stockCount?.toString() ?: "5")
     }
-    var lowStockThresholdText by remember { mutableStateOf("4") }
+    var lowStockThresholdText by remember { mutableStateOf("2") }
     var allowBackorders by remember { mutableStateOf(false) }
 
     // Step 5: Variants
-    var colorChips by remember { mutableStateOf(listOf("Ocean Blue", "Cloud White", "Soft Grey")) }
-    var sizeChips by remember { mutableStateOf(listOf("Small", "Medium", "Large")) }
+    var colorChips by remember { mutableStateOf<List<String>>(product?.colors?.map { it.name } ?: emptyList()) }
+    var sizeChips by remember { mutableStateOf<List<String>>(emptyList()) }
 
     // Step 6: Handmade details
-    var materialsUsed by remember { mutableStateOf("Milk cotton yarn, cotton lining") }
-    var yarnType by remember { mutableStateOf("4-ply milk cotton") }
-    var yarnColour by remember { mutableStateOf("Midnight blue") }
+    var materialsUsed by remember { mutableStateOf("") }
+    var yarnType by remember { mutableStateOf("") }
+    var yarnColour by remember { mutableStateOf(product?.colors?.firstOrNull()?.name ?: "") }
     var productionType by remember { mutableStateOf("Made to order") }
     var showProductionTypeMenu by remember { mutableStateOf(false) }
     val productionTypeOptions = listOf("Made to order", "Ready to ship", "Made in small batches")
@@ -187,15 +188,15 @@ fun ProductEditScreen(
     var careInstructions by remember { mutableStateOf("Spot clean gently. Do not machine wash.") }
 
     // Step 7: Shipping information
-    var weightText by remember { mutableStateOf("420 g") }
+    var weightText by remember { mutableStateOf("") }
     var packageType by remember { mutableStateOf("Box") }
     var showPackageTypeMenu by remember { mutableStateOf(false) }
     val packageTypeOptions = listOf("Box", "Pouch", "Envelope", "Tube")
-    var parcelLength by remember { mutableStateOf("30 cm") }
-    var parcelWidth by remember { mutableStateOf("24 cm") }
-    var parcelHeight by remember { mutableStateOf("10 cm") }
+    var parcelLength by remember { mutableStateOf("") }
+    var parcelWidth by remember { mutableStateOf("") }
+    var parcelHeight by remember { mutableStateOf("") }
     var processingTime by remember { mutableStateOf("1–2 business days") }
-    var shippingNote by remember { mutableStateOf("Packed in a reusable cotton dust bag.") }
+    var shippingNote by remember { mutableStateOf("") }
 
     // Step 8: Storefront visibility
     var publishImmediately by remember { mutableStateOf(true) }
@@ -206,12 +207,12 @@ fun ProductEditScreen(
 
     // Helper to submit/save product
     val submitProduct: (Boolean) -> Unit = { isDraft ->
-        val finalPrice = sellingPriceText.toDoubleOrNull() ?: 2499.0
+        val finalPrice = sellingPriceText.toDoubleOrNull() ?: 0.0
         val finalOrigPrice = originalPriceText.toDoubleOrNull()
-        val primaryImg = imagesList.firstOrNull() ?: "/assets/images/granny-bag.jpg"
+        val primaryImg = imagesList.firstOrNull() ?: ""
 
         val req = ProductCreateRequest(
-            name = productName.trim().ifBlank { "Ocean Bloom Crochet Bag" },
+            name = productName.trim().ifBlank { "Untitled Handcrafted Piece" },
             category = when {
                 category.contains("Handbag", true) || category.contains("Bag", true) -> "bags"
                 category.contains("Plush", true) -> "plushies"
@@ -743,24 +744,13 @@ fun ProductEditScreen(
                                         .clip(RoundedCornerShape(16.dp))
                                         .background(Color(0xFFF1F5F9))
                                 ) {
-                                    val fullUrl = if (primaryImg.startsWith("http") || primaryImg.startsWith("data:")) {
-                                        primaryImg
-                                    } else if (primaryImg.isNotBlank()) {
-                                        "${serverUrl.trimEnd('/')}${if (primaryImg.startsWith("/")) "" else "/"}$primaryImg"
-                                    } else ""
-
-                                    if (fullUrl.isNotBlank()) {
-                                        AsyncImage(
-                                            model = fullUrl,
-                                            contentDescription = "Primary Image",
-                                            contentScale = ContentScale.Crop,
-                                            modifier = Modifier.fillMaxSize()
-                                        )
-                                    } else {
-                                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                                            Icon(Icons.Outlined.PhotoCamera, contentDescription = null, tint = TextMuted, modifier = Modifier.size(48.dp))
-                                        }
-                                    }
+                                    AdminProductImage(
+                                        model = primaryImg,
+                                        contentDescription = "Primary Image",
+                                        serverUrl = serverUrl,
+                                        fallbackIcon = Icons.Outlined.PhotoCamera,
+                                        modifier = Modifier.fillMaxSize()
+                                    )
 
                                     Surface(
                                         shape = RoundedCornerShape(6.dp),
@@ -812,8 +802,12 @@ fun ProductEditScreen(
                                                 .clip(RoundedCornerShape(12.dp))
                                                 .background(Color(0xFFF1F5F9))
                                         ) {
-                                            val u = if (img.startsWith("http") || img.startsWith("data:")) img else "${serverUrl.trimEnd('/')}$img"
-                                            AsyncImage(model = u, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
+                                            AdminProductImage(
+                                                model = img,
+                                                contentDescription = null,
+                                                serverUrl = serverUrl,
+                                                modifier = Modifier.fillMaxSize()
+                                            )
 
                                             Box(
                                                 modifier = Modifier
@@ -1711,9 +1705,12 @@ fun ProductEditScreen(
                                                 .background(Color(0xFFE2E8F0))
                                         ) {
                                             val u = imagesList.firstOrNull() ?: ""
-                                            if (u.isNotBlank()) {
-                                                AsyncImage(model = u, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
-                                            }
+                                            AdminProductImage(
+                                                model = u,
+                                                contentDescription = null,
+                                                serverUrl = serverUrl,
+                                                modifier = Modifier.fillMaxSize()
+                                            )
                                         }
 
                                         Spacer(modifier = Modifier.width(14.dp))
@@ -1798,9 +1795,12 @@ fun ProductEditScreen(
                                             .background(Color(0xFFE2E8F0))
                                     ) {
                                         val u = imagesList.firstOrNull() ?: ""
-                                        if (u.isNotBlank()) {
-                                            AsyncImage(model = u, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
-                                        }
+                                        AdminProductImage(
+                                            model = u,
+                                            contentDescription = null,
+                                            serverUrl = serverUrl,
+                                            modifier = Modifier.fillMaxSize()
+                                        )
                                     }
 
                                     Spacer(modifier = Modifier.width(12.dp))
