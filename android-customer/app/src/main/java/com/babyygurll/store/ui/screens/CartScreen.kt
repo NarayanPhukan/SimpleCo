@@ -293,9 +293,9 @@ fun CartScreen(
                             cartItems.forEachIndexed { index, item ->
                                 CartItemRow(
                                     item = item,
-                                    onIncrease = { viewModel.updateCartQuantity(item.product.effectiveId, item.quantity + 1) },
-                                    onDecrease = { viewModel.updateCartQuantity(item.product.effectiveId, item.quantity - 1) },
-                                    onRemove = { viewModel.removeFromCart(item.product.effectiveId) }
+                                    onIncrease = { viewModel.updateCartQuantity(item.cartKey, item.quantity + 1) },
+                                    onDecrease = { viewModel.updateCartQuantity(item.cartKey, item.quantity - 1) },
+                                    onRemove = { viewModel.removeFromCart(item.cartKey) }
                                 )
 
                                 if (index < cartItems.size - 1) {
@@ -517,8 +517,9 @@ fun CartItemRow(
             color = Color(0xFFF8FAFC),
             modifier = Modifier.size(72.dp)
         ) {
+            val img = item.selectedVariant?.image?.ifBlank { null } ?: item.product.resolvedPrimaryImage
             BoutiqueImage(
-                imageUrl = item.product.resolvedPrimaryImage,
+                imageUrl = img,
                 contentDescription = item.product.name,
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Crop
@@ -538,8 +539,12 @@ fun CartItemRow(
                 overflow = TextOverflow.Ellipsis
             )
             Spacer(modifier = Modifier.height(2.dp))
+            val variantLabel = listOfNotNull(
+                item.selectedVariant?.name?.ifBlank { null },
+                item.selectedColor?.ifBlank { null }
+            ).firstOrNull() ?: item.customNote.ifBlank { null } ?: "Standard edition"
             Text(
-                text = item.customNote.ifBlank { "Cloud white • Standard" },
+                text = variantLabel,
                 fontSize = 12.sp,
                 color = TextSecondary,
                 maxLines = 1,
@@ -547,7 +552,7 @@ fun CartItemRow(
             )
             Spacer(modifier = Modifier.height(6.dp))
             Text(
-                text = "₹${item.product.price.toInt()}",
+                text = "₹${item.unitPrice.toInt()}",
                 fontSize = 15.sp,
                 fontWeight = FontWeight.Bold,
                 color = BrandDarkNavy

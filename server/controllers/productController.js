@@ -89,6 +89,8 @@ exports.createProduct = async (req, res) => {
       description,
       leadTime,
       colors,
+      sizes,
+      variants,
       inStock,
       specs
     } = req.body;
@@ -119,7 +121,9 @@ exports.createProduct = async (req, res) => {
       leadTime: leadTime || 'Ready to ship (1-2 days)',
       description: description || 'Artisanal crochet piece hand-stitched with premium milk cotton yarn.',
       specs: specs || { 'Yarn Type': '100% Milk Cotton', 'Craft Technique': 'Hand Crocheted' },
-      colors: colors || [{ name: 'Original', hex: '#FF7B9C' }],
+      colors: Array.isArray(colors) && colors.length > 0 ? colors : [{ name: 'Original', hex: '#FF7B9C' }],
+      sizes: Array.isArray(sizes) ? sizes : [],
+      variants: Array.isArray(variants) ? variants : [],
       inStock: inStock !== undefined ? Boolean(inStock) : true
     });
 

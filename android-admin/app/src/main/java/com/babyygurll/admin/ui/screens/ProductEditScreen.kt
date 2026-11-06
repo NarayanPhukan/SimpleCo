@@ -34,7 +34,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.babyygurll.admin.data.model.Product
+import com.babyygurll.admin.data.model.ProductColor
 import com.babyygurll.admin.data.model.ProductCreateRequest
+import com.babyygurll.admin.data.model.ProductVariant
 import com.babyygurll.admin.ui.theme.*
 import com.babyygurll.admin.util.AdminProductImage
 import kotlinx.coroutines.Dispatchers
@@ -173,8 +175,74 @@ fun ProductEditScreen(
     var allowBackorders by remember { mutableStateOf(false) }
 
     // Step 5: Variants
-    var colorChips by remember { mutableStateOf<List<String>>(product?.colors?.map { it.name } ?: emptyList()) }
-    var sizeChips by remember { mutableStateOf<List<String>>(emptyList()) }
+    var colorChips by remember {
+        mutableStateOf<List<String>>(
+            if (!product?.colors.isNullOrEmpty()) product!!.colors.map { it.name }
+            else if (!product?.variants.isNullOrEmpty()) product!!.variants.mapNotNull { it.color }.distinct()
+            else listOf("Pastel Blue", "Midnight Navy")
+        )
+    }
+    var sizeChips by remember {
+        mutableStateOf<List<String>>(
+            if (!product?.sizes.isNullOrEmpty()) product!!.sizes
+            else if (!product?.variants.isNullOrEmpty()) product!!.variants.mapNotNull { it.size }.distinct()
+            else listOf("Standard", "Jumbo")
+        )
+    }
+    var dynamicVariants by remember {
+        mutableStateOf<List<ProductVariant>>(
+            product?.variants ?: emptyList()
+        )
+    }
+    var showAddColorDialog by remember { mutableStateOf(false) }
+    var newColorInput by remember { mutableStateOf("") }
+    var showAddSizeDialog by remember { mutableStateOf(false) }
+    var newSizeInput by remember { mutableStateOf("") }
+
+    val regenerateVariants: (List<String>, List<String>, List<ProductVariant>) -> List<ProductVariant> = { colors, sizes, existing ->
+        val basePrice = sellingPriceText.toDoubleOrNull() ?: 0.0
+        val baseStock = availableQuantityText.toIntOrNull() ?: 5
+        val baseOrigPrice = originalPriceText.toDoubleOrNull()
+
+        val activeColors = if (colors.isNotEmpty()) colors else listOf("")
+        val activeSizes = if (sizes.isNotEmpty()) sizes else listOf("")
+
+        val result = mutableListOf<ProductVariant>()
+        for (c in activeColors) {
+            for (s in activeSizes) {
+                val name = when {
+                    c.isNotBlank() && s.isNotBlank() -> "$s / $c"
+                    c.isNotBlank() -> c
+                    s.isNotBlank() -> s
+                    else -> "Standard edition"
+                }
+                val prev = existing.firstOrNull {
+                    (it.color.orEmpty().equals(c, ignoreCase = true) || it.name.contains(c, ignoreCase = true)) &&
+                    (it.size.orEmpty().equals(s, ignoreCase = true) || it.name.contains(s, ignoreCase = true))
+                }
+                result.add(
+                    prev ?: ProductVariant(
+                        id = "${c.lowercase().replace(" ", "-")}-${s.lowercase().replace(" ", "-")}".trim('-').ifBlank { "var-${(100..999).random()}" },
+                        name = name,
+                        size = s.ifBlank { null },
+                        color = c.ifBlank { null },
+                        colorHex = "#255DCE",
+                        price = basePrice,
+                        originalPrice = baseOrigPrice,
+                        stock = baseStock,
+                        sku = if (c.isNotBlank()) "$sku-${c.take(3).uppercase()}" else sku
+                    )
+                )
+            }
+        }
+        result
+    }
+
+    LaunchedEffect(Unit) {
+        if (dynamicVariants.isEmpty()) {
+            dynamicVariants = regenerateVariants(colorChips, sizeChips, emptyList())
+        }
+    }
 
     // Step 6: Handmade details
     var materialsUsed by remember { mutableStateOf("") }
@@ -210,6 +278,7 @@ fun ProductEditScreen(
         val finalPrice = sellingPriceText.toDoubleOrNull() ?: 0.0
         val finalOrigPrice = originalPriceText.toDoubleOrNull()
         val primaryImg = imagesList.firstOrNull() ?: ""
+        val finalVariants = if (dynamicVariants.isNotEmpty()) dynamicVariants else regenerateVariants(colorChips, sizeChips, emptyList())
 
         val req = ProductCreateRequest(
             name = productName.trim().ifBlank { "Untitled Handcrafted Piece" },
@@ -230,6 +299,9 @@ fun ProductEditScreen(
             description = shortDescription.trim().ifBlank {
                 "A structured hand-crocheted shoulder bag made with premium milk cotton yarn. Finished with a lined interior, magnetic closure and adjustable strap."
             },
+            colors = colorChips.map { ProductColor(name = it, hex = "#255DCE") },
+            sizes = sizeChips,
+            variants = finalVariants,
             inStock = !isDraft && (availableQuantityText.toIntOrNull() ?: 1) > 0
         )
         onSave(req, product?.id ?: product?.mongoId)
@@ -1140,24 +1212,52 @@ fun ProductEditScreen(
                                             verticalAlignment = Alignment.CenterVertically
                                         ) {
                                             Text(text = "Colour", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = MidnightNavy)
-                                            Icon(Icons.Outlined.Delete, contentDescription = "Delete", tint = TextMuted, modifier = Modifier.size(18.dp))
+                                            Text(
+                                                text = "+ Add colour",
+                                                fontWeight = FontWeight.Bold,
+                                                fontSize = 12.sp,
+                                                color = RoyalBlue,
+                                                modifier = Modifier
+                                                    .clickable { showAddColorDialog = true }
+                                                    .padding(horizontal = 6.dp, vertical = 2.dp)
+                                            )
                                         }
 
                                         Spacer(modifier = Modifier.height(10.dp))
 
-                                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                        Row(
+                                            modifier = Modifier.horizontalScroll(rememberScrollState()),
+                                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                        ) {
                                             colorChips.forEach { col ->
                                                 Surface(
                                                     shape = RoundedCornerShape(8.dp),
                                                     color = Color(0xFFEFF6FF)
                                                 ) {
-                                                    Text(
-                                                        text = col,
-                                                        fontSize = 12.sp,
-                                                        fontWeight = FontWeight.Medium,
-                                                        color = MidnightNavy,
-                                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
-                                                    )
+                                                    Row(
+                                                        verticalAlignment = Alignment.CenterVertically,
+                                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                                                    ) {
+                                                        Text(
+                                                            text = col,
+                                                            fontSize = 12.sp,
+                                                            fontWeight = FontWeight.Medium,
+                                                            color = MidnightNavy
+                                                        )
+                                                        Spacer(modifier = Modifier.width(6.dp))
+                                                        Icon(
+                                                            imageVector = Icons.Default.Close,
+                                                            contentDescription = "Remove",
+                                                            tint = TextMuted,
+                                                            modifier = Modifier
+                                                                .size(14.dp)
+                                                                .clickable {
+                                                                    val updated = colorChips.filter { it != col }
+                                                                    colorChips = updated
+                                                                    dynamicVariants = regenerateVariants(updated, sizeChips, dynamicVariants)
+                                                                }
+                                                        )
+                                                    }
                                                 }
                                             }
                                         }
@@ -1178,24 +1278,52 @@ fun ProductEditScreen(
                                             verticalAlignment = Alignment.CenterVertically
                                         ) {
                                             Text(text = "Size", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = MidnightNavy)
-                                            Icon(Icons.Outlined.Delete, contentDescription = "Delete", tint = TextMuted, modifier = Modifier.size(18.dp))
+                                            Text(
+                                                text = "+ Add size",
+                                                fontWeight = FontWeight.Bold,
+                                                fontSize = 12.sp,
+                                                color = RoyalBlue,
+                                                modifier = Modifier
+                                                    .clickable { showAddSizeDialog = true }
+                                                    .padding(horizontal = 6.dp, vertical = 2.dp)
+                                            )
                                         }
 
                                         Spacer(modifier = Modifier.height(10.dp))
 
-                                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                        Row(
+                                            modifier = Modifier.horizontalScroll(rememberScrollState()),
+                                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                        ) {
                                             sizeChips.forEach { sz ->
                                                 Surface(
                                                     shape = RoundedCornerShape(8.dp),
                                                     color = Color(0xFFEFF6FF)
                                                 ) {
-                                                    Text(
-                                                        text = sz,
-                                                        fontSize = 12.sp,
-                                                        fontWeight = FontWeight.Medium,
-                                                        color = MidnightNavy,
-                                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
-                                                    )
+                                                    Row(
+                                                        verticalAlignment = Alignment.CenterVertically,
+                                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                                                    ) {
+                                                        Text(
+                                                            text = sz,
+                                                            fontSize = 12.sp,
+                                                            fontWeight = FontWeight.Medium,
+                                                            color = MidnightNavy
+                                                        )
+                                                        Spacer(modifier = Modifier.width(6.dp))
+                                                        Icon(
+                                                            imageVector = Icons.Default.Close,
+                                                            contentDescription = "Remove",
+                                                            tint = TextMuted,
+                                                            modifier = Modifier
+                                                                .size(14.dp)
+                                                                .clickable {
+                                                                    val updated = sizeChips.filter { it != sz }
+                                                                    sizeChips = updated
+                                                                    dynamicVariants = regenerateVariants(colorChips, updated, dynamicVariants)
+                                                                }
+                                                        )
+                                                    }
                                                 }
                                             }
                                         }
@@ -1209,7 +1337,7 @@ fun ProductEditScreen(
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .clip(RoundedCornerShape(12.dp))
-                                        .clickable { }
+                                        .clickable { showAddColorDialog = true }
                                 ) {
                                     Row(
                                         modifier = Modifier
@@ -1224,19 +1352,103 @@ fun ProductEditScreen(
                                     }
                                 }
 
-                                val comboCount = colorChips.size * sizeChips.size
+                                val comboCount = dynamicVariants.size
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
                                     horizontalArrangement = Arrangement.SpaceBetween,
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Text(text = "$comboCount variant combinations", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MidnightNavy)
+                                    Text(text = "$comboCount dynamic combinations", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = MidnightNavy)
                                     Text(
-                                        text = "Bulk edit stock and pricing >",
+                                        text = "Regenerate all",
                                         fontSize = 12.sp,
                                         fontWeight = FontWeight.SemiBold,
-                                        color = RoyalBlue
+                                        color = RoyalBlue,
+                                        modifier = Modifier.clickable {
+                                            dynamicVariants = regenerateVariants(colorChips, sizeChips, emptyList())
+                                        }
                                     )
+                                }
+
+                                // Interactive combinations list with individual price and stock editing
+                                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    dynamicVariants.forEachIndexed { vIdx, v ->
+                                        Surface(
+                                            shape = RoundedCornerShape(10.dp),
+                                            color = Color(0xFFF8FAFC),
+                                            border = androidx.compose.foundation.BorderStroke(1.dp, BrandBorder),
+                                            modifier = Modifier.fillMaxWidth()
+                                        ) {
+                                            Column(modifier = Modifier.padding(12.dp)) {
+                                                Row(
+                                                    modifier = Modifier.fillMaxWidth(),
+                                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                                    verticalAlignment = Alignment.CenterVertically
+                                                ) {
+                                                    Text(
+                                                        text = v.name,
+                                                        fontSize = 13.sp,
+                                                        fontWeight = FontWeight.Bold,
+                                                        color = MidnightNavy
+                                                    )
+                                                    Text(
+                                                        text = "SKU: ${v.sku ?: "Auto"}",
+                                                        fontSize = 11.sp,
+                                                        color = TextMuted
+                                                    )
+                                                }
+
+                                                Spacer(modifier = Modifier.height(8.dp))
+
+                                                Row(
+                                                    modifier = Modifier.fillMaxWidth(),
+                                                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                                ) {
+                                                    // Variant Price
+                                                    OutlinedTextField(
+                                                        value = if (v.price > 0) v.price.toInt().toString() else "",
+                                                        onValueChange = { newPriceStr ->
+                                                            val p = newPriceStr.toDoubleOrNull() ?: 0.0
+                                                            dynamicVariants = dynamicVariants.toMutableList().apply {
+                                                                this[vIdx] = v.copy(price = p)
+                                                            }
+                                                        },
+                                                        label = { Text("Price (₹)", fontSize = 11.sp) },
+                                                        singleLine = true,
+                                                        modifier = Modifier.weight(1f),
+                                                        shape = RoundedCornerShape(8.dp),
+                                                        colors = OutlinedTextFieldDefaults.colors(
+                                                            focusedBorderColor = RoyalBlue,
+                                                            unfocusedBorderColor = BrandBorder,
+                                                            focusedContainerColor = Color.White,
+                                                            unfocusedContainerColor = Color.White
+                                                        )
+                                                    )
+
+                                                    // Variant Stock
+                                                    OutlinedTextField(
+                                                        value = v.stock.toString(),
+                                                        onValueChange = { newStockStr ->
+                                                            val s = newStockStr.toIntOrNull() ?: 0
+                                                            dynamicVariants = dynamicVariants.toMutableList().apply {
+                                                                this[vIdx] = v.copy(stock = s)
+                                                            }
+                                                        },
+                                                        label = { Text("Stock units", fontSize = 11.sp) },
+                                                        singleLine = true,
+                                                        modifier = Modifier.weight(1f),
+                                                        shape = RoundedCornerShape(8.dp),
+                                                        colors = OutlinedTextFieldDefaults.colors(
+                                                            focusedBorderColor = RoyalBlue,
+                                                            unfocusedBorderColor = BrandBorder,
+                                                            focusedContainerColor = Color.White,
+                                                            unfocusedContainerColor = Color.White
+                                                        )
+                                                    )
+                                                }
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -1920,6 +2132,118 @@ fun ProductEditScreen(
                     }
                 }
             }
+        }
+
+        if (showAddColorDialog) {
+            AlertDialog(
+                onDismissRequest = { showAddColorDialog = false },
+                title = {
+                    Text(
+                        text = "Add Colour Option",
+                        fontWeight = FontWeight.Bold,
+                        color = MidnightNavy
+                    )
+                },
+                text = {
+                    Column {
+                        Text(
+                            text = "Enter the name of the new colour option for this product:",
+                            fontSize = 13.sp,
+                            color = TextMuted
+                        )
+                        Spacer(modifier = Modifier.height(10.dp))
+                        OutlinedTextField(
+                            value = newColorInput,
+                            onValueChange = { newColorInput = it },
+                            placeholder = { Text("e.g. Pastel Lilac, Lavender") },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(8.dp),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = RoyalBlue,
+                                unfocusedBorderColor = BrandBorder
+                            )
+                        )
+                    }
+                },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            if (newColorInput.isNotBlank()) {
+                                val updated = (colorChips + newColorInput.trim()).distinct()
+                                colorChips = updated
+                                dynamicVariants = regenerateVariants(updated, sizeChips, dynamicVariants)
+                                newColorInput = ""
+                                showAddColorDialog = false
+                            }
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = RoyalBlue)
+                    ) {
+                        Text("Add Colour", fontWeight = FontWeight.Bold)
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showAddColorDialog = false }) {
+                        Text("Cancel", color = TextMuted)
+                    }
+                }
+            )
+        }
+
+        if (showAddSizeDialog) {
+            AlertDialog(
+                onDismissRequest = { showAddSizeDialog = false },
+                title = {
+                    Text(
+                        text = "Add Size Option",
+                        fontWeight = FontWeight.Bold,
+                        color = MidnightNavy
+                    )
+                },
+                text = {
+                    Column {
+                        Text(
+                            text = "Enter the name of the new size option for this product:",
+                            fontSize = 13.sp,
+                            color = TextMuted
+                        )
+                        Spacer(modifier = Modifier.height(10.dp))
+                        OutlinedTextField(
+                            value = newSizeInput,
+                            onValueChange = { newSizeInput = it },
+                            placeholder = { Text("e.g. Mini, Standard, Jumbo") },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(8.dp),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = RoyalBlue,
+                                unfocusedBorderColor = BrandBorder
+                            )
+                        )
+                    }
+                },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            if (newSizeInput.isNotBlank()) {
+                                val updated = (sizeChips + newSizeInput.trim()).distinct()
+                                sizeChips = updated
+                                dynamicVariants = regenerateVariants(colorChips, updated, dynamicVariants)
+                                newSizeInput = ""
+                                showAddSizeDialog = false
+                            }
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = RoyalBlue)
+                    ) {
+                        Text("Add Size", fontWeight = FontWeight.Bold)
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showAddSizeDialog = false }) {
+                        Text("Cancel", color = TextMuted)
+                    }
+                }
+            )
         }
     }
 }

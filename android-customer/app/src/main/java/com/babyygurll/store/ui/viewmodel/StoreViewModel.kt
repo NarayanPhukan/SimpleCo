@@ -78,7 +78,7 @@ class StoreViewModel(application: Application) : AndroidViewModel(application) {
 
     // Cart Totals
     val cartSubtotal: StateFlow<Double> = cartItems.map { list ->
-        list.sumOf { it.product.price * it.quantity }
+        list.sumOf { it.unitPrice * it.quantity }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0.0)
 
     val cartDiscount: StateFlow<Double> = combine(cartSubtotal, appliedCoupon) { subtotal, coupon ->
@@ -249,19 +249,27 @@ class StoreViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     // Cart Actions
-    fun addToCart(product: Product, quantity: Int = 1, customNote: String = "") {
-        cartRepo.addToCart(product, quantity, customNote)
+    fun addToCart(
+        product: Product,
+        quantity: Int = 1,
+        customNote: String = "",
+        selectedVariant: com.babyygurll.store.data.model.ProductVariant? = null,
+        selectedColor: String? = null
+    ) {
+        cartRepo.addToCart(product, quantity, customNote, selectedVariant, selectedColor)
         viewModelScope.launch {
-            _eventMessage.emit("Added ${product.name} to cart ✓")
+            val variantLabel = selectedVariant?.name ?: selectedColor
+            val msg = if (variantLabel != null) "Added ${product.name} ($variantLabel) to cart ✓" else "Added ${product.name} to cart ✓"
+            _eventMessage.emit(msg)
         }
     }
 
-    fun updateCartQuantity(productId: String, quantity: Int) {
-        cartRepo.updateQuantity(productId, quantity)
+    fun updateCartQuantity(cartKey: String, quantity: Int) {
+        cartRepo.updateQuantity(cartKey, quantity)
     }
 
-    fun removeFromCart(productId: String) {
-        cartRepo.removeFromCart(productId)
+    fun removeFromCart(cartKey: String) {
+        cartRepo.removeFromCart(cartKey)
     }
 
     fun clearCart() {
@@ -427,12 +435,14 @@ class StoreViewModel(application: Application) : AndroidViewModel(application) {
             _isLoading.value = true
             val userEmail = currentUser.value?.email ?: "guest@babyygurll.in"
             val items = cartItems.value.map {
+                val variantDesc = it.selectedVariant?.name ?: it.selectedColor
                 OrderItem(
-                    id = it.product.effectiveId,
-                    name = it.product.name,
-                    price = it.product.price,
+                    id = it.selectedVariant?.id ?: it.product.effectiveId,
+                    name = if (variantDesc != null) "${it.product.name} ($variantDesc)" else it.product.name,
+                    color = it.selectedColor ?: it.selectedVariant?.color ?: "Default",
+                    price = it.unitPrice,
                     quantity = it.quantity,
-                    image = it.product.image,
+                    image = it.selectedVariant?.image?.ifBlank { null } ?: it.product.image,
                     customNote = it.customNote
                 )
             }

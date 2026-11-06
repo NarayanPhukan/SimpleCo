@@ -62,23 +62,38 @@ class CartRepository(private val context: Context) {
         }
     }
 
-    fun addToCart(product: Product, quantity: Int = 1, customNote: String = "") {
+    fun addToCart(
+        product: Product,
+        quantity: Int = 1,
+        customNote: String = "",
+        selectedVariant: com.babyygurll.store.data.model.ProductVariant? = null,
+        selectedColor: String? = null
+    ) {
         val current = _cartItems.value.toMutableList()
-        val existingIndex = current.indexOfFirst { it.product.effectiveId == product.effectiveId }
+        val key = "${product.effectiveId}_${selectedVariant?.id ?: selectedVariant?.name ?: selectedColor ?: "default"}"
+        val existingIndex = current.indexOfFirst { it.cartKey == key }
         if (existingIndex >= 0) {
             val existing = current[existingIndex]
             val updatedQty = existing.quantity + quantity
             val updatedNote = if (customNote.isNotBlank()) customNote else existing.customNote
             current[existingIndex] = existing.copy(quantity = updatedQty, customNote = updatedNote)
         } else {
-            current.add(CartItem(product = product, quantity = quantity, customNote = customNote))
+            current.add(
+                CartItem(
+                    product = product,
+                    quantity = quantity,
+                    customNote = customNote,
+                    selectedVariant = selectedVariant,
+                    selectedColor = selectedColor ?: selectedVariant?.color
+                )
+            )
         }
         saveCart(current)
     }
 
-    fun updateQuantity(productId: String, quantity: Int) {
+    fun updateQuantity(cartKey: String, quantity: Int) {
         val current = _cartItems.value.toMutableList()
-        val index = current.indexOfFirst { it.product.effectiveId == productId }
+        val index = current.indexOfFirst { it.cartKey == cartKey || it.product.effectiveId == cartKey }
         if (index >= 0) {
             if (quantity <= 0) {
                 current.removeAt(index)
@@ -89,8 +104,8 @@ class CartRepository(private val context: Context) {
         }
     }
 
-    fun removeFromCart(productId: String) {
-        val current = _cartItems.value.filter { it.product.effectiveId != productId }
+    fun removeFromCart(cartKey: String) {
+        val current = _cartItems.value.filter { it.cartKey != cartKey && it.product.effectiveId != cartKey }
         saveCart(current)
     }
 

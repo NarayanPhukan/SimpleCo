@@ -189,3 +189,4 @@ export const LegalPolicyModal = ({ isOpen, onClose, initialTab = 'terms' }) => {
     </div>
   );
 };
+

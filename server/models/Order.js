@@ -4,7 +4,7 @@ const { getDBState } = require('../config/db');
 const orderItemSchema = new mongoose.Schema({
   id: { type: String, required: true },
   name: { type: String, required: true },
-  color: { type: String, required: true },
+  color: { type: String, default: 'Default' },
   quantity: { type: Number, required: true, min: 1 },
   price: { type: Number, required: true },
   image: { type: String, required: true },

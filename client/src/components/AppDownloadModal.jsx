@@ -62,3 +62,4 @@ export const AppDownloadModal = ({ isOpen, onClose }) => {
     </div>
   );
 };
+

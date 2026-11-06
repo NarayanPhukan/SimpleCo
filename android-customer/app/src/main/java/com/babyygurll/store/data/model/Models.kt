@@ -3,6 +3,24 @@ package com.babyygurll.store.data.model
 import com.babyygurll.store.util.ImageUrlUtils
 import com.google.gson.annotations.SerializedName
 
+data class ProductColor(
+    @SerializedName("name") val name: String = "",
+    @SerializedName("hex") val hex: String = ""
+)
+
+data class ProductVariant(
+    @SerializedName("id") val id: String = "",
+    @SerializedName("name") val name: String = "",
+    @SerializedName("size") val size: String? = null,
+    @SerializedName("color") val color: String? = null,
+    @SerializedName("colorHex") val colorHex: String? = null,
+    @SerializedName("price") val price: Double = 0.0,
+    @SerializedName("originalPrice") val originalPrice: Double? = null,
+    @SerializedName("stock") val stock: Int = 5,
+    @SerializedName("sku") val sku: String? = null,
+    @SerializedName("image") val image: String? = null
+)
+
 data class Product(
     @SerializedName("_id") val mongoId: String? = null,
     @SerializedName("id") val id: String = "",
@@ -18,6 +36,9 @@ data class Product(
     @SerializedName("reviewsCount") val reviewsCount: Int = 0,
     @SerializedName("leadTime") val leadTime: String? = "Ready to ship (1-2 days)",
     @SerializedName("description") val description: String = "",
+    @SerializedName("colors") val colors: List<ProductColor> = emptyList(),
+    @SerializedName("sizes") val sizes: List<String> = emptyList(),
+    @SerializedName("variants") val variants: List<ProductVariant> = emptyList(),
     @SerializedName("inStock") val inStock: Boolean = true
 ) {
     val effectiveId: String
@@ -30,6 +51,33 @@ data class Product(
         get() {
             val list = if (images.isNotEmpty()) images else if (image.isNotBlank()) listOf(image) else emptyList()
             return list.map { ImageUrlUtils.resolveImageUrl(it) }
+        }
+
+    val effectiveVariants: List<ProductVariant>
+        get() {
+            if (variants.isNotEmpty()) return variants
+            if (colors.isNotEmpty()) {
+                return colors.mapIndexed { idx, c ->
+                    ProductVariant(
+                        id = "col-$idx",
+                        name = c.name,
+                        color = c.name,
+                        colorHex = c.hex,
+                        price = price,
+                        originalPrice = originalPrice,
+                        stock = if (inStock) 5 else 0
+                    )
+                }
+            }
+            return listOf(
+                ProductVariant(
+                    id = "std-1",
+                    name = "Standard Edition",
+                    price = price,
+                    originalPrice = originalPrice,
+                    stock = if (inStock) 5 else 0
+                )
+            )
         }
 }
 
@@ -71,8 +119,16 @@ data class Coupon(
 data class CartItem(
     val product: Product,
     val quantity: Int = 1,
-    val customNote: String = ""
-)
+    val customNote: String = "",
+    val selectedVariant: ProductVariant? = null,
+    val selectedColor: String? = null
+) {
+    val unitPrice: Double
+        get() = selectedVariant?.price ?: product.price
+
+    val cartKey: String
+        get() = "${product.effectiveId}_${selectedVariant?.id ?: selectedVariant?.name ?: selectedColor ?: "default"}"
+}
 
 data class ShippingAddress(
     @SerializedName("recipientName") val recipientName: String = "",
@@ -118,6 +174,7 @@ data class OrderTotals(
 data class OrderItem(
     @SerializedName("id") val id: String = "",
     @SerializedName("name") val name: String = "",
+    @SerializedName("color") val color: String = "Default",
     @SerializedName("price") val price: Double = 0.0,
     @SerializedName("quantity") val quantity: Int = 1,
     @SerializedName("image") val image: String = "",

@@ -6,6 +6,19 @@ const colorSchema = new mongoose.Schema({
   hex: { type: String, required: true }
 });
 
+const variantSchema = new mongoose.Schema({
+  id: { type: String },
+  name: { type: String, required: true },
+  size: { type: String, default: '' },
+  color: { type: String, default: '' },
+  colorHex: { type: String, default: '' },
+  price: { type: Number, required: true },
+  originalPrice: { type: Number },
+  stock: { type: Number, default: 5 },
+  sku: { type: String, default: '' },
+  image: { type: String, default: '' }
+});
+
 const productSchema = new mongoose.Schema({
   id: { type: String, unique: true },
   name: { type: String, required: true },
@@ -22,6 +35,8 @@ const productSchema = new mongoose.Schema({
   description: { type: String, required: true },
   specs: { type: mongoose.Schema.Types.Mixed, default: {} },
   colors: [colorSchema],
+  sizes: [{ type: String }],
+  variants: [variantSchema],
   inStock: { type: Boolean, default: true }
 }, { timestamps: true });
 

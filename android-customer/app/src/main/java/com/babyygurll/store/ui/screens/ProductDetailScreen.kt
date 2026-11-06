@@ -45,12 +45,23 @@ fun ProductDetailScreen(
     val wishlistIds by viewModel.wishlistIds.collectAsState()
     val isWishlisted = wishlistIds.contains(product.effectiveId)
 
-    val imageList = remember(product) {
-        val list = product.allImages.filter { it.isNotBlank() }
-        if (list.isNotEmpty()) list else listOf(product.resolvedPrimaryImage)
+    val variants = remember(product) { product.effectiveVariants }
+    var selectedVariantIndex by remember(product.effectiveId) { mutableIntStateOf(0) }
+    val activeVariant = variants.getOrNull(selectedVariantIndex) ?: variants.firstOrNull()
+
+    val imageList = remember(product, activeVariant) {
+        val list = mutableListOf<String>()
+        if (!activeVariant?.image.isNullOrBlank()) {
+            list.add(activeVariant!!.image!!)
+        }
+        list.addAll(product.allImages.filter { it.isNotBlank() })
+        if (list.isNotEmpty()) list.distinct() else listOf(product.resolvedPrimaryImage)
     }
-    var currentImageIndex by remember { mutableIntStateOf(0) }
+    var currentImageIndex by remember(product.effectiveId, activeVariant) { mutableIntStateOf(0) }
     var careExpanded by remember { mutableStateOf(false) }
+
+    val activeStock = activeVariant?.stock ?: (if (product.inStock) 5 else 0)
+    val isAvailable = activeStock > 0 && product.inStock
 
     Scaffold(
         bottomBar = {
@@ -70,9 +81,14 @@ fun ProductDetailScreen(
                     // 1. Add to Cart (Royal Blue)
                     Button(
                         onClick = {
-                            viewModel.addToCart(product, 1)
+                            viewModel.addToCart(
+                                product = product,
+                                quantity = 1,
+                                selectedVariant = activeVariant,
+                                selectedColor = activeVariant?.color
+                            )
                         },
-                        enabled = product.inStock,
+                        enabled = isAvailable,
                         shape = RoundedCornerShape(14.dp),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = BrandPrimary,
@@ -92,10 +108,15 @@ fun ProductDetailScreen(
                     // 2. Buy Now (Dark Navy)
                     Button(
                         onClick = {
-                            viewModel.addToCart(product, 1)
+                            viewModel.addToCart(
+                                product = product,
+                                quantity = 1,
+                                selectedVariant = activeVariant,
+                                selectedColor = activeVariant?.color
+                            )
                             onBuyNow()
                         },
-                        enabled = product.inStock,
+                        enabled = isAvailable,
                         shape = RoundedCornerShape(14.dp),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = BrandDarkNavy,
@@ -234,7 +255,7 @@ fun ProductDetailScreen(
             Column(modifier = Modifier.padding(20.dp)) {
                 // Availability Pill Badge
                 Surface(
-                    color = Color(0xFFEBF3FC),
+                    color = if (isAvailable) Color(0xFFEBF3FC) else Color(0xFFFEE2E2),
                     shape = RoundedCornerShape(16.dp),
                     modifier = Modifier.padding(bottom = 12.dp)
                 ) {
@@ -246,12 +267,12 @@ fun ProductDetailScreen(
                             modifier = Modifier
                                 .size(5.dp)
                                 .clip(CircleShape)
-                                .background(BrandPrimary)
+                                .background(if (isAvailable) BrandPrimary else Color(0xFFDC2626))
                         )
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
-                            text = if (product.inStock) "AVAILABLE • READY TO SHIP" else "MADE TO ORDER",
-                            color = BrandPrimary,
+                            text = if (isAvailable) "AVAILABLE • $activeStock IN STOCK" else "OUT OF STOCK",
+                            color = if (isAvailable) BrandPrimary else Color(0xFFDC2626),
                             fontSize = 10.sp,
                             fontWeight = FontWeight.Bold,
                             letterSpacing = 0.8.sp
@@ -277,14 +298,29 @@ fun ProductDetailScreen(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Text(
-                        text = "₹${product.price.toInt()}",
-                        style = MaterialTheme.typography.headlineSmall.copy(
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 22.sp
-                        ),
-                        color = BrandDarkNavy
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        val currentPrice = activeVariant?.price ?: product.price
+                        Text(
+                            text = "₹${currentPrice.toInt()}",
+                            style = MaterialTheme.typography.headlineSmall.copy(
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 24.sp
+                            ),
+                            color = BrandDarkNavy
+                        )
+                        val origPrice = activeVariant?.originalPrice ?: product.originalPrice
+                        if (origPrice != null && origPrice > currentPrice) {
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "₹${origPrice.toInt()}",
+                                style = MaterialTheme.typography.bodyMedium.copy(
+                                    fontSize = 15.sp,
+                                    textDecoration = androidx.compose.ui.text.style.TextDecoration.LineThrough
+                                ),
+                                color = TextMuted
+                            )
+                        }
+                    }
 
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(
@@ -300,6 +336,78 @@ fun ProductDetailScreen(
                             color = TextSecondary,
                             fontWeight = FontWeight.Medium
                         )
+                    }
+                }
+
+                // Dynamic Variant Selector Chips
+                if (variants.size > 1) {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        text = "SELECT OPTION / VARIANT",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = BrandDarkNavy,
+                        letterSpacing = 0.8.sp
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    androidx.compose.foundation.lazy.LazyRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        contentPadding = PaddingValues(vertical = 4.dp)
+                    ) {
+                        items(variants.size) { idx ->
+                            val v = variants[idx]
+                            val isSelected = idx == selectedVariantIndex
+                            val isItemAvailable = v.stock > 0
+
+                            Surface(
+                                shape = RoundedCornerShape(12.dp),
+                                color = if (isSelected) Color(0xFFEFF6FF) else Color(0xFFF8FAFC),
+                                border = BorderStroke(
+                                    if (isSelected) 1.5.dp else 1.dp,
+                                    if (isSelected) BrandPrimary else SurfaceBorder
+                                ),
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .clickable(enabled = isItemAvailable) {
+                                        selectedVariantIndex = idx
+                                    }
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    if (!v.colorHex.isNullOrBlank()) {
+                                        val parsedColor = try {
+                                            Color(android.graphics.Color.parseColor(v.colorHex))
+                                        } catch (e: Exception) {
+                                            BrandPrimary
+                                        }
+                                        Box(
+                                            modifier = Modifier
+                                                .size(12.dp)
+                                                .clip(CircleShape)
+                                                .background(parsedColor)
+                                                .border(1.dp, Color.White, CircleShape)
+                                        )
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                    }
+                                    Column {
+                                        Text(
+                                            text = v.name,
+                                            fontSize = 13.sp,
+                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                            color = if (isItemAvailable) (if (isSelected) BrandPrimary else BrandDarkNavy) else TextMuted
+                                        )
+                                        Text(
+                                            text = if (isItemAvailable) "₹${v.price.toInt()} · ${v.stock} left" else "Out of stock",
+                                            fontSize = 11.sp,
+                                            color = if (isSelected) BrandPrimary.copy(alpha = 0.85f) else TextSecondary
+                                        )
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
 

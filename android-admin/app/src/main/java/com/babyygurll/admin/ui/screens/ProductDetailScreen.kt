@@ -596,51 +596,14 @@ fun ProductDetailScreen(
 
                     Spacer(modifier = Modifier.height(12.dp))
 
-                    if (product.colors.isNotEmpty()) {
-                        product.colors.forEachIndexed { idx, col ->
-                            if (idx > 0) {
-                                HorizontalDivider(
-                                    modifier = Modifier.padding(vertical = 8.dp),
-                                    color = BrandBorder.copy(alpha = 0.6f)
-                                )
-                            }
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = 4.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Box(
-                                        modifier = Modifier
-                                            .size(14.dp)
-                                            .clip(CircleShape)
-                                            .background(
-                                                try {
-                                                    Color(android.graphics.Color.parseColor(col.hex))
-                                                } catch (_: Exception) {
-                                                    RoyalBlue
-                                                }
-                                            )
-                                    )
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Text(
-                                        text = col.name,
-                                        fontSize = 13.sp,
-                                        fontWeight = FontWeight.Medium,
-                                        color = MidnightNavy
-                                    )
-                                }
-                                Text(
-                                    text = currencyFormat.format(product.price),
-                                    fontSize = 13.sp,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = MidnightNavy
-                                )
-                            }
+                    val variants = product.effectiveVariants
+                    variants.take(6).forEachIndexed { idx, v ->
+                        if (idx > 0) {
+                            HorizontalDivider(
+                                modifier = Modifier.padding(vertical = 8.dp),
+                                color = BrandBorder.copy(alpha = 0.6f)
+                            )
                         }
-                    } else {
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -648,14 +611,31 @@ fun ProductDetailScreen(
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                if (!v.colorHex.isNullOrBlank()) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(14.dp)
+                                            .clip(CircleShape)
+                                            .background(
+                                                try {
+                                                    Color(android.graphics.Color.parseColor(v.colorHex))
+                                                } catch (_: Exception) {
+                                                    RoyalBlue
+                                                }
+                                            )
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                }
+                                Text(
+                                    text = v.name,
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    color = MidnightNavy
+                                )
+                            }
                             Text(
-                                text = "Standard edition",
-                                fontSize = 13.sp,
-                                fontWeight = FontWeight.Medium,
-                                color = MidnightNavy
-                            )
-                            Text(
-                                text = "${currencyFormat.format(product.price)} · ${if (product.inStock) "In stock" else "Out of stock"}",
+                                text = "${currencyFormat.format(v.price)} · ${v.stock} left",
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.SemiBold,
                                 color = MidnightNavy
@@ -696,18 +676,36 @@ fun ProductDetailScreen(
 
     // Variants Dialog
     if (showVariantsDialog) {
+        val variants = product.effectiveVariants
         AlertDialog(
             onDismissRequest = { showVariantsDialog = false },
-            title = { Text("Product Options & Variants", fontWeight = FontWeight.Bold, color = MidnightNavy) },
+            title = { Text("Product Options & Variants (${variants.size})", fontWeight = FontWeight.Bold, color = MidnightNavy) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    if (product.colors.isNotEmpty()) {
-                        product.colors.forEach { c ->
-                            Text("• ${c.name}: ${currencyFormat.format(product.price)}")
+                    variants.forEach { v ->
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                if (!v.colorHex.isNullOrBlank()) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(12.dp)
+                                            .clip(CircleShape)
+                                            .background(
+                                                try { Color(android.graphics.Color.parseColor(v.colorHex)) } catch (_: Exception) { RoyalBlue }
+                                            )
+                                    )
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                }
+                                Text(v.name, fontWeight = FontWeight.Medium, fontSize = 13.sp, color = MidnightNavy)
+                            }
+                            Text("${currencyFormat.format(v.price)} · ${v.stock} in stock", fontSize = 12.sp, color = TextMuted)
                         }
-                    } else {
-                        Text("• Standard edition: ${currencyFormat.format(product.price)}")
                     }
+                    Spacer(modifier = Modifier.height(6.dp))
                     Text("• Category: ${product.categoryName}", color = TextMuted, fontSize = 12.sp)
                     Text("• Lead time: ${product.leadTime.ifBlank { "Ready to ship" }}", color = TextMuted, fontSize = 12.sp)
                 }
