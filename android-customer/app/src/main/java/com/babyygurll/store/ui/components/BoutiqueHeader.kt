@@ -5,6 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.ShoppingBag
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -26,7 +27,9 @@ import com.babyygurll.store.ui.theme.TextSecondary
 @Composable
 fun BoutiqueHeader(
     cartBadgeCount: Int = 0,
+    notificationBadgeCount: Int = 0,
     onBagClick: () -> Unit = {},
+    onNotificationClick: () -> Unit = {},
     onLogoClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
@@ -85,34 +88,69 @@ fun BoutiqueHeader(
                 )
             }
 
-            // Right Shopping Bag Button with Royal Blue badge
-            IconButton(
-                onClick = onBagClick,
-                modifier = Modifier.size(38.dp)
+            // Right Action Icons: Notification Bell & Shopping Bag
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                BadgedBox(
-                    badge = {
-                        if (cartBadgeCount > 0) {
-                            Badge(
-                                containerColor = BrandPrimary,
-                                contentColor = Color.White,
-                                modifier = Modifier.offset(x = (-2).dp, y = 2.dp)
-                            ) {
-                                Text(
-                                    text = if (cartBadgeCount > 99) "99+" else "$cartBadgeCount",
-                                    fontSize = 9.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
+                IconButton(
+                    onClick = onNotificationClick,
+                    modifier = Modifier.size(38.dp)
+                ) {
+                    BadgedBox(
+                        badge = {
+                            if (notificationBadgeCount > 0) {
+                                Badge(
+                                    containerColor = BrandPrimary,
+                                    contentColor = Color.White,
+                                    modifier = Modifier.offset(x = (-2).dp, y = 2.dp)
+                                ) {
+                                    Text(
+                                        text = if (notificationBadgeCount > 9) "9+" else "$notificationBadgeCount",
+                                        fontSize = 9.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
                             }
                         }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.Notifications,
+                            contentDescription = "Notifications",
+                            tint = BrandDarkNavy,
+                            modifier = Modifier.size(24.dp)
+                        )
                     }
+                }
+
+                IconButton(
+                    onClick = onBagClick,
+                    modifier = Modifier.size(38.dp)
                 ) {
-                    Icon(
-                        imageVector = Icons.Outlined.ShoppingBag,
-                        contentDescription = "Shopping Bag",
-                        tint = BrandDarkNavy,
-                        modifier = Modifier.size(24.dp)
-                    )
+                    BadgedBox(
+                        badge = {
+                            if (cartBadgeCount > 0) {
+                                Badge(
+                                    containerColor = BrandPrimary,
+                                    contentColor = Color.White,
+                                    modifier = Modifier.offset(x = (-2).dp, y = 2.dp)
+                                ) {
+                                    Text(
+                                        text = if (cartBadgeCount > 99) "99+" else "$cartBadgeCount",
+                                        fontSize = 9.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                            }
+                        }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.ShoppingBag,
+                            contentDescription = "Shopping Bag",
+                            tint = BrandDarkNavy,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
                 }
             }
         }

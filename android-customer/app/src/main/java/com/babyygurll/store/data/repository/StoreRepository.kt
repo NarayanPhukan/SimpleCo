@@ -126,5 +126,49 @@ class StoreRepository(private val context: Context) {
                 Result.failure(e)
             }
         }
+
+    // Notifications
+    suspend fun getNotifications(userEmail: String): Result<Pair<List<StoreNotification>, Int>> =
+        withContext(Dispatchers.IO) {
+            try {
+                val response = api.getNotifications(userEmail = userEmail, role = "customer")
+                val body = response.body()
+                if (response.isSuccessful && body != null) {
+                    Result.success(Pair(body.data, body.unreadCount))
+                } else {
+                    Result.failure(Exception("Failed to fetch notifications"))
+                }
+            } catch (e: Exception) {
+                Result.failure(e)
+            }
+        }
+
+    suspend fun markNotificationRead(id: String): Result<Unit> =
+        withContext(Dispatchers.IO) {
+            try {
+                val response = api.markNotificationRead(id)
+                if (response.isSuccessful) {
+                    Result.success(Unit)
+                } else {
+                    Result.failure(Exception("Failed to mark as read"))
+                }
+            } catch (e: Exception) {
+                Result.failure(e)
+            }
+        }
+
+    suspend fun markAllNotificationsRead(userEmail: String): Result<Unit> =
+        withContext(Dispatchers.IO) {
+            try {
+                val response = api.markAllNotificationsRead(mapOf("userEmail" to userEmail, "role" to "customer"))
+                if (response.isSuccessful) {
+                    Result.success(Unit)
+                } else {
+                    Result.failure(Exception("Failed to mark all as read"))
+                }
+            } catch (e: Exception) {
+                Result.failure(e)
+            }
+        }
 }
 

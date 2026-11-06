@@ -100,5 +100,22 @@ interface StoreApiService {
 
     @GET("payment/razorpay-key")
     suspend fun getRazorpayKey(): Response<Map<String, Any>>
+
+    // Customer Notifications
+    @GET("notifications")
+    suspend fun getNotifications(
+        @Query("userEmail") userEmail: String,
+        @Query("role") role: String = "customer"
+    ): Response<CustomerNotificationsResponse>
+
+    @PATCH("notifications/{id}/read")
+    suspend fun markNotificationRead(
+        @Path("id") id: String
+    ): Response<ApiResponse<Unit>>
+
+    @POST("notifications/read-all")
+    suspend fun markAllNotificationsRead(
+        @Body body: Map<String, String>
+    ): Response<ApiResponse<Unit>>
 }
 

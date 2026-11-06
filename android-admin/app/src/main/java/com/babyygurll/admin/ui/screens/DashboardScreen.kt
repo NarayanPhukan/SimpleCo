@@ -52,7 +52,8 @@ fun DashboardScreen(
     onNavigateNewProduct: () -> Unit,
     onNavigateCoupons: () -> Unit,
     onSelectOrder: (Order) -> Unit,
-    onSelectPeriod: (String) -> Unit
+    onSelectPeriod: (String) -> Unit,
+    onOpenNotifications: () -> Unit = {}
 ) {
     val currencyFormat = remember {
         NumberFormat.getCurrencyInstance(Locale("en", "IN")).apply {
@@ -155,7 +156,7 @@ fun DashboardScreen(
                                 .clip(RoundedCornerShape(12.dp))
                                 .background(Color.White)
                                 .border(1.dp, BrandBorder, RoundedCornerShape(12.dp))
-                                .clickable { onRefresh() },
+                                .clickable { onOpenNotifications() },
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
@@ -164,15 +165,17 @@ fun DashboardScreen(
                                 tint = MidnightNavy,
                                 modifier = Modifier.size(22.dp)
                             )
-                            // Notification dot
-                            Box(
-                                modifier = Modifier
-                                    .align(Alignment.TopEnd)
-                                    .padding(8.dp)
-                                    .size(7.dp)
-                                    .clip(CircleShape)
-                                    .background(RoyalBlue)
-                            )
+                            // Notification dot if unread alerts exist
+                            if (state.unreadNotificationCount > 0) {
+                                Box(
+                                    modifier = Modifier
+                                        .align(Alignment.TopEnd)
+                                        .padding(7.dp)
+                                        .size(8.dp)
+                                        .clip(CircleShape)
+                                        .background(RoyalBlue)
+                                )
+                            }
                         }
 
                         // User Avatar

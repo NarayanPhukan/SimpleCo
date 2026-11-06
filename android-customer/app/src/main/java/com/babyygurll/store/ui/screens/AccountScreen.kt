@@ -42,12 +42,14 @@ fun AccountScreen(
     onNavigateToEditProfile: () -> Unit = {},
     onNavigateToSavedAddresses: () -> Unit = {},
     onNavigateToForgotPassword: () -> Unit = {},
+    onNavigateToNotifications: () -> Unit = {},
     onNavigateToHome: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
     val currentUser by viewModel.currentUser.collectAsState()
     val wishlistIds by viewModel.wishlistIds.collectAsState()
+    val unreadNotifications by viewModel.unreadNotificationCount.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
 
     var isRegisterMode by remember { mutableStateOf(false) }
@@ -245,6 +247,14 @@ fun AccountScreen(
                             title = "Saved Addresses",
                             subtitle = "Manage delivery locations",
                             onClick = onNavigateToSavedAddresses
+                        )
+                        HorizontalDivider(color = SurfaceBorder.copy(alpha = 0.6f), thickness = 1.dp)
+                        AccountMenuRow(
+                            icon = Icons.Outlined.Notifications,
+                            title = "Notifications & Alerts",
+                            subtitle = "Order updates & artisan announcements",
+                            trailingBadge = if (unreadNotifications > 0) "$unreadNotifications" else null,
+                            onClick = onNavigateToNotifications
                         )
                         HorizontalDivider(color = SurfaceBorder.copy(alpha = 0.6f), thickness = 1.dp)
                         AccountMenuRow(

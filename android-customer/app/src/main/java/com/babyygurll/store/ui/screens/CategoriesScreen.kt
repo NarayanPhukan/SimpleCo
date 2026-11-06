@@ -28,6 +28,7 @@ fun CategoriesScreen(
     viewModel: StoreViewModel,
     onProductClick: (Product) -> Unit,
     onNavigateToBag: () -> Unit = {},
+    onNavigateToNotifications: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val products by viewModel.products.collectAsState()
@@ -36,6 +37,7 @@ fun CategoriesScreen(
     val isLoading by viewModel.isLoading.collectAsState()
     val wishlistIds by viewModel.wishlistIds.collectAsState()
     val cartItems by viewModel.cartItems.collectAsState()
+    val unreadNotifications by viewModel.unreadNotificationCount.collectAsState()
     val cartCount = remember(cartItems) { cartItems.sumOf { it.quantity } }
 
     Column(
@@ -46,7 +48,9 @@ fun CategoriesScreen(
         // Top Header
         BoutiqueHeader(
             cartBadgeCount = cartCount,
-            onBagClick = onNavigateToBag
+            notificationBadgeCount = unreadNotifications,
+            onBagClick = onNavigateToBag,
+            onNotificationClick = onNavigateToNotifications
         )
 
         LazyColumn(

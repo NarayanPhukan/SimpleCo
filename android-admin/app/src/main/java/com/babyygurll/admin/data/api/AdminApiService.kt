@@ -123,5 +123,31 @@ interface AdminApiService {
     suspend fun issueRefund(
         @Body request: IssueRefundRequest
     ): Response<ApiResponse<Unit>>
+
+    // Notification Center & Broadcasts
+    @GET("api/notifications")
+    suspend fun getNotifications(
+        @Query("role") role: String = "admin"
+    ): Response<NotificationsResponse>
+
+    @PATCH("api/notifications/{id}/read")
+    suspend fun markNotificationRead(
+        @Path("id") id: String
+    ): Response<ApiResponse<Unit>>
+
+    @POST("api/notifications/read-all")
+    suspend fun markAllNotificationsRead(
+        @Body body: Map<String, String> = mapOf("role" to "admin")
+    ): Response<ApiResponse<Unit>>
+
+    @DELETE("api/notifications/{id}")
+    suspend fun deleteNotification(
+        @Path("id") id: String
+    ): Response<ApiResponse<Unit>>
+
+    @POST("api/notifications")
+    suspend fun createNotification(
+        @Body request: CreateNotificationRequest
+    ): Response<ApiResponse<AdminNotification>>
 }
 

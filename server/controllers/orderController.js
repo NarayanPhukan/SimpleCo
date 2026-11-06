@@ -1,6 +1,7 @@
 const Order = require('../models/Order');
 const shiprocketService = require('../services/shiprocketService');
 const paymentController = require('./paymentController');
+const { createNotificationInternal } = require('./notificationController');
 
 // @desc    Create new crochet order
 // @route   POST /api/orders
@@ -118,6 +119,33 @@ exports.createOrder = async (req, res) => {
       timeline
     });
 
+    // Send automatic notifications to Admin & Customer
+    createNotificationInternal({
+      recipient: 'admin',
+      role: 'admin',
+      title: `New Order #${order.orderId} 🛍️`,
+      message: `Customer ${order.shippingAddress.recipientName} placed an order for ₹${Number(order.total || 0).toLocaleString('en-IN')} (${(order.items || []).length} item${(order.items || []).length > 1 ? 's' : ''}).`,
+      type: 'order',
+      data: {
+        orderId: order.orderId,
+        customerName: order.shippingAddress.recipientName,
+        amount: order.total,
+        itemsCount: (order.items || []).length
+      }
+    });
+
+    createNotificationInternal({
+      recipient: order.userEmail,
+      role: 'customer',
+      title: `Order #${order.orderId} Confirmed! 🌸`,
+      message: `Thank you for your order! Artisans at BabyyGurll have selected your yarn and are preparing to craft your piece.`,
+      type: 'order',
+      data: {
+        orderId: order.orderId,
+        status: order.statusCode
+      }
+    });
+
     // Sync order dispatch automatically with Shiprocket API
     shiprocketService.createShipmentOrder(order).then(async (srResult) => {
       try {
@@ -232,6 +260,50 @@ exports.updateOrderStatus = async (req, res) => {
           item.completed = false;
           item.current = false;
         }
+      });
+      // Create customer notification based on stage
+      let customerTitle = `Order #${order.orderId} Update 📦`;
+      let customerMessage = `Your order status has been updated to "${order.statusLabel}".`;
+      let notifType = 'order';
+
+      if (statusCode === 'crafted') {
+        customerTitle = `Handcrafting in Progress 🧶`;
+        customerMessage = `Artisans at BabyyGurll have begun crafting your order #${order.orderId} stitch by stitch with love.`;
+      } else if (statusCode === 'packed') {
+        customerTitle = `Ribbon Wrapped & Scented 🎀`;
+        customerMessage = `Your order #${order.orderId} has been carefully inspected, tied with satin ribbon, and scented with floral mist.`;
+      } else if (statusCode === 'shipped') {
+        notifType = 'shipping';
+        customerTitle = `Order #${order.orderId} Dispatched! 🚚`;
+        customerMessage = `Your package has left the atelier via ${order.carrier || 'Express Delivery'}. Tracking: ${order.trackingNumber || 'Active'}.`;
+      } else if (statusCode === 'delivered') {
+        notifType = 'shipping';
+        customerTitle = `Delivered to Your Doorstep! 🌸✨`;
+        customerMessage = `Order #${order.orderId} has arrived! We hope your handmade crochet piece brings you endless warmth and joy.`;
+      }
+
+      createNotificationInternal({
+        recipient: order.userEmail,
+        role: 'customer',
+        title: customerTitle,
+        message: customerMessage,
+        type: notifType,
+        data: {
+          orderId: order.orderId,
+          statusCode: order.statusCode,
+          trackingNumber: order.trackingNumber,
+          carrier: order.carrier
+        }
+      });
+
+      // Also notify Admin of stage advance
+      createNotificationInternal({
+        recipient: 'admin',
+        role: 'admin',
+        title: `Order #${order.orderId} → ${order.statusLabel}`,
+        message: `Order #${order.orderId} stage updated to ${order.statusCode}. Customer notified automatically.`,
+        type: 'order',
+        data: { orderId: order.orderId, statusCode: order.statusCode }
       });
     }
 

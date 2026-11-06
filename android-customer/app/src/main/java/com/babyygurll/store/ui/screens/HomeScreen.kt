@@ -52,6 +52,7 @@ fun HomeScreen(
     onNavigateToShop: () -> Unit = {},
     onNavigateToBag: () -> Unit = {},
     onNavigateToSearch: () -> Unit = {},
+    onNavigateToNotifications: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val products by viewModel.products.collectAsState()
@@ -60,6 +61,7 @@ fun HomeScreen(
     val isLoading by viewModel.isLoading.collectAsState()
     val wishlistIds by viewModel.wishlistIds.collectAsState()
     val cartItems by viewModel.cartItems.collectAsState()
+    val unreadNotifications by viewModel.unreadNotificationCount.collectAsState()
     val cartCount = remember(cartItems) { cartItems.sumOf { it.quantity } }
 
     Column(
@@ -67,10 +69,12 @@ fun HomeScreen(
             .fillMaxSize()
             .background(BrandBackground)
     ) {
-        // 1. Top Boutique Header: (BG) BabyyGurll BOUTIQUE [Bag icon]
+        // 1. Top Boutique Header: (BG) BabyyGurll BOUTIQUE [Bell & Bag icons]
         BoutiqueHeader(
             cartBadgeCount = cartCount,
-            onBagClick = onNavigateToBag
+            notificationBadgeCount = unreadNotifications,
+            onBagClick = onNavigateToBag,
+            onNotificationClick = onNavigateToNotifications
         )
 
         LazyColumn(

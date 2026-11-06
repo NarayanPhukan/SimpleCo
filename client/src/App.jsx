@@ -23,6 +23,7 @@ import { WhatsAppConcierge } from './components/WhatsAppConcierge';
 import { RecentlyViewedBar } from './components/RecentlyViewedBar';
 import { LegalPolicyModal } from './components/LegalPolicyModal';
 import { AppDownloadModal } from './components/AppDownloadModal';
+import { NotificationDrawer } from './components/NotificationDrawer';
 import { IconSearch, IconPackage, IconSparkles } from './components/Icons';
 
 export const App = () => {
@@ -55,6 +56,7 @@ export const App = () => {
   const [isPolicyModalOpen, setIsPolicyModalOpen] = useState(false);
   const [policyInitialTab, setPolicyInitialTab] = useState('terms');
   const [isAppDownloadOpen, setIsAppDownloadOpen] = useState(false);
+  const [isNotificationOpen, setIsNotificationOpen] = useState(false);
 
   // Toasts
   const [toasts, setToasts] = useState([]);
@@ -167,6 +169,8 @@ export const App = () => {
         setIsCheckoutOpen(true);
       } else if (hash === '#app' || hash === '#download' || path === '/app' || path === '/download') {
         setIsAppDownloadOpen(true);
+      } else if (hash === '#notifications' || hash === '#alerts' || path === '/notifications' || path === '/alerts') {
+        setIsNotificationOpen(true);
       } else if (hash === '#refund-policy' || hash === '#refund' || hash === '#cancellation' || path === '/refund' || path === '/cancellation' || path === '/refund-policy') {
         setPolicyInitialTab('refund');
         setIsPolicyModalOpen(true);
@@ -273,6 +277,10 @@ export const App = () => {
         onOpenCustomStudio={() => {
           setIsCustomStudioOpen(true);
           window.history.pushState(null, '', '#studio');
+        }}
+        onOpenNotifications={() => {
+          setIsNotificationOpen(true);
+          window.history.pushState(null, '', '#notifications');
         }}
         onOpenAdmin={() => {
           setIsAdminOpen(true);
@@ -605,6 +613,22 @@ export const App = () => {
         onShowToast={showToast}
         onOpenCart={() => setIsCartOpen(true)}
         onExplore={handleExplore}
+      />
+
+      {/* Boutique Alerts & Notifications Drawer */}
+      <NotificationDrawer 
+        isOpen={isNotificationOpen}
+        onClose={() => {
+          setIsNotificationOpen(false);
+          if (window.location.hash === '#notifications' || window.location.hash === '#alerts') {
+            window.history.pushState(null, '', window.location.pathname);
+          }
+        }}
+        onShowToast={showToast}
+        onOpenOrder={(orderId) => {
+          setIsAccountOpen(true);
+          window.history.pushState(null, '', '#orders');
+        }}
       />
 
       {/* Custom Studio & Bouquet Builder Modal */}

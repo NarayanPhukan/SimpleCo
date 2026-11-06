@@ -426,6 +426,46 @@ export const api = {
       }
     } catch (e) {}
     return import.meta.env.VITE_RAZORPAY_KEY_ID || '';
+  },
+
+  // Notifications
+  async getNotifications(params = {}) {
+    const query = new URLSearchParams();
+    if (params.userEmail) query.append('userEmail', params.userEmail);
+    if (params.role) query.append('role', params.role);
+    if (params.limit) query.append('limit', params.limit);
+
+    const res = await fetch(`${API_BASE}/notifications?${query.toString()}`);
+    if (!res.ok) throw new Error('Failed to fetch notifications');
+    return res.json();
+  },
+
+  async markNotificationRead(id) {
+    const res = await fetch(`${API_BASE}/notifications/${id}/read`, {
+      method: 'PATCH'
+    });
+    if (!res.ok) throw new Error('Failed to mark notification as read');
+    return res.json();
+  },
+
+  async markAllNotificationsRead(payload = {}) {
+    const res = await fetch(`${API_BASE}/notifications/read-all`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    if (!res.ok) throw new Error('Failed to mark all as read');
+    return res.json();
+  },
+
+  async createNotification(payload) {
+    const res = await fetch(`${API_BASE}/notifications`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    if (!res.ok) throw new Error('Failed to create notification');
+    return res.json();
   }
 };
 

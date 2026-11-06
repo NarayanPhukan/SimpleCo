@@ -10,6 +10,7 @@ import com.babyygurll.admin.data.diagnostics.ErrorLogManager
 import com.babyygurll.admin.data.model.*
 import com.babyygurll.admin.data.repository.AdminRepository
 import com.babyygurll.admin.data.repository.PreferencesManager
+import com.babyygurll.admin.util.NotificationHelper
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -76,7 +77,14 @@ data class AdminUiState(
     // Error Detection & System Diagnostics
     val diagnostics: DiagnosticsData? = null,
     val isCheckingDiagnostics: Boolean = false,
-    val clientErrors: List<ClientErrorLog> = emptyList()
+    val clientErrors: List<ClientErrorLog> = emptyList(),
+
+    // Notifications & Broadcasts
+    val notifications: List<AdminNotification> = emptyList(),
+    val unreadNotificationCount: Int = 0,
+    val isLoadingNotifications: Boolean = false,
+    val isSendingBroadcast: Boolean = false,
+    val notificationFilter: String = "All"
 )
 
 class AdminViewModel : ViewModel() {
@@ -114,6 +122,7 @@ class AdminViewModel : ViewModel() {
                 kotlinx.coroutines.delay(12_000)
                 fetchDashboardAndOrders(silent = true)
                 fetchProducts(silent = true)
+                fetchNotifications(silent = true)
             }
         }
 
@@ -265,6 +274,7 @@ class AdminViewModel : ViewModel() {
         fetchSettings()
         fetchDiagnostics()
         fetchRefunds()
+        fetchNotifications()
         checkForAppUpdates(silent = true)
     }
 
@@ -995,5 +1005,97 @@ class AdminViewModel : ViewModel() {
             }
             _uiState.update { it.copy(isProcessingRefund = false) }
         }
+    }
+
+    // Notification Center & Broadcast
+    fun fetchNotifications(silent: Boolean = false) {
+        viewModelScope.launch {
+            if (!silent) _uiState.update { it.copy(isLoadingNotifications = true) }
+            val prevIds = _uiState.value.notifications.map { it.id }.toSet()
+            val result = repository.fetchNotifications()
+            result.onSuccess { (list, unread) ->
+                val newUnread = list.filter { !it.isRead && it.id !in prevIds }
+                if (newUnread.isNotEmpty() && prevIds.isNotEmpty()) {
+                    val latest = newUnread.first()
+                    NotificationHelper.showNotification(
+                        BabyyGurllAdminApp.instance,
+                        latest.id.hashCode(),
+                        latest.title,
+                        latest.message
+                    )
+                }
+                _uiState.update {
+                    it.copy(
+                        notifications = list,
+                        unreadNotificationCount = unread,
+                        isLoadingNotifications = false
+                    )
+                }
+            }.onFailure {
+                _uiState.update { it.copy(isLoadingNotifications = false) }
+            }
+        }
+    }
+
+    fun markNotificationRead(id: String) {
+        viewModelScope.launch {
+            val result = repository.markNotificationRead(id)
+            if (result.isSuccess) {
+                _uiState.update { state ->
+                    val updated = state.notifications.map {
+                        if (it.id == id) it.copy(isRead = true) else it
+                    }
+                    val unread = updated.count { !it.isRead }
+                    state.copy(notifications = updated, unreadNotificationCount = unread)
+                }
+            }
+        }
+    }
+
+    fun markAllNotificationsRead() {
+        viewModelScope.launch {
+            val result = repository.markAllNotificationsRead()
+            if (result.isSuccess) {
+                _uiState.update { state ->
+                    val updated = state.notifications.map { it.copy(isRead = true) }
+                    state.copy(notifications = updated, unreadNotificationCount = 0)
+                }
+                _eventMessage.emit("All notifications marked as read")
+            }
+        }
+    }
+
+    fun deleteNotification(id: String) {
+        viewModelScope.launch {
+            val result = repository.deleteNotification(id)
+            if (result.isSuccess) {
+                _uiState.update { state ->
+                    val updated = state.notifications.filter { it.id != id }
+                    val unread = updated.count { !it.isRead }
+                    state.copy(notifications = updated, unreadNotificationCount = unread)
+                }
+                _eventMessage.emit("Notification removed")
+            }
+        }
+    }
+
+    fun sendBroadcast(title: String, message: String, type: String, onComplete: (Boolean) -> Unit = {}) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isSendingBroadcast = true) }
+            val result = repository.sendBroadcastNotification(title, message, type)
+            _uiState.update { it.copy(isSendingBroadcast = false) }
+            result.onSuccess {
+                _eventMessage.emit("Broadcast notification sent to all customers!")
+                fetchNotifications(silent = true)
+                onComplete(true)
+            }.onFailure { err ->
+                _eventMessage.emit("Failed to send broadcast: ${err.message}")
+                onComplete(false)
+            }
+        }
+    }
+
+    fun setNotificationFilter(filter: String) {
+        _uiState.update { it.copy(notificationFilter = filter) }
     }
 }

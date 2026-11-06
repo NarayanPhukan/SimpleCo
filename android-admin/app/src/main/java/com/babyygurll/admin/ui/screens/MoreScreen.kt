@@ -43,6 +43,7 @@ fun MoreScreen(
     onNavigateProductionQueue: () -> Unit = {},
     onNavigateShipping: () -> Unit = {},
     onNavigateRefunds: () -> Unit = {},
+    onNavigateNotifications: () -> Unit = {},
     onCheckUpdates: () -> Unit,
     onOpenServerConfig: () -> Unit,
     onLogout: () -> Unit
@@ -113,9 +114,7 @@ fun MoreScreen(
                             .clip(RoundedCornerShape(12.dp))
                             .background(Color.White)
                             .border(1.dp, BrandBorder, RoundedCornerShape(12.dp))
-                            .clickable {
-                                showFeatureDialog = "Notifications" to "All boutique alerts and customer dispatch notifications are active."
-                            },
+                            .clickable { onNavigateNotifications() },
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
@@ -124,6 +123,16 @@ fun MoreScreen(
                             tint = MidnightNavy,
                             modifier = Modifier.size(20.dp)
                         )
+                        if (state.unreadNotificationCount > 0) {
+                            Box(
+                                modifier = Modifier
+                                    .align(Alignment.TopEnd)
+                                    .padding(6.dp)
+                                    .size(7.dp)
+                                    .clip(CircleShape)
+                                    .background(RoyalBlue)
+                            )
+                        }
                     }
 
                     // Avatar Circle ("AK")
@@ -297,10 +306,8 @@ fun MoreScreen(
                         modifier = Modifier.weight(1f),
                         icon = Icons.Outlined.Notifications,
                         title = "Notifications",
-                        subtitle = "Campaigns",
-                        onClick = {
-                            showFeatureDialog = "Campaigns & Push" to "Festival Crochet Drop campaign scheduled. Push notifications enabled for VIP customers."
-                        }
+                        subtitle = if (state.unreadNotificationCount > 0) "${state.unreadNotificationCount} New" else "Active",
+                        onClick = onNavigateNotifications
                     )
                     MoreToolCard(
                         modifier = Modifier.weight(1f),

@@ -9,7 +9,8 @@ export const Navbar = ({
   onOpenAdmin, 
   onSelectCategory,
   onOpenWishlist,
-  onOpenCustomStudio 
+  onOpenCustomStudio,
+  onOpenNotifications
 }) => {
   const { user } = useAuth();
   const { getTotals, wishlist, theme, toggleTheme } = useCart();
@@ -128,6 +129,21 @@ export const Navbar = ({
             {wishlist.length > 0 && (
               <span className="nav-cart-badge nav-wishlist-badge">{wishlist.length}</span>
             )}
+          </button>
+
+          {/* Notifications Button */}
+          <button 
+            className="nav-icon-btn nav-notifications-btn" 
+            onClick={onOpenNotifications}
+            aria-label="Boutique Alerts"
+            title="Boutique Alerts"
+          >
+            <span aria-hidden="true" style={{ display: 'inline-flex' }}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+              </svg>
+            </span>
           </button>
 
           {/* Account Logo Button */}

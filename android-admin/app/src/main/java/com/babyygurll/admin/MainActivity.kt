@@ -226,6 +226,9 @@ class MainActivity : ComponentActivity() {
                                     },
                                     onSelectPeriod = { period ->
                                         viewModel.setSelectedPeriod(period)
+                                    },
+                                    onOpenNotifications = {
+                                        navController.navigate(Screen.Notifications.route)
                                     }
                                 )
                             }
@@ -377,6 +380,7 @@ class MainActivity : ComponentActivity() {
                                     onNavigateProductionQueue = { navController.navigate(Screen.ProductionQueue.route) },
                                     onNavigateShipping = { navController.navigate(Screen.Shipping.route) },
                                     onNavigateRefunds = { navController.navigate(Screen.Refunds.route) },
+                                    onNavigateNotifications = { navController.navigate(Screen.Notifications.route) },
                                     onCheckUpdates = { viewModel.checkForAppUpdates(silent = false) },
                                     onOpenServerConfig = { showServerConfigDialog = true },
                                     onLogout = { viewModel.logout() }
@@ -437,6 +441,26 @@ class MainActivity : ComponentActivity() {
                                         viewModel.issueRefund(orderId, amount, reason)
                                     },
                                     onRefresh = { viewModel.fetchRefunds() }
+                                )
+                            }
+
+                            // Notification Center & Broadcasts Screen
+                            composable(Screen.Notifications.route) {
+                                NotificationsScreen(
+                                    state = uiState,
+                                    onBack = { navController.popBackStack() },
+                                    onViewOrder = { orderId ->
+                                        val order = uiState.orders.find { it.orderId == orderId }
+                                        if (order != null) viewModel.selectOrder(order)
+                                        navController.navigate(Screen.OrderDetail.createRoute(orderId))
+                                    },
+                                    onMarkRead = { id -> viewModel.markNotificationRead(id) },
+                                    onMarkAllRead = { viewModel.markAllNotificationsRead() },
+                                    onDeleteNotification = { id -> viewModel.deleteNotification(id) },
+                                    onSendBroadcast = { title, message, type ->
+                                        viewModel.sendBroadcast(title, message, type)
+                                    },
+                                    onRefresh = { viewModel.fetchNotifications() }
                                 )
                             }
 

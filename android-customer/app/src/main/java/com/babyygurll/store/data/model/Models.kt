@@ -286,3 +286,47 @@ data class ApiResponse<T>(
     @SerializedName("count") val count: Int? = null
 )
 
+// Customer Notifications
+data class StoreNotification(
+    @SerializedName("_id") val id: String = "",
+    @SerializedName("recipient") val recipient: String = "all",
+    @SerializedName("role") val role: String = "customer",
+    @SerializedName("title") val title: String = "",
+    @SerializedName("message") val message: String = "",
+    @SerializedName("type") val type: String = "general", // order, shipping, promotion, system, general
+    @SerializedName("data") val data: Map<String, Any?> = emptyMap(),
+    @SerializedName("isRead") val isRead: Boolean = false,
+    @SerializedName("createdAt") val createdAt: String? = null
+) {
+    val orderId: String?
+        get() = (data["orderId"] as? String) ?: (data["orderNumber"] as? String)
+
+    val relativeTime: String
+        get() {
+            if (createdAt.isNullOrBlank()) return "Recent"
+            return try {
+                val clean = createdAt.replace("Z", "+00:00")
+                val parsed = java.time.Instant.parse(if (clean.contains("+") || clean.endsWith("Z")) clean else "${clean}Z")
+                val now = java.time.Instant.now()
+                val diffSeconds = java.time.Duration.between(parsed, now).seconds
+                when {
+                    diffSeconds < 60 -> "Just now"
+                    diffSeconds < 3600 -> "${diffSeconds / 60}m ago"
+                    diffSeconds < 86400 -> "${diffSeconds / 3600}h ago"
+                    diffSeconds < 172800 -> "Yesterday"
+                    else -> "${diffSeconds / 86400}d ago"
+                }
+            } catch (e: Exception) {
+                "Recent"
+            }
+        }
+}
+
+data class CustomerNotificationsResponse(
+    @SerializedName("success") val success: Boolean = true,
+    @SerializedName("count") val count: Int = 0,
+    @SerializedName("unreadCount") val unreadCount: Int = 0,
+    @SerializedName("data") val data: List<StoreNotification> = emptyList()
+)
+
+

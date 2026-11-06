@@ -54,6 +54,7 @@ sealed class Screen(val route: String, val title: String, val activeIcon: ImageV
     object Search : Screen("search", "Search", Icons.Filled.Search, Icons.Outlined.Search)
     object ForgotPassword : Screen("forgot_password", "Forgot Password", Icons.Filled.Lock, Icons.Outlined.Lock)
     object SavedAddresses : Screen("saved_addresses", "Saved Addresses", Icons.Filled.LocationOn, Icons.Outlined.LocationOn)
+    object Notifications : Screen("notifications", "Notifications", Icons.Filled.Notifications, Icons.Outlined.Notifications)
 }
 
 val BOTTOM_NAV_ITEMS = listOf(
@@ -234,6 +235,9 @@ class MainActivity : ComponentActivity(), PaymentResultWithDataListener {
                                 },
                                 onNavigateToSearch = {
                                     navController.navigate(Screen.Search.route)
+                                },
+                                onNavigateToNotifications = {
+                                    navController.navigate(Screen.Notifications.route)
                                 }
                             )
                         }
@@ -257,6 +261,9 @@ class MainActivity : ComponentActivity(), PaymentResultWithDataListener {
                                 },
                                 onNavigateToBag = {
                                     navController.navigate(Screen.Cart.route)
+                                },
+                                onNavigateToNotifications = {
+                                    navController.navigate(Screen.Notifications.route)
                                 }
                             )
                         }
@@ -307,8 +314,22 @@ class MainActivity : ComponentActivity(), PaymentResultWithDataListener {
                                 onNavigateToForgotPassword = {
                                     navController.navigate(Screen.ForgotPassword.route)
                                 },
+                                onNavigateToNotifications = {
+                                    navController.navigate(Screen.Notifications.route)
+                                },
                                 onNavigateToHome = {
                                     navController.navigate(Screen.Home.route)
+                                }
+                            )
+                        }
+
+                        composable(Screen.Notifications.route) {
+                            NotificationsScreen(
+                                viewModel = viewModel,
+                                onBack = { navController.popBackStack() },
+                                onNavigateToOrder = { orderId ->
+                                    viewModel.fetchOrderDetail(orderId)
+                                    navController.navigate(Screen.OrderDetail.route)
                                 }
                             )
                         }

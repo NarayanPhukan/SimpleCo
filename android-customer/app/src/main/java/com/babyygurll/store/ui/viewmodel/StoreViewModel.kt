@@ -9,6 +9,7 @@ import com.babyygurll.store.data.diagnostics.ErrorLogManager
 import com.babyygurll.store.data.model.*
 import com.babyygurll.store.data.repository.*
 import com.babyygurll.store.data.update.CustomerUpdateDownloader
+import com.babyygurll.store.util.NotificationHelper
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
@@ -47,6 +48,16 @@ class StoreViewModel(application: Application) : AndroidViewModel(application) {
     // Auto-Detected Error Report State
     private val _pendingErrorReport = MutableStateFlow<String?>(null)
     val pendingErrorReport = _pendingErrorReport.asStateFlow()
+
+    // Notifications State
+    private val _notifications = MutableStateFlow<List<StoreNotification>>(emptyList())
+    val notifications = _notifications.asStateFlow()
+
+    private val _unreadNotificationCount = MutableStateFlow(0)
+    val unreadNotificationCount = _unreadNotificationCount.asStateFlow()
+
+    private val _isLoadingNotifications = MutableStateFlow(false)
+    val isLoadingNotifications = _isLoadingNotifications.asStateFlow()
 
     // Derived filtered and sorted products
     val products: StateFlow<List<Product>> = combine(
@@ -117,12 +128,26 @@ class StoreViewModel(application: Application) : AndroidViewModel(application) {
 
     init {
         loadInitialData()
+        // Re-fetch notifications whenever user auth changes
+        viewModelScope.launch {
+            currentUser.collectLatest {
+                fetchNotifications(silent = true)
+            }
+        }
+        // Periodic background notification check
+        viewModelScope.launch {
+            while (true) {
+                kotlinx.coroutines.delay(15_000)
+                fetchNotifications(silent = true)
+            }
+        }
     }
 
     fun loadInitialData() {
         fetchProducts()
         fetchSettings()
         fetchCoupons()
+        fetchNotifications()
         checkPendingCrashReport()
     }
 
@@ -522,6 +547,59 @@ class StoreViewModel(application: Application) : AndroidViewModel(application) {
             val res = orderRepo.getOrderById(orderId)
             res.onSuccess {
                 _activeOrderDetail.value = it
+            }
+        }
+    }
+
+    // Customer Notification Actions
+    fun fetchNotifications(silent: Boolean = false) {
+        viewModelScope.launch {
+            val email = currentUser.value?.email ?: "guest@babyygurll.in"
+            if (!silent) _isLoadingNotifications.value = true
+            val prevIds = _notifications.value.map { it.id }.toSet()
+            val result = storeRepo.getNotifications(email)
+            result.onSuccess { (list, unread) ->
+                val newUnread = list.filter { !it.isRead && it.id !in prevIds }
+                if (newUnread.isNotEmpty() && prevIds.isNotEmpty()) {
+                    val latest = newUnread.first()
+                    NotificationHelper.showNotification(
+                        getApplication(),
+                        latest.id.hashCode(),
+                        latest.title,
+                        latest.message
+                    )
+                }
+                _notifications.value = list
+                _unreadNotificationCount.value = unread
+                _isLoadingNotifications.value = false
+            }.onFailure {
+                _isLoadingNotifications.value = false
+            }
+        }
+    }
+
+    fun markNotificationRead(id: String) {
+        viewModelScope.launch {
+            val result = storeRepo.markNotificationRead(id)
+            if (result.isSuccess) {
+                val updated = _notifications.value.map {
+                    if (it.id == id) it.copy(isRead = true) else it
+                }
+                _notifications.value = updated
+                _unreadNotificationCount.value = updated.count { !it.isRead }
+            }
+        }
+    }
+
+    fun markAllNotificationsRead() {
+        viewModelScope.launch {
+            val email = currentUser.value?.email ?: "guest@babyygurll.in"
+            val result = storeRepo.markAllNotificationsRead(email)
+            if (result.isSuccess) {
+                val updated = _notifications.value.map { it.copy(isRead = true) }
+                _notifications.value = updated
+                _unreadNotificationCount.value = 0
+                _eventMessage.emit("All notifications marked as read")
             }
         }
     }

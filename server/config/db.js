@@ -7,7 +7,8 @@ let memoryDB = {
   products: new MemoryCollection([]),
   users: new MemoryCollection([]),
   orders: new MemoryCollection([]),
-  coupons: new MemoryCollection([])
+  coupons: new MemoryCollection([]),
+  notifications: new MemoryCollection([])
 };
 
 const connectDB = async () => {
@@ -53,6 +54,7 @@ const connectDB = async () => {
   memoryDB.users = new MemoryCollection([]);
   memoryDB.orders = new MemoryCollection([]);
   memoryDB.coupons = new MemoryCollection([]);
+  memoryDB.notifications = new MemoryCollection([]);
 };
 
 const seedAtlasDatabase = async () => {

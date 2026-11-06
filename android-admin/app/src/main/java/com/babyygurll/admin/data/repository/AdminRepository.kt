@@ -320,5 +320,80 @@ class AdminRepository(
             Result.failure(e)
         }
     }
+
+    // Notification Center & Broadcast
+    suspend fun fetchNotifications(): Result<Pair<List<AdminNotification>, Int>> = withContext(Dispatchers.IO) {
+        try {
+            val response = api.getNotifications(role = "admin")
+            val body = response.body()
+            if (response.isSuccessful && body != null) {
+                Result.success(Pair(body.data, body.unreadCount))
+            } else {
+                Result.failure(Exception("Failed to load notifications"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun markNotificationRead(id: String): Result<Unit> = withContext(Dispatchers.IO) {
+        try {
+            val response = api.markNotificationRead(id)
+            if (response.isSuccessful) {
+                Result.success(Unit)
+            } else {
+                Result.failure(Exception(response.body()?.message ?: "Failed to mark as read"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun markAllNotificationsRead(): Result<Unit> = withContext(Dispatchers.IO) {
+        try {
+            val response = api.markAllNotificationsRead(mapOf("role" to "admin"))
+            if (response.isSuccessful) {
+                Result.success(Unit)
+            } else {
+                Result.failure(Exception("Failed to mark all as read"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun deleteNotification(id: String): Result<Unit> = withContext(Dispatchers.IO) {
+        try {
+            val response = api.deleteNotification(id)
+            if (response.isSuccessful) {
+                Result.success(Unit)
+            } else {
+                Result.failure(Exception("Failed to delete notification"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun sendBroadcastNotification(title: String, message: String, type: String): Result<AdminNotification> = withContext(Dispatchers.IO) {
+        try {
+            val req = CreateNotificationRequest(
+                title = title,
+                message = message,
+                type = type,
+                role = "customer",
+                recipient = "all"
+            )
+            val response = api.createNotification(req)
+            val body = response.body()
+            if (response.isSuccessful && body?.data != null) {
+                Result.success(body.data)
+            } else {
+                Result.failure(Exception(body?.message ?: "Failed to send broadcast"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
 }
 
