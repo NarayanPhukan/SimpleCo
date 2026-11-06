@@ -17,8 +17,8 @@ exports.createOrder = async (req, res) => {
       totals
     } = req.body;
 
-    // Enforce Online Razorpay Payments: Reject any COD attempts
-    if (paymentMethod && paymentMethod.toLowerCase().includes('cod')) {
+    // Enforce Online Razorpay Payments: Reject any COD attempts for regular storefront checkout (allow manual admin orders)
+    if (!req.body.isManualOrder && paymentMethod && paymentMethod.toLowerCase().includes('cod')) {
       return res.status(400).json({
         success: false,
         message: 'Cash on Delivery (COD) is temporarily disabled. Please pay securely online via Razorpay.'

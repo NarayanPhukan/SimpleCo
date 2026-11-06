@@ -39,6 +39,7 @@ fun OrdersScreen(
     onFilterChange: (String) -> Unit,
     onRefresh: () -> Unit,
     onSelectOrder: (Order) -> Unit,
+    onCreateManualOrder: () -> Unit = {},
     onOpenShippingChecker: () -> Unit = {},
     onOpenMoreMenu: () -> Unit = {}
 ) {
@@ -317,7 +318,7 @@ fun OrdersScreen(
                     shadowElevation = 6.dp,
                     modifier = Modifier
                         .clip(RoundedCornerShape(25.dp))
-                        .clickable { showNewOrderDialog = true }
+                        .clickable { onCreateManualOrder() }
                 ) {
                     Row(
                         modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp),

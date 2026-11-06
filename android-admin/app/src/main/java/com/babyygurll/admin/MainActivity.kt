@@ -231,6 +231,9 @@ class MainActivity : ComponentActivity() {
                                         viewModel.selectOrder(order)
                                         navController.navigate(Screen.OrderDetail.createRoute(order.orderId))
                                     },
+                                    onCreateManualOrder = {
+                                        navController.navigate(Screen.CreateManualOrder.route)
+                                    },
                                     onOpenShippingChecker = {
                                         navController.navigate(Screen.Settings.route)
                                     },
@@ -308,6 +311,21 @@ class MainActivity : ComponentActivity() {
                                     state = uiState,
                                     onNavigateSettings = { navController.navigate(Screen.Settings.route) },
                                     onNavigateCoupons = { navController.navigate(Screen.Coupons.route) },
+                                    onNavigateProducts = {
+                                        navController.navigate(Screen.Products.route) {
+                                            popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                                            launchSingleTop = true
+                                        }
+                                    },
+                                    onNavigateOrders = { filter ->
+                                        if (filter != null) {
+                                            viewModel.setOrderFilter(filter)
+                                        }
+                                        navController.navigate(Screen.Orders.route) {
+                                            popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                                            launchSingleTop = true
+                                        }
+                                    },
                                     onCheckUpdates = { viewModel.checkForAppUpdates(silent = false) },
                                     onOpenServerConfig = { showServerConfigDialog = true },
                                     onLogout = { viewModel.logout() }
@@ -355,6 +373,49 @@ class MainActivity : ComponentActivity() {
                             // Settings Screen
                             composable(Screen.Settings.route) {
                                 SettingsScreen(viewModel = viewModel)
+                            }
+
+                            // Create Manual Order Screen
+                            composable(Screen.CreateManualOrder.route) {
+                                CreateManualOrderScreen(
+                                    state = uiState,
+                                    onBack = { navController.popBackStack() },
+                                    onCreateOrder = { req, onDone ->
+                                        viewModel.createManualOrder(req) { created ->
+                                            onDone(created)
+                                        }
+                                    },
+                                    onOrderCreatedSuccess = { orderId ->
+                                        navController.navigate(Screen.OrderCreatedSuccess.createRoute(orderId)) {
+                                            popUpTo(Screen.Orders.route)
+                                        }
+                                    }
+                                )
+                            }
+
+                            // Order Created Confirmation Screen
+                            composable(
+                                route = Screen.OrderCreatedSuccess.route,
+                                arguments = listOf(navArgument("orderId") { type = NavType.StringType })
+                            ) { backStackEntry ->
+                                val orderId = backStackEntry.arguments?.getString("orderId") ?: ""
+                                OrderCreatedSuccessScreen(
+                                    orderId = orderId,
+                                    onViewOrder = { id ->
+                                        val found = uiState.orders.find { it.orderId == id }
+                                        if (found != null) {
+                                            viewModel.selectOrder(found)
+                                        }
+                                        navController.navigate(Screen.OrderDetail.createRoute(id)) {
+                                            popUpTo(Screen.Orders.route)
+                                        }
+                                    },
+                                    onBackToOrders = {
+                                        navController.navigate(Screen.Orders.route) {
+                                            popUpTo(Screen.Orders.route) { inclusive = true }
+                                        }
+                                    }
+                                )
                             }
                         }
                     }

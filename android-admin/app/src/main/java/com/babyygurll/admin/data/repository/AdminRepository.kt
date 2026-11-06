@@ -135,6 +135,20 @@ class AdminRepository(
         }
     }
 
+    suspend fun createOrder(req: ManualOrderCreateRequest): Result<Order> = withContext(Dispatchers.IO) {
+        try {
+            val response = api.createOrder(req)
+            val body = response.body()
+            if (response.isSuccessful && body?.data != null) {
+                Result.success(body.data)
+            } else {
+                Result.failure(Exception(body?.message ?: "Failed to create manual order"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     suspend fun advanceOrderStage(orderId: String): Result<Order> = withContext(Dispatchers.IO) {
         try {
             val response = api.advanceOrderStage(orderId)

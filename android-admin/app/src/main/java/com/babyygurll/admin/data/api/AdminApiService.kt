@@ -65,6 +65,11 @@ interface AdminApiService {
         @Path("id") id: String
     ): Response<ApiResponse<Order>>
 
+    @POST("api/orders")
+    suspend fun createOrder(
+        @Body request: ManualOrderCreateRequest
+    ): Response<ApiResponse<Order>>
+
     @PUT("api/orders/{id}/tracking")
     suspend fun updateOrderTracking(
         @Path("id") id: String,

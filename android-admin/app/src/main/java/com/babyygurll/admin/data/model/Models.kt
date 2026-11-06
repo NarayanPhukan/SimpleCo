@@ -117,6 +117,26 @@ data class OrderTrackingUpdateRequest(
     @SerializedName("estimatedDelivery") val estimatedDelivery: String
 )
 
+data class ManualOrderTotals(
+    @SerializedName("subtotal") val subtotal: Double = 0.0,
+    @SerializedName("discount") val discount: Double = 0.0,
+    @SerializedName("shipping") val shipping: Double = 80.0,
+    @SerializedName("tax") val tax: Double = 0.0,
+    @SerializedName("total") val total: Double = 0.0
+)
+
+data class ManualOrderCreateRequest(
+    @SerializedName("userEmail") val userEmail: String,
+    @SerializedName("shippingAddress") val shippingAddress: ShippingAddress,
+    @SerializedName("paymentMethod") val paymentMethod: String,
+    @SerializedName("paymentStatus") val paymentStatus: String,
+    @SerializedName("items") val items: List<OrderItem>,
+    @SerializedName("totals") val totals: ManualOrderTotals,
+    @SerializedName("isManualOrder") val isManualOrder: Boolean = true,
+    @SerializedName("source") val source: String = "WhatsApp",
+    @SerializedName("customerInstructions") val customerInstructions: String? = null
+)
+
 // Coupon Models
 data class Coupon(
     @SerializedName("_id") val id: String? = null,
