@@ -21,6 +21,8 @@ import { WishlistDrawer } from './components/WishlistDrawer';
 import { CustomStudioModal } from './components/CustomStudioModal';
 import { WhatsAppConcierge } from './components/WhatsAppConcierge';
 import { RecentlyViewedBar } from './components/RecentlyViewedBar';
+import { LegalPolicyModal } from './components/LegalPolicyModal';
+import { AppDownloadModal } from './components/AppDownloadModal';
 import { IconSearch, IconPackage, IconSparkles } from './components/Icons';
 
 export const App = () => {
@@ -50,6 +52,9 @@ export const App = () => {
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [quickViewProduct, setQuickViewProduct] = useState(null);
   const [isAdminOpen, setIsAdminOpen] = useState(false);
+  const [isPolicyModalOpen, setIsPolicyModalOpen] = useState(false);
+  const [policyInitialTab, setPolicyInitialTab] = useState('terms');
+  const [isAppDownloadOpen, setIsAppDownloadOpen] = useState(false);
 
   // Toasts
   const [toasts, setToasts] = useState([]);
@@ -158,6 +163,23 @@ export const App = () => {
         setIsAccountOpen(true);
       } else if (hash === '#checkout') {
         setIsCheckoutOpen(true);
+      } else if (hash === '#app' || hash === '#download') {
+        setIsAppDownloadOpen(true);
+      } else if (hash === '#refund-policy' || hash === '#refund' || hash === '#cancellation') {
+        setPolicyInitialTab('refund');
+        setIsPolicyModalOpen(true);
+      } else if (hash === '#shipping-policy' || hash === '#shipping') {
+        setPolicyInitialTab('shipping');
+        setIsPolicyModalOpen(true);
+      } else if (hash === '#terms' || hash === '#conditions') {
+        setPolicyInitialTab('terms');
+        setIsPolicyModalOpen(true);
+      } else if (hash === '#privacy') {
+        setPolicyInitialTab('privacy');
+        setIsPolicyModalOpen(true);
+      } else if (hash === '#contact' || hash === '#merchant') {
+        setPolicyInitialTab('contact');
+        setIsPolicyModalOpen(true);
       }
     };
     handleHash();
@@ -477,6 +499,11 @@ export const App = () => {
           window.history.pushState(null, '', '#admin');
         }}
         onShowToast={showToast}
+        onOpenPolicy={(tab) => {
+          setPolicyInitialTab(tab);
+          setIsPolicyModalOpen(true);
+        }}
+        onOpenAppDownload={() => setIsAppDownloadOpen(true)}
       />
 
       {/* Modals & Drawers */}
@@ -585,6 +612,29 @@ export const App = () => {
         }}
         onShowToast={showToast}
         onOpenCart={() => setIsCartOpen(true)}
+      />
+
+      {/* Razorpay Compliance Policies Modal */}
+      <LegalPolicyModal 
+        isOpen={isPolicyModalOpen}
+        onClose={() => {
+          setIsPolicyModalOpen(false);
+          if (['#refund-policy', '#refund', '#cancellation', '#shipping-policy', '#shipping', '#terms', '#privacy', '#contact'].includes(window.location.hash)) {
+            window.history.pushState(null, '', window.location.pathname);
+          }
+        }}
+        initialTab={policyInitialTab}
+      />
+
+      {/* Android Mobile App Showcase & Download Modal */}
+      <AppDownloadModal 
+        isOpen={isAppDownloadOpen}
+        onClose={() => {
+          setIsAppDownloadOpen(false);
+          if (window.location.hash === '#app' || window.location.hash === '#download') {
+            window.history.pushState(null, '', window.location.pathname);
+          }
+        }}
       />
 
       {/* Live WhatsApp Floating Concierge */}

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { IconInstagram, IconPinterest } from './Icons';
 
-export const Footer = ({ onOpenAccount, onScrollToTrack, onSelectCategory, onOpenAdmin, onShowToast }) => {
+export const Footer = ({ onOpenAccount, onScrollToTrack, onSelectCategory, onOpenAdmin, onShowToast, onOpenPolicy, onOpenAppDownload }) => {
   const [newsletterEmail, setNewsletterEmail] = useState('');
 
   const handleSubscribe = (e) => {
@@ -85,7 +85,15 @@ export const Footer = ({ onOpenAccount, onScrollToTrack, onSelectCategory, onOpe
             <h4>Collector Care</h4>
             <ul className="footer-links">
               <li><a href="#orderTracking" onClick={(e) => { e.preventDefault(); onScrollToTrack(); }}>Track Your Parcel</a></li>
-              <li><a href="https://raw.githubusercontent.com/NarayanPhukan/SimpleCo/main/android-customer/babyygurll-boutique.apk" download="babyygurll-boutique.apk" target="_blank" rel="noopener noreferrer" style={{ color: '#FFB6C1', fontWeight: 600 }}>📱 Download Android App</a></li>
+              <li>
+                <a 
+                  href="#app" 
+                  onClick={(e) => { e.preventDefault(); if (onOpenAppDownload) onOpenAppDownload(); }}
+                  style={{ color: '#FFB6C1', fontWeight: 600, cursor: 'pointer' }}
+                >
+                  📱 Download Android App
+                </a>
+              </li>
               <li><a href="#account" onClick={(e) => { e.preventDefault(); onOpenAccount(); }}>Stitch Club Yarn Points</a></li>
               <li><a href="#account" onClick={(e) => { e.preventDefault(); onOpenAccount(); }}>Saved Addresses & Orders</a></li>
               <li><a href="#reviews">Verified Collector Reviews</a></li>
@@ -115,8 +123,31 @@ export const Footer = ({ onOpenAccount, onScrollToTrack, onSelectCategory, onOpe
           </div>
         </div>
 
-        <div className="footer-bottom">
-          <p>&copy; 2026 BabyyGurll Crochet. Handcrafted with love in Assam, India.</p>
+        {/* Razorpay Compliance Policies & Legal Nav */}
+        <div style={{ marginTop: '2rem', paddingTop: '1.25rem', borderTop: '1px solid rgba(255,255,255,0.1)', display: 'flex', flexWrap: 'wrap', gap: '1.2rem', justifyContent: 'center', fontSize: '0.8rem', color: '#94A3B8' }}>
+          <a href="#refund-policy" onClick={(e) => { e.preventDefault(); onOpenPolicy && onOpenPolicy('refund'); }} style={{ color: '#CBD5E1', textDecoration: 'none' }}>
+            Refund & Cancellation Policy
+          </a>
+          <span>•</span>
+          <a href="#shipping-policy" onClick={(e) => { e.preventDefault(); onOpenPolicy && onOpenPolicy('shipping'); }} style={{ color: '#CBD5E1', textDecoration: 'none' }}>
+            Shipping & Delivery Policy
+          </a>
+          <span>•</span>
+          <a href="#terms" onClick={(e) => { e.preventDefault(); onOpenPolicy && onOpenPolicy('terms'); }} style={{ color: '#CBD5E1', textDecoration: 'none' }}>
+            Terms & Conditions
+          </a>
+          <span>•</span>
+          <a href="#privacy" onClick={(e) => { e.preventDefault(); onOpenPolicy && onOpenPolicy('privacy'); }} style={{ color: '#CBD5E1', textDecoration: 'none' }}>
+            Privacy Policy
+          </a>
+          <span>•</span>
+          <a href="#contact" onClick={(e) => { e.preventDefault(); onOpenPolicy && onOpenPolicy('contact'); }} style={{ color: '#CBD5E1', textDecoration: 'none' }}>
+            Contact Us & Merchant Info
+          </a>
+        </div>
+
+        <div className="footer-bottom" style={{ marginTop: '1rem' }}>
+          <p>&copy; 2026 BabyyGurll Crochet Studio. Handcrafted with love in Assam, India.</p>
           <p>
             All rights reserved • 
             <a 
