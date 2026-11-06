@@ -37,6 +37,25 @@ export const QuickViewModal = ({ product, onClose, onShowToast, onOpenCart }) =>
   const { formatPrice, addToCart, addRecentlyViewed } = useCart();
   const [selectedColor, setSelectedColor] = useState('');
   const [customNote, setCustomNote] = useState('');
+  const [activeImageIdx, setActiveImageIdx] = useState(0);
+
+  // Compute all available product images for slideshow
+  const allImages = React.useMemo(() => {
+    if (!product) return [];
+    const list = [];
+    if (product.image && !product.image.startsWith('/assets/images/granny-bag.jpg')) {
+      list.push(product.image);
+    }
+    if (Array.isArray(product.images)) {
+      product.images.forEach(img => {
+        if (img && !img.startsWith('/assets/images/granny-bag.jpg') && !list.includes(img)) {
+          list.push(img);
+        }
+      });
+    }
+    if (list.length === 0 && product.image) list.push(product.image);
+    return list.length > 0 ? list : ['/assets/images/placeholder.jpg'];
+  }, [product]);
 
   // PIN Code Delivery Checker State
   const [pinCode, setPinCode] = useState(() => {
@@ -48,6 +67,7 @@ export const QuickViewModal = ({ product, onClose, onShowToast, onOpenCart }) =>
 
   useEffect(() => {
     if (product) {
+      setActiveImageIdx(0);
       if (product.colors && product.colors.length > 0) {
         setSelectedColor(product.colors[0].name);
       }
@@ -133,8 +153,50 @@ export const QuickViewModal = ({ product, onClose, onShowToast, onOpenCart }) =>
       <div className="modal-card quick-view-card" role="dialog" aria-modal="true" aria-label={product.name}>
         <button className="modal-close-btn" onClick={onClose} aria-label="Close modal">&times;</button>
         
-        <div className="qv-media">
-          <img src={product.image} alt={product.name} />
+        <div className="qv-media" style={{ position: 'relative' }}>
+          <img src={allImages[activeImageIdx] || product.image} alt={`${product.name} - slide ${activeImageIdx + 1}`} />
+          {allImages.length > 1 && (
+            <>
+              <button
+                type="button"
+                className="qv-nav-btn qv-nav-prev"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setActiveImageIdx(prev => (prev === 0 ? allImages.length - 1 : prev - 1));
+                }}
+                aria-label="Previous slide"
+              >
+                ‹
+              </button>
+              <button
+                type="button"
+                className="qv-nav-btn qv-nav-next"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setActiveImageIdx(prev => (prev === allImages.length - 1 ? 0 : prev + 1));
+                }}
+                aria-label="Next slide"
+              >
+                ›
+              </button>
+              <div className="qv-thumbs-row">
+                {allImages.map((img, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    className={`qv-thumb-btn ${idx === activeImageIdx ? 'active' : ''}`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setActiveImageIdx(idx);
+                    }}
+                    aria-label={`View photo ${idx + 1}`}
+                  >
+                    <img src={img} alt="" />
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
         </div>
 
         <div className="qv-content">

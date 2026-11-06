@@ -202,11 +202,13 @@ fun InventoryScreen(
                         }
                     }
 
-                    // Green Trend Indicator (↗ 8.2%)
+                    // Dynamic Live In-Stock Indicator
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(2.dp)
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
+                        val inStockCount = inventoryItems.count { it.status == "In stock" }
+                        val inStockPct = if (inventoryItems.isNotEmpty()) (inStockCount * 100 / inventoryItems.size) else 0
                         Icon(
                             imageVector = Icons.Default.TrendingUp,
                             contentDescription = null,
@@ -214,7 +216,7 @@ fun InventoryScreen(
                             modifier = Modifier.size(16.dp)
                         )
                         Text(
-                            text = "8.2%",
+                            text = "$inStockPct% in stock",
                             color = Color(0xFF22C55E),
                             fontSize = 13.sp,
                             fontWeight = FontWeight.SemiBold

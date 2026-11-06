@@ -47,7 +47,8 @@ data class Product(
     @SerializedName("inStock") val inStock: Boolean = true,
     @SerializedName("colors") val colors: List<ProductColor> = emptyList(),
     @SerializedName("sizes") val sizes: List<String> = emptyList(),
-    @SerializedName("variants") val variants: List<ProductVariant> = emptyList()
+    @SerializedName("variants") val variants: List<ProductVariant> = emptyList(),
+    @SerializedName("stock") val stock: Int? = null
 ) {
     val resolvedPrimaryImage: String
         get() {
@@ -70,34 +71,33 @@ data class Product(
 
     val sku: String
         get() {
-            val prefix = when {
-                name.contains("Ocean", true) || category.contains("bag", true) -> "BGB-OCB"
-                name.contains("Cardigan", true) || category.contains("apparel", true) -> "BGB-CKC"
-                name.contains("Daisy", true) || name.contains("Tote", true) -> "BGB-DMT"
-                name.contains("Pearl", true) || name.contains("Weave", true) -> "BGB-PWS"
-                else -> "BGB-" + name.filter { it.isLetter() }.take(3).uppercase().padEnd(3, 'X')
-            }
-            val num = (Math.abs(id.hashCode()) % 80 + 10)
-            return "$prefix-0$num"
+            val effective = (if (id.isNotBlank()) id else mongoId.orEmpty())
+            val clean = effective.filter { it.isLetterOrDigit() }.takeLast(6).uppercase()
+            return if (clean.isNotBlank()) "BGC-$clean" else "BGC-ITEM"
         }
 
     val stockCount: Int
-        get() = if (!inStock) 0 else {
-            val num = (Math.abs(id.hashCode()) % 15)
-            if (num == 0) 1 else num
+        get() {
+            if (!inStock) return 0
+            if (stock != null) return stock
+            if (variants.isNotEmpty()) {
+                val variantTotal = variants.sumOf { it.stock }
+                if (variantTotal > 0) return variantTotal
+            }
+            return 10
         }
 
     val unitsSold: Int
-        get() = ((Math.abs(id.hashCode()) % 50) + 16)
+        get() = 0
 
     val productionDays: String
         get() = if (leadTime.contains("days", true)) leadTime.substringBefore("(") else "3–5 days"
 
     val displayStatus: String
         get() = when {
-            !inStock -> "Out of stock"
+            !inStock || stockCount <= 0 -> "Out of stock"
             stockCount in 1..3 -> "Low stock"
-            badge?.contains("Draft", true) == true || (id.hashCode() % 5 == 0 && inStock && stockCount > 10) -> "Draft"
+            badge?.contains("Draft", true) == true -> "Draft"
             else -> "Published"
         }
 

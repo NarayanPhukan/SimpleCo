@@ -32,6 +32,14 @@ object ImageUrlUtils {
             return trimmed
         }
 
+        // 2b. Raw Base64 string without data: prefix
+        if (trimmed.startsWith("/9j/")) {
+            return "data:image/jpeg;base64,$trimmed"
+        }
+        if (trimmed.startsWith("iVBORw0KGgo")) {
+            return "data:image/png;base64,$trimmed"
+        }
+
         // 3. Resolve against server origin (strip trailing /api or /api/)
         val serverHost = baseUrl.substringBefore("/api").trimEnd('/')
         val cleanPath = trimmed.trimStart('/')

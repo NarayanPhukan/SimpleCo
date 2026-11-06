@@ -7,7 +7,10 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -31,6 +34,7 @@ import com.babyygurll.store.data.model.Product
 import com.babyygurll.store.ui.components.BoutiqueImage
 import com.babyygurll.store.ui.theme.*
 import com.babyygurll.store.ui.viewmodel.StoreViewModel
+import kotlinx.coroutines.launch
 
 @Composable
 fun ProductDetailScreen(
@@ -57,7 +61,8 @@ fun ProductDetailScreen(
         list.addAll(product.allImages.filter { it.isNotBlank() })
         if (list.isNotEmpty()) list.distinct() else listOf(product.resolvedPrimaryImage)
     }
-    var currentImageIndex by remember(product.effectiveId, activeVariant) { mutableIntStateOf(0) }
+    val coroutineScope = rememberCoroutineScope()
+    val pagerState = rememberPagerState(initialPage = 0, pageCount = { imageList.size.coerceAtLeast(1) })
     var careExpanded by remember { mutableStateOf(false) }
 
     val activeStock = activeVariant?.stock ?: (if (product.inStock) 5 else 0)
@@ -143,23 +148,82 @@ fun ProductDetailScreen(
                 .background(Color.White)
                 .verticalScroll(rememberScrollState())
         ) {
-            // Hero Image Area with Floating Back & Wishlist Buttons
+            // Hero Image Carousel Area with HorizontalPager, Controls & Buttons
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(380.dp)
                     .background(Color(0xFFF8FAFC))
             ) {
-                // Product Image
-                val currentImage = imageList.getOrNull(currentImageIndex) ?: product.resolvedPrimaryImage
-                BoutiqueImage(
-                    imageUrl = currentImage,
-                    contentDescription = product.name,
-                    modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.Crop
-                )
+                // Interactive Swipeable HorizontalPager
+                HorizontalPager(
+                    state = pagerState,
+                    modifier = Modifier.fillMaxSize()
+                ) { page ->
+                    val pageImage = imageList.getOrNull(page) ?: product.resolvedPrimaryImage
+                    BoutiqueImage(
+                        imageUrl = pageImage,
+                        contentDescription = "${product.name} - Slide ${page + 1}",
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+                }
 
-                // Top Floating Action Buttons
+                // Previous Image Chevron Button
+                if (imageList.size > 1 && pagerState.currentPage > 0) {
+                    Surface(
+                        shape = CircleShape,
+                        color = Color.White.copy(alpha = 0.88f),
+                        shadowElevation = 3.dp,
+                        modifier = Modifier
+                            .align(Alignment.CenterStart)
+                            .padding(start = 12.dp)
+                            .size(38.dp)
+                            .clickable {
+                                coroutineScope.launch {
+                                    pagerState.animateScrollToPage(pagerState.currentPage - 1)
+                                }
+                            }
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                imageVector = Icons.Default.ChevronLeft,
+                                contentDescription = "Previous photo",
+                                tint = BrandDarkNavy,
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
+                    }
+                }
+
+                // Next Image Chevron Button
+                if (imageList.size > 1 && pagerState.currentPage < imageList.size - 1) {
+                    Surface(
+                        shape = CircleShape,
+                        color = Color.White.copy(alpha = 0.88f),
+                        shadowElevation = 3.dp,
+                        modifier = Modifier
+                            .align(Alignment.CenterEnd)
+                            .padding(end = 12.dp)
+                            .size(38.dp)
+                            .clickable {
+                                coroutineScope.launch {
+                                    pagerState.animateScrollToPage(pagerState.currentPage + 1)
+                                }
+                            }
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                imageVector = Icons.Default.ChevronRight,
+                                contentDescription = "Next photo",
+                                tint = BrandDarkNavy,
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
+                    }
+                }
+
+                // Top Floating Action Buttons (Back & Wishlist)
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -224,13 +288,17 @@ fun ProductDetailScreen(
                     ) {
                         val count = imageList.size.coerceAtLeast(1)
                         repeat(count) { index ->
-                            val isSelected = index == currentImageIndex
+                            val isSelected = index == pagerState.currentPage
                             Box(
                                 modifier = Modifier
-                                    .size(width = if (isSelected) 16.dp else 4.dp, height = 4.dp)
-                                    .clip(RoundedCornerShape(2.dp))
+                                    .size(width = if (isSelected) 18.dp else 5.dp, height = 5.dp)
+                                    .clip(RoundedCornerShape(3.dp))
                                     .background(if (isSelected) Color.White else Color.White.copy(alpha = 0.5f))
-                                    .clickable { currentImageIndex = index }
+                                    .clickable {
+                                        coroutineScope.launch {
+                                            pagerState.animateScrollToPage(index)
+                                        }
+                                    }
                             )
                         }
                     }
@@ -241,12 +309,50 @@ fun ProductDetailScreen(
                         shape = RoundedCornerShape(12.dp)
                     ) {
                         Text(
-                            text = "${currentImageIndex + 1}/${imageList.size.coerceAtLeast(1)}",
+                            text = "${pagerState.currentPage + 1}/${imageList.size.coerceAtLeast(1)}",
                             color = Color.White,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
                             modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
                         )
+                    }
+                }
+            }
+
+            // Thumbnail Row Strip (when multiple photos exist)
+            if (imageList.size > 1) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 10.dp)
+                        .horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    imageList.forEachIndexed { index, imgUrl ->
+                        val isSelected = index == pagerState.currentPage
+                        Box(
+                            modifier = Modifier
+                                .size(54.dp)
+                                .clip(RoundedCornerShape(10.dp))
+                                .border(
+                                    width = if (isSelected) 2.dp else 1.dp,
+                                    color = if (isSelected) BrandPrimary else SurfaceBorder,
+                                    shape = RoundedCornerShape(10.dp)
+                                )
+                                .clickable {
+                                    coroutineScope.launch {
+                                        pagerState.animateScrollToPage(index)
+                                    }
+                                }
+                        ) {
+                            BoutiqueImage(
+                                imageUrl = imgUrl,
+                                contentDescription = "Photo thumbnail ${index + 1}",
+                                modifier = Modifier.fillMaxSize(),
+                                contentScale = ContentScale.Crop
+                            )
+                        }
                     }
                 }
             }

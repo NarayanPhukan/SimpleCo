@@ -207,23 +207,33 @@ fun ShippingScreen(
                         }
                     }
 
-                    // Green Trend Indicator (↗ 8.2%)
+                    // Dynamic Shipment Status
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(2.dp)
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.TrendingUp,
-                            contentDescription = null,
-                            tint = Color(0xFF22C55E),
-                            modifier = Modifier.size(16.dp)
-                        )
-                        Text(
-                            text = "8.2%",
-                            color = Color(0xFF22C55E),
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.SemiBold
-                        )
+                        val inTransit = realShipments.count { it.status == "In transit" }
+                        if (realShipments.isNotEmpty()) {
+                            Icon(
+                                imageVector = Icons.Default.LocalShipping,
+                                contentDescription = null,
+                                tint = Color(0xFF22C55E),
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Text(
+                                text = "$inTransit in transit",
+                                color = Color(0xFF22C55E),
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        } else {
+                            Text(
+                                text = "No shipments",
+                                color = Color(0xFF94A3B8),
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
                     }
                 }
             }

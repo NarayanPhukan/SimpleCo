@@ -5,6 +5,8 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -28,6 +30,7 @@ import com.babyygurll.admin.data.model.Order
 import com.babyygurll.admin.data.model.Product
 import com.babyygurll.admin.ui.theme.*
 import com.babyygurll.admin.util.AdminProductImage
+import kotlinx.coroutines.launch
 import java.text.NumberFormat
 import java.util.Locale
 
@@ -185,10 +188,10 @@ fun ProductDetailScreen(
             val allImages = remember(product) {
                 if (product.allImages.isNotEmpty()) product.allImages else listOf(product.resolvedPrimaryImage)
             }
-            var selectedImageIdx by remember(product.id) { mutableIntStateOf(0) }
-            val activeImageUrl = allImages.getOrNull(selectedImageIdx) ?: product.resolvedPrimaryImage
+            val coroutineScope = rememberCoroutineScope()
+            val pagerState = rememberPagerState(initialPage = 0, pageCount = { allImages.size.coerceAtLeast(1) })
 
-            // Hero Image Card with Dynamic Counter Badge
+            // Hero Image Card with HorizontalPager & Navigation Controls
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -196,13 +199,73 @@ fun ProductDetailScreen(
                     .clip(RoundedCornerShape(20.dp))
                     .background(Color(0xFFF1F5F9))
             ) {
-                AdminProductImage(
-                    model = activeImageUrl,
-                    contentDescription = product.name,
-                    serverUrl = serverUrl,
-                    fallbackEmoji = "🧶",
+                HorizontalPager(
+                    state = pagerState,
                     modifier = Modifier.fillMaxSize()
-                )
+                ) { page ->
+                    val imgUrl = allImages.getOrNull(page) ?: product.resolvedPrimaryImage
+                    AdminProductImage(
+                        model = imgUrl,
+                        contentDescription = "${product.name} - Image ${page + 1}",
+                        serverUrl = serverUrl,
+                        fallbackEmoji = "🧶",
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
+
+                // Previous Image Chevron Button
+                if (allImages.size > 1 && pagerState.currentPage > 0) {
+                    Surface(
+                        shape = CircleShape,
+                        color = Color.White.copy(alpha = 0.85f),
+                        shadowElevation = 2.dp,
+                        modifier = Modifier
+                            .align(Alignment.CenterStart)
+                            .padding(start = 12.dp)
+                            .size(36.dp)
+                            .clickable {
+                                coroutineScope.launch {
+                                    pagerState.animateScrollToPage(pagerState.currentPage - 1)
+                                }
+                            }
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                imageVector = Icons.Default.ChevronLeft,
+                                contentDescription = "Previous photo",
+                                tint = MidnightNavy,
+                                modifier = Modifier.size(22.dp)
+                            )
+                        }
+                    }
+                }
+
+                // Next Image Chevron Button
+                if (allImages.size > 1 && pagerState.currentPage < allImages.size - 1) {
+                    Surface(
+                        shape = CircleShape,
+                        color = Color.White.copy(alpha = 0.85f),
+                        shadowElevation = 2.dp,
+                        modifier = Modifier
+                            .align(Alignment.CenterEnd)
+                            .padding(end = 12.dp)
+                            .size(36.dp)
+                            .clickable {
+                                coroutineScope.launch {
+                                    pagerState.animateScrollToPage(pagerState.currentPage + 1)
+                                }
+                            }
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                imageVector = Icons.Default.ChevronRight,
+                                contentDescription = "Next photo",
+                                tint = MidnightNavy,
+                                modifier = Modifier.size(22.dp)
+                            )
+                        }
+                    }
+                }
 
                 // Counter Badge (only if multiple images exist)
                 if (allImages.size > 1) {
@@ -214,7 +277,7 @@ fun ProductDetailScreen(
                             .padding(16.dp)
                     ) {
                         Text(
-                            text = "${selectedImageIdx + 1} / ${allImages.size}",
+                            text = "${pagerState.currentPage + 1} / ${allImages.size}",
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color.White,
@@ -233,7 +296,7 @@ fun ProductDetailScreen(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     allImages.forEachIndexed { idx, imgUrl ->
-                        val isSelected = (idx == selectedImageIdx)
+                        val isSelected = (idx == pagerState.currentPage)
                         Box(
                             modifier = Modifier
                                 .size(56.dp)
@@ -243,7 +306,11 @@ fun ProductDetailScreen(
                                     color = if (isSelected) RoyalBlue else BrandBorder,
                                     shape = RoundedCornerShape(10.dp)
                                 )
-                                .clickable { selectedImageIdx = idx }
+                                .clickable {
+                                    coroutineScope.launch {
+                                        pagerState.animateScrollToPage(idx)
+                                    }
+                                }
                         ) {
                             AdminProductImage(
                                 model = imgUrl,
