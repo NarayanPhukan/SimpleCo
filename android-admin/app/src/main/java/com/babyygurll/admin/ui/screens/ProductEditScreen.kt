@@ -10,6 +10,7 @@ import androidx.compose.animation.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -26,10 +27,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
@@ -48,6 +51,7 @@ import java.io.InputStream
 import java.text.NumberFormat
 import java.util.Locale
 import kotlin.math.min
+import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -199,6 +203,15 @@ fun ProductEditScreen(
     var showAddSizeDialog by remember { mutableStateOf(false) }
     var newSizeInput by remember { mutableStateOf("") }
 
+    // Direct Custom Variant Dialog state
+    var showAddVariantDialog by remember { mutableStateOf(false) }
+    var newVariantName by remember { mutableStateOf("") }
+    var newVariantColor by remember { mutableStateOf("") }
+    var newVariantSize by remember { mutableStateOf("") }
+    var newVariantPrice by remember { mutableStateOf("") }
+    var newVariantStock by remember { mutableStateOf("") }
+    var newVariantSku by remember { mutableStateOf("") }
+
     val regenerateVariants: (List<String>, List<String>, List<ProductVariant>) -> List<ProductVariant> = { colors, sizes, existing ->
         val basePrice = sellingPriceText.toDoubleOrNull() ?: 0.0
         val baseStock = availableQuantityText.toIntOrNull() ?: 5
@@ -279,6 +292,8 @@ fun ProductEditScreen(
         val finalOrigPrice = originalPriceText.toDoubleOrNull()
         val primaryImg = imagesList.firstOrNull() ?: ""
         val finalVariants = if (dynamicVariants.isNotEmpty()) dynamicVariants else regenerateVariants(colorChips, sizeChips, emptyList())
+        val effectiveColors = (colorChips + dynamicVariants.mapNotNull { it.color }).distinct().filter { it.isNotBlank() }
+        val effectiveSizes = (sizeChips + dynamicVariants.mapNotNull { it.size }).distinct().filter { it.isNotBlank() }
 
         val req = ProductCreateRequest(
             name = productName.trim().ifBlank { "Untitled Handcrafted Piece" },
@@ -299,8 +314,8 @@ fun ProductEditScreen(
             description = shortDescription.trim().ifBlank {
                 "A structured hand-crocheted shoulder bag made with premium milk cotton yarn. Finished with a lined interior, magnetic closure and adjustable strap."
             },
-            colors = colorChips.map { ProductColor(name = it, hex = "#255DCE") },
-            sizes = sizeChips,
+            colors = effectiveColors.map { ProductColor(name = it, hex = "#255DCE") },
+            sizes = effectiveSizes,
             variants = finalVariants,
             inStock = !isDraft && (availableQuantityText.toIntOrNull() ?: 1) > 0
         )
@@ -802,7 +817,7 @@ fun ProductEditScreen(
                                     fontSize = 20.sp
                                 )
                                 Text(
-                                    text = "Add up to 8 high-quality images. Drag to reorder.",
+                                    text = "Add up to 8 high-quality images. Swipe/drag cards or tap ◀ ▶ to reorder. First photo is Primary.",
                                     style = MaterialTheme.typography.bodySmall,
                                     color = TextMuted,
                                     fontSize = 13.sp
@@ -834,7 +849,7 @@ fun ProductEditScreen(
                                                 .padding(12.dp)
                                         ) {
                                             Text(
-                                                text = "PRIMARY",
+                                                text = "PRIMARY PREVIEW",
                                                 fontSize = 10.sp,
                                                 fontWeight = FontWeight.Bold,
                                                 color = Color.White,
@@ -856,9 +871,9 @@ fun ProductEditScreen(
                                                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
                                                 verticalAlignment = Alignment.CenterVertically
                                             ) {
-                                                Icon(Icons.Outlined.Edit, contentDescription = null, tint = MidnightNavy, modifier = Modifier.size(14.dp))
+                                                Icon(Icons.Outlined.AddPhotoAlternate, contentDescription = null, tint = MidnightNavy, modifier = Modifier.size(14.dp))
                                                 Spacer(modifier = Modifier.width(4.dp))
-                                                Text(text = "Change", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = MidnightNavy)
+                                                Text(text = "Add more", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = MidnightNavy)
                                             }
                                         }
                                     }
@@ -901,80 +916,186 @@ fun ProductEditScreen(
                                     }
                                 }
 
+                                // Interactive Reorderable Photo Gallery Row
                                 Row(
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .horizontalScroll(rememberScrollState()),
-                                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                                    verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     imagesList.forEachIndexed { idx, img ->
-                                        if (idx > 0) {
+                                        var dragDelta by remember(idx, img) { mutableFloatStateOf(0f) }
+                                        val isPrimary = (idx == 0)
+
+                                        Box(
+                                            modifier = Modifier
+                                                .offset { IntOffset(x = dragDelta.roundToInt(), y = 0) }
+                                                .size(width = 104.dp, height = 114.dp)
+                                                .clip(RoundedCornerShape(12.dp))
+                                                .background(Color(0xFFF1F5F9))
+                                                .border(
+                                                    width = if (isPrimary) 2.dp else 1.dp,
+                                                    color = if (isPrimary) RoyalBlue else BrandBorder,
+                                                    shape = RoundedCornerShape(12.dp)
+                                                )
+                                                .pointerInput(idx, imagesList.size) {
+                                                    detectHorizontalDragGestures(
+                                                        onDragStart = { dragDelta = 0f },
+                                                        onDragEnd = {
+                                                            val threshold = 50f
+                                                            if (dragDelta < -threshold && idx < imagesList.size - 1) {
+                                                                // Dragged Left -> move forward in list
+                                                                val list = imagesList.toMutableList()
+                                                                val item = list.removeAt(idx)
+                                                                list.add(idx + 1, item)
+                                                                imagesList = list
+                                                            } else if (dragDelta > threshold && idx > 0) {
+                                                                // Dragged Right -> move backward in list
+                                                                val list = imagesList.toMutableList()
+                                                                val item = list.removeAt(idx)
+                                                                list.add(idx - 1, item)
+                                                                imagesList = list
+                                                            }
+                                                            dragDelta = 0f
+                                                        },
+                                                        onDragCancel = { dragDelta = 0f },
+                                                        onHorizontalDrag = { _, dragAmount ->
+                                                            dragDelta += dragAmount
+                                                        }
+                                                    )
+                                                }
+                                        ) {
+                                            AdminProductImage(
+                                                model = img,
+                                                contentDescription = "Photo ${idx + 1}",
+                                                serverUrl = serverUrl,
+                                                modifier = Modifier.fillMaxSize()
+                                            )
+
+                                            // Bottom Action Pill: ★ PRIMARY or "Set Primary"
                                             Box(
                                                 modifier = Modifier
-                                                    .size(92.dp)
-                                                    .clip(RoundedCornerShape(12.dp))
-                                                    .background(Color(0xFFF1F5F9))
-                                            ) {
-                                                AdminProductImage(
-                                                    model = img,
-                                                    contentDescription = null,
-                                                    serverUrl = serverUrl,
-                                                    modifier = Modifier.fillMaxSize()
-                                                )
-
-                                                Box(
-                                                    modifier = Modifier
-                                                        .align(Alignment.BottomCenter)
-                                                        .fillMaxWidth()
-                                                        .background(Color(0xCC0F172A))
-                                                        .clickable {
+                                                    .align(Alignment.BottomCenter)
+                                                    .fillMaxWidth()
+                                                    .background(if (isPrimary) RoyalBlue else Color(0xCC0F172A))
+                                                    .clickable {
+                                                        if (!isPrimary) {
                                                             val list = imagesList.toMutableList()
                                                             val selected = list.removeAt(idx)
                                                             list.add(0, selected)
                                                             imagesList = list
                                                         }
-                                                        .padding(vertical = 3.dp),
-                                                    contentAlignment = Alignment.Center
-                                                ) {
-                                                    Text(
-                                                        text = "Set Primary",
-                                                        color = Color.White,
-                                                        fontSize = 9.sp,
-                                                        fontWeight = FontWeight.Bold
-                                                    )
+                                                    }
+                                                    .padding(vertical = 3.dp),
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                Text(
+                                                    text = if (isPrimary) "★ PRIMARY" else "Set Primary",
+                                                    color = Color.White,
+                                                    fontSize = 9.sp,
+                                                    fontWeight = FontWeight.Bold
+                                                )
+                                            }
+
+                                            // Top Reorder Arrows & Delete Button Bar
+                                            Row(
+                                                modifier = Modifier
+                                                    .align(Alignment.TopCenter)
+                                                    .fillMaxWidth()
+                                                    .padding(horizontal = 4.dp, vertical = 4.dp),
+                                                horizontalArrangement = Arrangement.SpaceBetween,
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                // Reorder Left Button (◀)
+                                                if (idx > 0) {
+                                                    Surface(
+                                                        shape = CircleShape,
+                                                        color = Color.White.copy(alpha = 0.92f),
+                                                        shadowElevation = 1.dp,
+                                                        modifier = Modifier
+                                                            .size(20.dp)
+                                                            .clickable {
+                                                                val list = imagesList.toMutableList()
+                                                                val item = list.removeAt(idx)
+                                                                list.add(idx - 1, item)
+                                                                imagesList = list
+                                                            }
+                                                    ) {
+                                                        Box(contentAlignment = Alignment.Center) {
+                                                            Icon(
+                                                                imageVector = Icons.Default.ChevronLeft,
+                                                                contentDescription = "Move left",
+                                                                tint = MidnightNavy,
+                                                                modifier = Modifier.size(14.dp)
+                                                            )
+                                                        }
+                                                    }
+                                                } else {
+                                                    Spacer(modifier = Modifier.size(20.dp))
                                                 }
 
-                                                Box(
+                                                // Reorder Right Button (▶)
+                                                if (idx < imagesList.size - 1) {
+                                                    Surface(
+                                                        shape = CircleShape,
+                                                        color = Color.White.copy(alpha = 0.92f),
+                                                        shadowElevation = 1.dp,
+                                                        modifier = Modifier
+                                                            .size(20.dp)
+                                                            .clickable {
+                                                                val list = imagesList.toMutableList()
+                                                                val item = list.removeAt(idx)
+                                                                list.add(idx + 1, item)
+                                                                imagesList = list
+                                                            }
+                                                    ) {
+                                                        Box(contentAlignment = Alignment.Center) {
+                                                            Icon(
+                                                                imageVector = Icons.Default.ChevronRight,
+                                                                contentDescription = "Move right",
+                                                                tint = MidnightNavy,
+                                                                modifier = Modifier.size(14.dp)
+                                                            )
+                                                        }
+                                                    }
+                                                } else {
+                                                    Spacer(modifier = Modifier.size(20.dp))
+                                                }
+
+                                                // Delete Photo Button (✕)
+                                                Surface(
+                                                    shape = CircleShape,
+                                                    color = Color.White.copy(alpha = 0.92f),
+                                                    shadowElevation = 1.dp,
                                                     modifier = Modifier
-                                                        .align(Alignment.TopEnd)
-                                                        .padding(4.dp)
                                                         .size(20.dp)
-                                                        .clip(CircleShape)
-                                                        .background(Color.White.copy(alpha = 0.9f))
                                                         .clickable {
                                                             val list = imagesList.toMutableList()
                                                             list.removeAt(idx)
                                                             imagesList = list
-                                                        },
-                                                    contentAlignment = Alignment.Center
+                                                        }
                                                 ) {
-                                                    Icon(
-                                                        imageVector = Icons.Default.Close,
-                                                        contentDescription = "Remove",
-                                                        tint = MidnightNavy,
-                                                        modifier = Modifier.size(12.dp)
-                                                    )
+                                                    Box(contentAlignment = Alignment.Center) {
+                                                        Icon(
+                                                            imageVector = Icons.Default.Close,
+                                                            contentDescription = "Remove photo",
+                                                            tint = Color(0xFFEF4444),
+                                                            modifier = Modifier.size(12.dp)
+                                                        )
+                                                    }
                                                 }
                                             }
                                         }
                                     }
 
+                                    // Add Image Slot Button
                                     Surface(
                                         shape = RoundedCornerShape(12.dp),
                                         color = Color(0xFFEFF6FF),
                                         border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFBFDBFE)),
                                         modifier = Modifier
-                                            .size(92.dp)
+                                            .size(width = 104.dp, height = 114.dp)
                                             .clip(RoundedCornerShape(12.dp))
                                             .clickable { photoPickerLauncher.launch("image/*") }
                                     ) {
@@ -983,7 +1104,7 @@ fun ProductEditScreen(
                                             horizontalAlignment = Alignment.CenterHorizontally,
                                             verticalArrangement = Arrangement.Center
                                         ) {
-                                            Icon(Icons.Outlined.PhotoCamera, contentDescription = null, tint = RoyalBlue, modifier = Modifier.size(20.dp))
+                                            Icon(Icons.Outlined.PhotoCamera, contentDescription = null, tint = RoyalBlue, modifier = Modifier.size(22.dp))
                                             Spacer(modifier = Modifier.height(4.dp))
                                             Text(text = "Add image", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = RoyalBlue)
                                         }
@@ -991,7 +1112,7 @@ fun ProductEditScreen(
                                 }
 
                                 Text(
-                                    text = "Use square images at least 1200 × 1200 px. JPG, PNG up to 10 MB.",
+                                    text = "Use high-resolution photos. First photo will be displayed on customer catalog cards.",
                                     fontSize = 11.sp,
                                     color = TextMuted
                                 )
@@ -1400,25 +1521,44 @@ fun ProductEditScreen(
                                     }
                                 }
 
-                                Surface(
-                                    shape = RoundedCornerShape(12.dp),
-                                    color = Color(0xFFEFF6FF),
-                                    border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFBFDBFE)),
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .clip(RoundedCornerShape(12.dp))
-                                        .clickable { showAddColorDialog = true }
+                                // Action Buttons Row: Add Variant, Add Colour, Add Size
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                                 ) {
-                                    Row(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(14.dp),
-                                        horizontalArrangement = Arrangement.Center,
-                                        verticalAlignment = Alignment.CenterVertically
+                                    Button(
+                                        onClick = {
+                                            newVariantPrice = sellingPriceText
+                                            newVariantStock = availableQuantityText
+                                            showAddVariantDialog = true
+                                        },
+                                        modifier = Modifier.weight(1.4f),
+                                        shape = RoundedCornerShape(10.dp),
+                                        colors = ButtonDefaults.buttonColors(containerColor = RoyalBlue)
                                     ) {
-                                        Icon(Icons.Default.Add, contentDescription = null, tint = RoyalBlue, modifier = Modifier.size(18.dp))
-                                        Spacer(modifier = Modifier.width(6.dp))
-                                        Text(text = "Add another option", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = RoyalBlue)
+                                        Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
+                                        Spacer(modifier = Modifier.width(4.dp))
+                                        Text("+ Add Variant", fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                    }
+
+                                    OutlinedButton(
+                                        onClick = { showAddColorDialog = true },
+                                        modifier = Modifier.weight(1f),
+                                        shape = RoundedCornerShape(10.dp),
+                                        colors = ButtonDefaults.outlinedButtonColors(contentColor = MidnightNavy),
+                                        border = androidx.compose.foundation.BorderStroke(1.dp, BrandBorder)
+                                    ) {
+                                        Text("+ Colour", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                                    }
+
+                                    OutlinedButton(
+                                        onClick = { showAddSizeDialog = true },
+                                        modifier = Modifier.weight(1f),
+                                        shape = RoundedCornerShape(10.dp),
+                                        colors = ButtonDefaults.outlinedButtonColors(contentColor = MidnightNavy),
+                                        border = androidx.compose.foundation.BorderStroke(1.dp, BrandBorder)
+                                    ) {
+                                        Text("+ Size", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
                                     }
                                 }
 
@@ -1428,93 +1568,175 @@ fun ProductEditScreen(
                                     horizontalArrangement = Arrangement.SpaceBetween,
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Text(text = "$comboCount dynamic combinations", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = MidnightNavy)
-                                    Text(
-                                        text = "Regenerate all",
-                                        fontSize = 12.sp,
-                                        fontWeight = FontWeight.SemiBold,
-                                        color = RoyalBlue,
-                                        modifier = Modifier.clickable {
-                                            dynamicVariants = regenerateVariants(colorChips, sizeChips, emptyList())
-                                        }
-                                    )
+                                    Text(text = "$comboCount product variants", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = MidnightNavy)
+                                    if (colorChips.isNotEmpty() || sizeChips.isNotEmpty()) {
+                                        Text(
+                                            text = "Regenerate all",
+                                            fontSize = 12.sp,
+                                            fontWeight = FontWeight.SemiBold,
+                                            color = RoyalBlue,
+                                            modifier = Modifier.clickable {
+                                                dynamicVariants = regenerateVariants(colorChips, sizeChips, emptyList())
+                                            }
+                                        )
+                                    }
                                 }
 
-                                // Interactive combinations list with individual price and stock editing
-                                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    dynamicVariants.forEachIndexed { vIdx, v ->
-                                        Surface(
-                                            shape = RoundedCornerShape(10.dp),
-                                            color = Color(0xFFF8FAFC),
-                                            border = androidx.compose.foundation.BorderStroke(1.dp, BrandBorder),
-                                            modifier = Modifier.fillMaxWidth()
+                                // Interactive combinations list with individual price, stock and delete
+                                if (dynamicVariants.isEmpty()) {
+                                    Surface(
+                                        shape = RoundedCornerShape(10.dp),
+                                        color = Color(0xFFF8FAFC),
+                                        border = androidx.compose.foundation.BorderStroke(1.dp, BrandBorder),
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        Box(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(20.dp),
+                                            contentAlignment = Alignment.Center
                                         ) {
-                                            Column(modifier = Modifier.padding(12.dp)) {
-                                                Row(
-                                                    modifier = Modifier.fillMaxWidth(),
-                                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                                    verticalAlignment = Alignment.CenterVertically
-                                                ) {
-                                                    Text(
-                                                        text = v.name,
-                                                        fontSize = 13.sp,
-                                                        fontWeight = FontWeight.Bold,
-                                                        color = MidnightNavy
-                                                    )
-                                                    Text(
-                                                        text = "SKU: ${v.sku ?: "Auto"}",
-                                                        fontSize = 11.sp,
-                                                        color = TextMuted
-                                                    )
-                                                }
-
-                                                Spacer(modifier = Modifier.height(8.dp))
-
-                                                Row(
-                                                    modifier = Modifier.fillMaxWidth(),
-                                                    horizontalArrangement = Arrangement.spacedBy(10.dp)
-                                                ) {
-                                                    // Variant Price
-                                                    OutlinedTextField(
-                                                        value = if (v.price > 0) v.price.toInt().toString() else "",
-                                                        onValueChange = { newPriceStr ->
-                                                            val p = newPriceStr.toDoubleOrNull() ?: 0.0
-                                                            dynamicVariants = dynamicVariants.toMutableList().apply {
-                                                                this[vIdx] = v.copy(price = p)
+                                            Text(
+                                                text = "No variants added yet. Tap '+ Add Variant' above to create custom options.",
+                                                fontSize = 13.sp,
+                                                color = TextMuted,
+                                                fontWeight = FontWeight.Medium
+                                            )
+                                        }
+                                    }
+                                } else {
+                                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                        dynamicVariants.forEachIndexed { vIdx, v ->
+                                            Surface(
+                                                shape = RoundedCornerShape(10.dp),
+                                                color = Color(0xFFF8FAFC),
+                                                border = androidx.compose.foundation.BorderStroke(1.dp, BrandBorder),
+                                                modifier = Modifier.fillMaxWidth()
+                                            ) {
+                                                Column(modifier = Modifier.padding(12.dp)) {
+                                                    Row(
+                                                        modifier = Modifier.fillMaxWidth(),
+                                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                                        verticalAlignment = Alignment.CenterVertically
+                                                    ) {
+                                                        Row(
+                                                            verticalAlignment = Alignment.CenterVertically,
+                                                            modifier = Modifier.weight(1f)
+                                                        ) {
+                                                            Text(
+                                                                text = v.name,
+                                                                fontSize = 13.sp,
+                                                                fontWeight = FontWeight.Bold,
+                                                                color = MidnightNavy
+                                                            )
+                                                            if (!v.color.isNullOrBlank()) {
+                                                                Spacer(modifier = Modifier.width(6.dp))
+                                                                Surface(
+                                                                    shape = RoundedCornerShape(4.dp),
+                                                                    color = Color(0xFFEFF6FF)
+                                                                ) {
+                                                                    Text(
+                                                                        text = v.color!!,
+                                                                        fontSize = 10.sp,
+                                                                        color = RoyalBlue,
+                                                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                                                    )
+                                                                }
                                                             }
-                                                        },
-                                                        label = { Text("Price (₹)", fontSize = 11.sp) },
-                                                        singleLine = true,
-                                                        modifier = Modifier.weight(1f),
-                                                        shape = RoundedCornerShape(8.dp),
-                                                        colors = OutlinedTextFieldDefaults.colors(
-                                                            focusedBorderColor = RoyalBlue,
-                                                            unfocusedBorderColor = BrandBorder,
-                                                            focusedContainerColor = Color.White,
-                                                            unfocusedContainerColor = Color.White
-                                                        )
-                                                    )
-
-                                                    // Variant Stock
-                                                    OutlinedTextField(
-                                                        value = v.stock.toString(),
-                                                        onValueChange = { newStockStr ->
-                                                            val s = newStockStr.toIntOrNull() ?: 0
-                                                            dynamicVariants = dynamicVariants.toMutableList().apply {
-                                                                this[vIdx] = v.copy(stock = s)
+                                                            if (!v.size.isNullOrBlank()) {
+                                                                Spacer(modifier = Modifier.width(4.dp))
+                                                                Surface(
+                                                                    shape = RoundedCornerShape(4.dp),
+                                                                    color = Color(0xFFF1F5F9)
+                                                                ) {
+                                                                    Text(
+                                                                        text = v.size!!,
+                                                                        fontSize = 10.sp,
+                                                                        color = TextMuted,
+                                                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                                                    )
+                                                                }
                                                             }
-                                                        },
-                                                        label = { Text("Stock units", fontSize = 11.sp) },
-                                                        singleLine = true,
-                                                        modifier = Modifier.weight(1f),
-                                                        shape = RoundedCornerShape(8.dp),
-                                                        colors = OutlinedTextFieldDefaults.colors(
-                                                            focusedBorderColor = RoyalBlue,
-                                                            unfocusedBorderColor = BrandBorder,
-                                                            focusedContainerColor = Color.White,
-                                                            unfocusedContainerColor = Color.White
+                                                        }
+
+                                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                                            Text(
+                                                                text = "SKU: ${v.sku ?: "Auto"}",
+                                                                fontSize = 11.sp,
+                                                                color = TextMuted
+                                                            )
+                                                            Spacer(modifier = Modifier.width(8.dp))
+                                                            // Delete Variant Button
+                                                            Box(
+                                                                modifier = Modifier
+                                                                    .size(24.dp)
+                                                                    .clip(CircleShape)
+                                                                    .background(Color(0xFFFEE2E2))
+                                                                    .clickable {
+                                                                        val list = dynamicVariants.toMutableList()
+                                                                        list.removeAt(vIdx)
+                                                                        dynamicVariants = list
+                                                                    },
+                                                                contentAlignment = Alignment.Center
+                                                            ) {
+                                                                Icon(
+                                                                    imageVector = Icons.Default.Close,
+                                                                    contentDescription = "Delete variant",
+                                                                    tint = Color(0xFFEF4444),
+                                                                    modifier = Modifier.size(14.dp)
+                                                                )
+                                                            }
+                                                        }
+                                                    }
+
+                                                    Spacer(modifier = Modifier.height(8.dp))
+
+                                                    Row(
+                                                        modifier = Modifier.fillMaxWidth(),
+                                                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                                    ) {
+                                                        // Variant Price
+                                                        OutlinedTextField(
+                                                            value = if (v.price > 0) v.price.toInt().toString() else "",
+                                                            onValueChange = { newPriceStr ->
+                                                                val p = newPriceStr.toDoubleOrNull() ?: 0.0
+                                                                dynamicVariants = dynamicVariants.toMutableList().apply {
+                                                                    this[vIdx] = v.copy(price = p)
+                                                                }
+                                                            },
+                                                            label = { Text("Price (₹)", fontSize = 11.sp) },
+                                                            singleLine = true,
+                                                            modifier = Modifier.weight(1f),
+                                                            shape = RoundedCornerShape(8.dp),
+                                                            colors = OutlinedTextFieldDefaults.colors(
+                                                                focusedBorderColor = RoyalBlue,
+                                                                unfocusedBorderColor = BrandBorder,
+                                                                focusedContainerColor = Color.White,
+                                                                unfocusedContainerColor = Color.White
+                                                            )
                                                         )
-                                                    )
+
+                                                        // Variant Stock
+                                                        OutlinedTextField(
+                                                            value = v.stock.toString(),
+                                                            onValueChange = { newStockStr ->
+                                                                val s = newStockStr.toIntOrNull() ?: 0
+                                                                dynamicVariants = dynamicVariants.toMutableList().apply {
+                                                                    this[vIdx] = v.copy(stock = s)
+                                                                }
+                                                            },
+                                                            label = { Text("Stock units", fontSize = 11.sp) },
+                                                            singleLine = true,
+                                                            modifier = Modifier.weight(1f),
+                                                            shape = RoundedCornerShape(8.dp),
+                                                            colors = OutlinedTextFieldDefaults.colors(
+                                                                focusedBorderColor = RoyalBlue,
+                                                                unfocusedBorderColor = BrandBorder,
+                                                                focusedContainerColor = Color.White,
+                                                                unfocusedContainerColor = Color.White
+                                                            )
+                                                        )
+                                                    }
                                                 }
                                             }
                                         }
@@ -2310,6 +2532,190 @@ fun ProductEditScreen(
                 },
                 dismissButton = {
                     TextButton(onClick = { showAddSizeDialog = false }) {
+                        Text("Cancel", color = TextMuted)
+                    }
+                }
+            )
+        }
+
+        // Direct Custom Variant Dialog
+        if (showAddVariantDialog) {
+            AlertDialog(
+                onDismissRequest = { showAddVariantDialog = false },
+                title = {
+                    Text(
+                        text = "Add Custom Variant",
+                        fontWeight = FontWeight.Bold,
+                        color = MidnightNavy
+                    )
+                },
+                text = {
+                    Column(
+                        modifier = Modifier.verticalScroll(rememberScrollState()),
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Text(
+                            text = "Add an individual option with custom pricing and stock:",
+                            fontSize = 13.sp,
+                            color = TextMuted
+                        )
+
+                        // Variant Name
+                        OutlinedTextField(
+                            value = newVariantName,
+                            onValueChange = { newVariantName = it },
+                            label = { Text("Variant Name *") },
+                            placeholder = { Text("e.g. Pastel Lilac / Medium") },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(8.dp),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = RoyalBlue,
+                                unfocusedBorderColor = BrandBorder
+                            )
+                        )
+
+                        // Color & Size Row
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            OutlinedTextField(
+                                value = newVariantColor,
+                                onValueChange = { newVariantColor = it },
+                                label = { Text("Colour") },
+                                placeholder = { Text("e.g. Lilac") },
+                                singleLine = true,
+                                modifier = Modifier.weight(1f),
+                                shape = RoundedCornerShape(8.dp),
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedBorderColor = RoyalBlue,
+                                    unfocusedBorderColor = BrandBorder
+                                )
+                            )
+                            OutlinedTextField(
+                                value = newVariantSize,
+                                onValueChange = { newVariantSize = it },
+                                label = { Text("Size") },
+                                placeholder = { Text("e.g. Medium") },
+                                singleLine = true,
+                                modifier = Modifier.weight(1f),
+                                shape = RoundedCornerShape(8.dp),
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedBorderColor = RoyalBlue,
+                                    unfocusedBorderColor = BrandBorder
+                                )
+                            )
+                        }
+
+                        // Price & Stock Row
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            OutlinedTextField(
+                                value = newVariantPrice,
+                                onValueChange = { newVariantPrice = it },
+                                label = { Text("Price (₹) *") },
+                                placeholder = { Text(sellingPriceText.ifBlank { "0" }) },
+                                singleLine = true,
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                modifier = Modifier.weight(1f),
+                                shape = RoundedCornerShape(8.dp),
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedBorderColor = RoyalBlue,
+                                    unfocusedBorderColor = BrandBorder
+                                )
+                            )
+                            OutlinedTextField(
+                                value = newVariantStock,
+                                onValueChange = { newVariantStock = it },
+                                label = { Text("Stock Units") },
+                                placeholder = { Text("5") },
+                                singleLine = true,
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                modifier = Modifier.weight(1f),
+                                shape = RoundedCornerShape(8.dp),
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedBorderColor = RoyalBlue,
+                                    unfocusedBorderColor = BrandBorder
+                                )
+                            )
+                        }
+
+                        // SKU
+                        OutlinedTextField(
+                            value = newVariantSku,
+                            onValueChange = { newVariantSku = it },
+                            label = { Text("Custom SKU (optional)") },
+                            placeholder = { Text("e.g. BGC-SCARF-LILAC") },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(8.dp),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = RoyalBlue,
+                                unfocusedBorderColor = BrandBorder
+                            )
+                        )
+                    }
+                },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            val name = newVariantName.trim().ifBlank {
+                                val col = newVariantColor.trim()
+                                val sz = newVariantSize.trim()
+                                when {
+                                    col.isNotBlank() && sz.isNotBlank() -> "$col / $sz"
+                                    col.isNotBlank() -> col
+                                    sz.isNotBlank() -> sz
+                                    else -> "Custom Edition"
+                                }
+                            }
+                            val p = newVariantPrice.toDoubleOrNull() ?: sellingPriceText.toDoubleOrNull() ?: 0.0
+                            val s = newVariantStock.toIntOrNull() ?: availableQuantityText.toIntOrNull() ?: 5
+                            val autoSku = newVariantSku.trim().ifBlank {
+                                val code = name.filter { it.isLetter() }.take(3).uppercase()
+                                "$sku-$code"
+                            }
+                            val varId = "var-${System.currentTimeMillis() % 100000}"
+
+                            val customVariant = ProductVariant(
+                                id = varId,
+                                name = name,
+                                color = newVariantColor.trim().ifBlank { null },
+                                size = newVariantSize.trim().ifBlank { null },
+                                colorHex = "#255DCE",
+                                price = p,
+                                originalPrice = originalPriceText.toDoubleOrNull(),
+                                stock = s,
+                                sku = autoSku
+                            )
+
+                            dynamicVariants = dynamicVariants + customVariant
+
+                            if (newVariantColor.isNotBlank() && !colorChips.contains(newVariantColor.trim())) {
+                                colorChips = colorChips + newVariantColor.trim()
+                            }
+                            if (newVariantSize.isNotBlank() && !sizeChips.contains(newVariantSize.trim())) {
+                                sizeChips = sizeChips + newVariantSize.trim()
+                            }
+
+                            newVariantName = ""
+                            newVariantColor = ""
+                            newVariantSize = ""
+                            newVariantPrice = ""
+                            newVariantStock = ""
+                            newVariantSku = ""
+                            showAddVariantDialog = false
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = RoyalBlue)
+                    ) {
+                        Text("Add Variant", fontWeight = FontWeight.Bold)
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showAddVariantDialog = false }) {
                         Text("Cancel", color = TextMuted)
                     }
                 }

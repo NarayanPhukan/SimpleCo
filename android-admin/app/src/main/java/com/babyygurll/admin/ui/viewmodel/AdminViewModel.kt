@@ -734,6 +734,10 @@ class AdminViewModel : ViewModel() {
                     "badge" to req.badge,
                     "leadTime" to req.leadTime,
                     "description" to req.description,
+                    "colors" to req.colors,
+                    "sizes" to req.sizes,
+                    "variants" to req.variants,
+                    "stock" to if (req.variants.isNotEmpty()) req.variants.sumOf { it.stock } else null,
                     "inStock" to req.inStock
                 ))
             } else {
