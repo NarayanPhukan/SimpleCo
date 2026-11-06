@@ -6,11 +6,18 @@ const buildProductQuery = (rawId) => {
   if (!rawId) return { id: '__none__' };
   const paramId = decodeURIComponent(rawId).trim();
   const conditions = [{ id: paramId }, { id: rawId }];
-  if (mongoose.Types.ObjectId.isValid(paramId)) {
-    try {
-      conditions.push({ _id: new mongoose.Types.ObjectId(paramId) });
-    } catch (e) {}
-    conditions.push({ _id: paramId });
+  try {
+    const mg = mongoose || require('mongoose');
+    if (mg && mg.Types && mg.Types.ObjectId.isValid(paramId)) {
+      try {
+        conditions.push({ _id: new mg.Types.ObjectId(paramId) });
+      } catch (e) {}
+      conditions.push({ _id: paramId });
+    }
+  } catch (err) {
+    if (/^[0-9a-fA-F]{24}$/.test(paramId)) {
+      conditions.push({ _id: paramId });
+    }
   }
   return { $or: conditions };
 };

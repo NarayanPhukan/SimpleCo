@@ -19,12 +19,12 @@ const DEFAULT_CONFIG = {
   adminPassword: 'admin123',
   adminRazorpayAccountId: '',
   appVersion: {
-    latestVersionCode: 6,
-    latestVersionName: '1.3.1',
+    latestVersionCode: 7,
+    latestVersionName: '1.3.2',
     minRequiredVersionCode: 1,
-    releaseNotes: '• Fixed missing photos on piece edit: existing pictures load instantly\n• In-memory Base64 image rendering in catalog list preview\n• Fixed product update failure reference error\n• Free delivery across India on all orders (₹0 shipping fee)\n• Exclusive Razorpay integration & COD removed for safe dispatch',
+    releaseNotes: '• Fixed product update & delete reliability across MongoDB and memory\n• Separated admin app updates from customer app updates\n• Direct deletion support by slug and MongoDB _id\n• Enhanced error message reporting',
     downloadUrl: 'https://raw.githubusercontent.com/NarayanPhukan/SimpleCo/main/android-admin/babyygurll-admin.apk',
-    releaseDate: '2026-11-05',
+    releaseDate: '2026-11-06',
     critical: false
   },
   customerAppVersion: {
@@ -70,6 +70,11 @@ async function resolveSettingsDoc() {
         let changed = false;
         if (!doc.customerAppVersion || !doc.customerAppVersion.latestVersionCode) {
           doc.customerAppVersion = DEFAULT_CONFIG.customerAppVersion;
+          changed = true;
+        }
+        // Self-healing: if appVersion was erroneously overwritten with customer app APK info, restore it to admin app
+        if (doc.appVersion && doc.appVersion.downloadUrl && doc.appVersion.downloadUrl.includes('babyygurll-boutique')) {
+          doc.appVersion = DEFAULT_CONFIG.appVersion;
           changed = true;
         }
         if (changed) {

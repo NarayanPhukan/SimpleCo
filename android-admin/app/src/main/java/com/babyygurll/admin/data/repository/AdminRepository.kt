@@ -108,7 +108,13 @@ class AdminRepository(
             if (response.isSuccessful) {
                 Result.success(Unit)
             } else {
-                Result.failure(Exception(response.body()?.message ?: "Failed to delete product"))
+                val errorMsg = try {
+                    response.errorBody()?.string()?.let { errJson ->
+                        val regex = "\"message\"\\s*:\\s*\"([^\"]+)\"".toRegex()
+                        regex.find(errJson)?.groupValues?.get(1) ?: errJson
+                    }
+                } catch (e: Exception) { null }
+                Result.failure(Exception(errorMsg ?: "Failed to delete product"))
             }
         } catch (e: Exception) {
             Result.failure(e)

@@ -95,7 +95,7 @@ interface AdminApiService {
     ): Response<PincodeCheckResponse>
 
     // Auto Update Detection
-    @GET("api/settings/app-version")
+    @GET("api/settings/app-version?app=admin")
     suspend fun getAppVersion(): Response<ApiResponse<AppVersionInfo>>
 
     // Error Detection & System Diagnostics

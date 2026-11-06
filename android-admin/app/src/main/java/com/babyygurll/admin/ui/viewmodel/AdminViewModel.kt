@@ -550,7 +550,9 @@ class AdminViewModel : ViewModel() {
             val currentVersionName = getInstalledVersionName()
             val result = repository.fetchAppVersion()
             result.onSuccess { info ->
-                val hasUpdate = info.latestVersionCode > currentVersionCode
+                // Guard: Ensure the update manifest is genuinely for the Admin app and not the customer boutique APK
+                val isCustomerApk = info.downloadUrl.contains("babyygurll-boutique", ignoreCase = true)
+                val hasUpdate = !isCustomerApk && (info.latestVersionCode > currentVersionCode)
                 val critical = hasUpdate && (currentVersionCode < info.minRequiredVersionCode || info.critical)
 
                 // If it's a background silent check and non-critical, don't nag if dismissed this session

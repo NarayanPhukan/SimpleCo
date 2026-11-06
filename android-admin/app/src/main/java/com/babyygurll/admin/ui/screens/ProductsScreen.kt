@@ -191,7 +191,12 @@ fun ProductsScreen(
             confirmButton = {
                 Button(
                     onClick = {
-                        productToDelete?.let { onDeleteProduct(it.id) }
+                        productToDelete?.let { prod ->
+                            val targetId = prod.id.trim().ifBlank { prod.mongoId?.trim() ?: "" }
+                            if (targetId.isNotBlank()) {
+                                onDeleteProduct(targetId)
+                            }
+                        }
                         productToDelete = null
                     },
                     colors = ButtonDefaults.buttonColors(

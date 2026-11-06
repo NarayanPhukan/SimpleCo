@@ -68,15 +68,15 @@ const storeSettingSchema = new mongoose.Schema({
     default: false
   },
   appVersion: {
-    latestVersionCode: { type: Number, default: 6 },
-    latestVersionName: { type: String, default: '1.3.1' },
+    latestVersionCode: { type: Number, default: 7 },
+    latestVersionName: { type: String, default: '1.3.2' },
     minRequiredVersionCode: { type: Number, default: 1 },
     releaseNotes: {
       type: String,
-      default: '• Fixed missing photos on piece edit: existing pictures load instantly\n• In-memory Base64 image rendering in catalog list preview\n• Fixed product update failure reference error\n• Free delivery across India on all orders (₹0 shipping fee)\n• Exclusive Razorpay integration & COD removed for safe dispatch'
+      default: '• Fixed product update & delete reliability across MongoDB and memory\n• Separated admin app updates from customer app updates\n• Direct deletion support by slug and MongoDB _id\n• Enhanced error message reporting'
     },
     downloadUrl: { type: String, default: 'https://raw.githubusercontent.com/NarayanPhukan/SimpleCo/main/android-admin/babyygurll-admin.apk' },
-    releaseDate: { type: String, default: '2026-11-05' },
+    releaseDate: { type: String, default: '2026-11-06' },
     critical: { type: Boolean, default: false }
   },
   customerAppVersion: {
