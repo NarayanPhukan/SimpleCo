@@ -19,21 +19,21 @@ const DEFAULT_CONFIG = {
   adminPassword: 'admin123',
   adminRazorpayAccountId: '',
   appVersion: {
-    latestVersionCode: 16,
-    latestVersionName: '1.5.0',
+    latestVersionCode: 17,
+    latestVersionName: '1.6.0',
     minRequiredVersionCode: 1,
-    releaseNotes: '• Product image drag-to-reorder with touch gestures & move arrows\n• Dedicated + Add Variant dialog for custom variants with pricing & stock\n• 100% real live data across Inventory, Production Queue, Custom Requests, and Shipping\n• Product detail photo swipe carousel and full backend variant persistence',
+    releaseNotes: '• New official brand identity: BabyyGurll Admin\n• New deep navy BG monogram app launcher icon\n• Real-time studio notification broadcast system with unread badges\n• Dynamic order stage tracking and product variant management',
     downloadUrl: 'https://raw.githubusercontent.com/NarayanPhukan/SimpleCo/main/android-admin/babyygurll-admin.apk',
-    releaseDate: '2026-11-06',
+    releaseDate: '2026-11-07',
     critical: false
   },
   customerAppVersion: {
-    latestVersionCode: 12,
-    latestVersionName: '1.2.0',
+    latestVersionCode: 13,
+    latestVersionName: '1.3.0',
     minRequiredVersionCode: 1,
-    releaseNotes: '• Product photo slideshow carousel with smooth touch swipe gestures, navigation arrows, and interactive thumbnails\n• Support for raw Base64 and remote product images\n• Real-time stock availability and dynamic variants',
+    releaseNotes: '• New official brand identity: BabyyGurll Boutique\n• New high-resolution serif BG monogram app launcher icon\n• End-to-end real-time notification system with live notification bell\n• Verified Razorpay checkout with instant UPI & card payments',
     downloadUrl: 'https://raw.githubusercontent.com/NarayanPhukan/SimpleCo/main/android-customer/babyygurll-boutique.apk',
-    releaseDate: '2026-11-06',
+    releaseDate: '2026-11-07',
     critical: false
   }
 };
