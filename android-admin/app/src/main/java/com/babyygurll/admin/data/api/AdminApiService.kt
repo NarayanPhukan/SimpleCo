@@ -114,5 +114,14 @@ interface AdminApiService {
 
     @POST("api/settings/clear-error-logs")
     suspend fun clearErrorLogs(): Response<ApiResponse<Unit>>
+
+    // Payment & Razorpay Refunds
+    @GET("api/payment/refunds")
+    suspend fun getRefunds(): Response<RefundsResponse>
+
+    @POST("api/payment/refund")
+    suspend fun issueRefund(
+        @Body request: IssueRefundRequest
+    ): Response<ApiResponse<Unit>>
 }
 

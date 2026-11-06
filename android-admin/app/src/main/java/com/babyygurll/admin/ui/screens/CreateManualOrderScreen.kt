@@ -60,14 +60,11 @@ fun CreateManualOrderScreen(
     // Product Selection State
     var showProductPicker by remember { mutableStateOf(false) }
     var selectedProduct by remember(state.products) {
-        mutableStateOf<Product?>(
-            state.products.find { it.price == 80.0 }
-                ?: state.products.firstOrNull()
-        )
+        mutableStateOf<Product?>(state.products.firstOrNull())
     }
-    var quantity by remember { mutableIntStateOf(2) }
+    var quantity by remember { mutableIntStateOf(1) }
     var customizationInstructions by remember {
-        mutableStateOf("Color, size or personalization notes...")
+        mutableStateOf("")
     }
 
     // Discount State
@@ -78,14 +75,14 @@ fun CreateManualOrderScreen(
 
     // Address State
     var fullAddress by remember {
-        mutableStateOf("42, Lake View Road, Indiranagar, Bengaluru, Karnataka 560038")
+        mutableStateOf("")
     }
 
     // When customer changes, update address if available
     LaunchedEffect(selectedCustomer) {
         selectedCustomer?.let { cust ->
             if (cust.address.isNotBlank()) {
-                fullAddress = "${cust.address}, ${cust.city}"
+                fullAddress = listOfNotNull(cust.address.takeIf { it.isNotBlank() }, cust.city.takeIf { it.isNotBlank() }).joinToString(", ")
             }
         }
     }
@@ -374,12 +371,12 @@ fun CreateManualOrderScreen(
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 val label = selectedCustomer?.let { "${it.name} · ${it.phone}" }
-                                    ?: "Aarohi Mehta · +91 99876 21402"
+                                    ?: "Select a customer or create new"
                                 Text(
                                     text = label,
                                     fontSize = 14.sp,
                                     fontWeight = FontWeight.Medium,
-                                    color = MidnightNavy
+                                    color = if (selectedCustomer != null) MidnightNavy else TextMuted
                                 )
                                 Icon(
                                     imageVector = Icons.Default.KeyboardArrowDown,
@@ -396,17 +393,8 @@ fun CreateManualOrderScreen(
                         ) {
                             if (state.customers.isEmpty()) {
                                 DropdownMenuItem(
-                                    text = { Text("Aarohi Mehta · +91 99876 21402") },
-                                    onClick = {
-                                        selectedCustomer = Customer(
-                                            name = "Aarohi Mehta",
-                                            phone = "+91 99876 21402",
-                                            email = "aarohi@email.com",
-                                            address = "42, Lake View Road, Indiranagar",
-                                            city = "Bengaluru"
-                                        )
-                                        showCustomerMenu = false
-                                    }
+                                    text = { Text("No customer records yet — tap '+ Create new customer' below") },
+                                    onClick = { showCustomerMenu = false }
                                 )
                             } else {
                                 state.customers.forEach { customer ->
@@ -525,15 +513,14 @@ fun CreateManualOrderScreen(
                                 .clickable { showProductPicker = true }
                         ) {
                             Text(
-                                text = selectedProduct?.name?.ifBlank { "Daisy Crochet Sling" }
-                                    ?: "Daisy Crochet Sling",
+                                text = selectedProduct?.name?.ifBlank { null } ?: "Tap to select product",
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = MidnightNavy
                             )
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Text(
-                                    text = "Sky blue · Medium",
+                                    text = selectedProduct?.categoryName ?: selectedProduct?.category ?: "Handmade piece",
                                     fontSize = 12.sp,
                                     color = TextMuted
                                 )

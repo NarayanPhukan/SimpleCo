@@ -50,35 +50,22 @@ fun InventoryScreen(
     var showAdjustStockDialog by remember { mutableStateOf<InventoryStockItem?>(null) }
     var adjustedCount by remember { mutableIntStateOf(0) }
 
-    // Map catalog products into inventory tracking items with fallback sample data matching design
-    val defaultItems = remember {
-        listOf(
-            InventoryStockItem("inv-1", "Cloud Knit Cardigan", 3, "Low stock"),
-            InventoryStockItem("inv-2", "Daisy Mini Tote", 0, "Out of stock"),
-            InventoryStockItem("inv-3", "Ocean Bloom Bag", 8, "In stock"),
-            InventoryStockItem("inv-4", "Pearl Weave Sling", 2, "Low stock"),
-            InventoryStockItem("inv-5", "Strawberry Cow Plushie", 14, "In stock"),
-            InventoryStockItem("inv-6", "Lavender Dream Blanket", 0, "Out of stock")
-        )
-    }
-
+    // Real inventory tracking items mapped directly from catalog products
     val inventoryItems = remember(state.products) {
-        if (state.products.isNotEmpty()) {
-            state.products.map { p ->
-                val units = p.stockCount
-                val status = when {
-                    !p.inStock || units <= 0 -> "Out of stock"
-                    units in 1..3 -> "Low stock"
-                    else -> "In stock"
-                }
-                InventoryStockItem(
-                    id = p.id.ifBlank { p.mongoId ?: "" },
-                    name = p.name,
-                    stockUnits = units,
-                    status = status
-                )
+        state.products.map { p ->
+            val units = p.stockCount
+            val status = when {
+                !p.inStock || units <= 0 -> "Out of stock"
+                units in 1..3 -> "Low stock"
+                else -> "In stock"
             }
-        } else defaultItems
+            InventoryStockItem(
+                id = p.id.ifBlank { p.mongoId ?: "" },
+                name = p.name,
+                stockUnits = units,
+                status = status
+            )
+        }
     }
 
     val filteredItems = remember(inventoryItems, searchQuery, selectedFilter) {
@@ -202,7 +189,7 @@ fun InventoryScreen(
                         Column {
                             val totalUnits = inventoryItems.size
                             Text(
-                                text = "${if (totalUnits > 0) totalUnits else 46}",
+                                text = "$totalUnits",
                                 fontSize = 28.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = Color.White
@@ -378,8 +365,31 @@ fun InventoryScreen(
                 border = androidx.compose.foundation.BorderStroke(1.dp, BrandBorder),
                 elevation = CardDefaults.cardElevation(defaultElevation = 0.5.dp)
             ) {
-                Column(modifier = Modifier.fillMaxWidth()) {
-                    filteredItems.forEachIndexed { index, item ->
+                if (filteredItems.isEmpty()) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 36.dp, horizontal = 16.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(
+                                text = if (inventoryItems.isEmpty()) "No products in inventory" else "No matching products",
+                                fontWeight = FontWeight.Bold,
+                                color = MidnightNavy,
+                                fontSize = 15.sp
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = if (inventoryItems.isEmpty()) "Add products to your catalog to track real inventory stock." else "Try adjusting your search query or filter.",
+                                color = TextMuted,
+                                fontSize = 12.sp
+                            )
+                        }
+                    }
+                } else {
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        filteredItems.forEachIndexed { index, item ->
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -474,6 +484,7 @@ fun InventoryScreen(
                     }
                 }
             }
+        }
 
             Spacer(modifier = Modifier.height(18.dp))
 
@@ -598,3 +609,4 @@ fun InventoryScreen(
         )
     }
 }
+

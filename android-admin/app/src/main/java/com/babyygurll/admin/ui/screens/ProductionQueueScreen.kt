@@ -36,28 +36,48 @@ fun ProductionQueueScreen(
     onAdvanceStage: (String) -> Unit = {}
 ) {
     var searchQuery by remember { mutableStateOf("") }
-    var selectedFilter by remember { mutableStateOf("Waiting") } // "Waiting", "Crocheting", "Quality check"
+    var selectedFilter by remember { mutableStateOf("All") } // "All", "Waiting", "Being crocheted", "Quality check"
     var selectedItemForDetail by remember { mutableStateOf<ProductionQueueItem?>(null) }
     var showNewItemDialog by remember { mutableStateOf(false) }
 
-    val defaultQueue = remember {
-        listOf(
-            ProductionQueueItem("pq-1", "#BG1048", "Ocean Bloom Bag", "Due 22 Jun", "Being crocheted", "Master Crafter", 65),
-            ProductionQueueItem("pq-2", "#BG1039", "Pearl Weave Sling", "Due today", "Quality check", "Artisan Priya", 90),
-            ProductionQueueItem("pq-3", "#BG1051", "Daisy Mini Tote", "Starts tomorrow", "Waiting", "Unassigned", 10),
-            ProductionQueueItem("pq-4", "#BG1055", "Cloud Knit Cardigan", "Due 24 Jun", "Being crocheted", "Master Crafter", 40),
-            ProductionQueueItem("pq-5", "#BG1058", "Strawberry Cow Plushie", "Due 25 Jun", "Waiting", "Artisan Anita", 0)
-        )
+    // Real production queue items extracted from live orders in crafting stages
+    val realQueue = remember(state.orders) {
+        val inProgressOrders = state.orders.filter { it.statusCode !in listOf("delivered", "cancelled") }
+        inProgressOrders.flatMap { ord ->
+            ord.items.mapIndexed { idx, itm ->
+                val stage = when (ord.statusStage) {
+                    0 -> "Waiting"
+                    1 -> "Being crocheted"
+                    2 -> "Quality check"
+                    else -> "Being packed"
+                }
+                val progress = when (ord.statusStage) {
+                    0 -> 15
+                    1 -> 50
+                    2 -> 80
+                    else -> 95
+                }
+                ProductionQueueItem(
+                    id = "${ord.orderId}-$idx",
+                    orderRef = "#${ord.orderId}",
+                    itemName = itm.name,
+                    dueDate = ord.estimatedDelivery.orEmpty().ifBlank { "Estimated in 3-4 days" },
+                    stage = stage,
+                    artisan = "Master Crafter",
+                    progressPercent = progress
+                )
+            }
+        }
     }
 
-    val filteredList = remember(defaultQueue, searchQuery, selectedFilter) {
-        defaultQueue.filter { item ->
+    val filteredList = remember(realQueue, searchQuery, selectedFilter) {
+        realQueue.filter { item ->
             val matchesSearch = searchQuery.isBlank() ||
                 item.orderRef.contains(searchQuery, ignoreCase = true) ||
                 item.itemName.contains(searchQuery, ignoreCase = true)
             val matchesFilter = when (selectedFilter) {
                 "Waiting" -> item.stage.equals("Waiting", ignoreCase = true)
-                "Crocheting" -> item.stage.contains("crochet", ignoreCase = true)
+                "Being crocheted" -> item.stage.contains("crochet", ignoreCase = true)
                 "Quality check" -> item.stage.contains("quality", ignoreCase = true)
                 else -> true
             }
@@ -173,7 +193,7 @@ fun ProductionQueueScreen(
 
                         Column {
                             Text(
-                                text = "9",
+                                text = "${realQueue.size}",
                                 fontSize = 28.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = Color.White
@@ -274,14 +294,14 @@ fun ProductionQueueScreen(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Filter Pills: Waiting | Crocheting | Quality check
+            // Filter Pills: All | Waiting | Being crocheted | Quality check
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .horizontalScroll(rememberScrollState()),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                listOf("Waiting", "Crocheting", "Quality check").forEach { pill ->
+                listOf("All", "Waiting", "Being crocheted", "Quality check").forEach { pill ->
                     val isSelected = selectedFilter.equals(pill, ignoreCase = true)
                     Surface(
                         shape = RoundedCornerShape(20.dp),
@@ -349,8 +369,31 @@ fun ProductionQueueScreen(
                 border = androidx.compose.foundation.BorderStroke(1.dp, BrandBorder),
                 elevation = CardDefaults.cardElevation(defaultElevation = 0.5.dp)
             ) {
-                Column(modifier = Modifier.fillMaxWidth()) {
-                    filteredList.forEachIndexed { index, item ->
+                if (filteredList.isEmpty()) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 36.dp, horizontal = 16.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(
+                                text = if (realQueue.isEmpty()) "Production queue is clear" else "No matching items",
+                                fontWeight = FontWeight.Bold,
+                                color = MidnightNavy,
+                                fontSize = 15.sp
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = if (realQueue.isEmpty()) "Handmade pieces from active orders will automatically appear here." else "Try adjusting your search query or filter.",
+                                color = TextMuted,
+                                fontSize = 12.sp
+                            )
+                        }
+                    }
+                } else {
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        filteredList.forEachIndexed { index, item ->
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -434,6 +477,7 @@ fun ProductionQueueScreen(
                     }
                 }
             }
+        }
 
             Spacer(modifier = Modifier.height(18.dp))
 
@@ -578,3 +622,4 @@ fun ProductionQueueScreen(
         )
     }
 }
+

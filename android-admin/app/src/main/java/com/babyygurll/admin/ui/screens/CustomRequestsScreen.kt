@@ -39,21 +39,41 @@ fun CustomRequestsScreen(
 ) {
     val context = LocalContext.current
     var searchQuery by remember { mutableStateOf("") }
-    var selectedFilter by remember { mutableStateOf("New") } // "New", "Reviewing", "Quoted"
+    var selectedFilter by remember { mutableStateOf("All") } // "All", "New", "Reviewing", "Quoted"
     var selectedRequestForDetail by remember { mutableStateOf<CustomRequestItem?>(null) }
     var showNewRequestDialog by remember { mutableStateOf(false) }
 
-    val defaultRequests = remember {
-        listOf(
-            CustomRequestItem("cr-1", "Custom baby blanket", "Ananya Sharma", "+91 98201 12345", "ananya@example.com", "New", "₹3,200", "Pastel blue & cream hex tiles, soft cotton yarn.", "18 Jun"),
-            CustomRequestItem("cr-2", "Floral phone sling", "Meera Nair", "+91 97412 88441", "meera@example.com", "Reviewing", "₹1,450", "Embroidered daisy motifs, adjustable crossbody strap.", "17 Jun"),
-            CustomRequestItem("cr-3", "Bridal potli bag", "Diya Menon", "+91 98450 77112", "diya@example.com", "Quoted", "₹4,500", "Gold zari thread interwoven with silk cotton.", "15 Jun"),
-            CustomRequestItem("cr-4", "Oversized Cable Knit Vest", "Riya Kapoor", "+91 99882 33441", "riya@example.com", "New", "₹2,800", "Chunky sage green yarn, V-neck cut.", "18 Jun")
-        )
+    // Real custom requests and personalized instructions extracted from customer orders
+    val realRequests = remember(state.orders) {
+        val ordersWithCustomizations = state.orders.filter { ord ->
+            ord.items.any { !it.customNote.isNullOrBlank() }
+        }
+        ordersWithCustomizations.flatMap { ord ->
+            ord.items.filter { !it.customNote.isNullOrBlank() }.mapIndexed { idx, itm ->
+                val note = itm.customNote.orEmpty()
+                val status = when (ord.statusStage) {
+                    0 -> "New"
+                    1 -> "Reviewing"
+                    else -> "Quoted"
+                }
+                CustomRequestItem(
+                    id = "CR-${ord.orderId.takeLast(4)}-$idx",
+                    title = note,
+                    customerName = ord.shippingAddress?.recipientName?.ifBlank { null }
+                        ?: (if (ord.userEmail.contains("@")) ord.userEmail.substringBefore("@") else "Valued Customer"),
+                    customerPhone = ord.shippingAddress?.phone.orEmpty(),
+                    customerEmail = ord.userEmail,
+                    status = status,
+                    budget = "₹${(itm.price * itm.quantity).toInt()}",
+                    notes = "${itm.name}: $note",
+                    requestedDate = ord.dateFormatted ?: ord.createdAt?.take(10) ?: "Recent"
+                )
+            }
+        }
     }
 
-    val filteredList = remember(defaultRequests, searchQuery, selectedFilter) {
-        defaultRequests.filter { item ->
+    val filteredList = remember(realRequests, searchQuery, selectedFilter) {
+        realRequests.filter { item ->
             val matchesSearch = searchQuery.isBlank() ||
                 item.title.contains(searchQuery, ignoreCase = true) ||
                 item.customerName.contains(searchQuery, ignoreCase = true) ||
@@ -176,7 +196,7 @@ fun CustomRequestsScreen(
 
                         Column {
                             Text(
-                                text = "7",
+                                text = "${realRequests.size}",
                                 fontSize = 28.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = Color.White
@@ -277,14 +297,14 @@ fun CustomRequestsScreen(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Filter Pills: New | Reviewing | Quoted
+            // Filter Pills: All | New | Reviewing | Quoted
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .horizontalScroll(rememberScrollState()),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                listOf("New", "Reviewing", "Quoted").forEach { pill ->
+                listOf("All", "New", "Reviewing", "Quoted").forEach { pill ->
                     val isSelected = selectedFilter.equals(pill, ignoreCase = true)
                     Surface(
                         shape = RoundedCornerShape(20.dp),
@@ -352,14 +372,32 @@ fun CustomRequestsScreen(
                 border = androidx.compose.foundation.BorderStroke(1.dp, BrandBorder),
                 elevation = CardDefaults.cardElevation(defaultElevation = 0.5.dp)
             ) {
-                Column(modifier = Modifier.fillMaxWidth()) {
-                    filteredList.forEachIndexed { index, item ->
-                        val code = when (index) {
-                            0 -> "CR-204"
-                            1 -> "CR-203"
-                            2 -> "CR-199"
-                            else -> "CR-195"
+                if (filteredList.isEmpty()) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 36.dp, horizontal = 16.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(
+                                text = if (realRequests.isEmpty()) "No custom requests pending" else "No matching requests",
+                                fontWeight = FontWeight.Bold,
+                                color = MidnightNavy,
+                                fontSize = 15.sp
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = if (realRequests.isEmpty()) "Customization requests and notes submitted by shoppers will appear here." else "Try adjusting your search query or filter.",
+                                color = TextMuted,
+                                fontSize = 12.sp
+                            )
                         }
+                    }
+                } else {
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        filteredList.forEachIndexed { index, item ->
+                            val code = item.id.ifBlank { "CR-${index + 101}" }
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -443,6 +481,7 @@ fun CustomRequestsScreen(
                     }
                 }
             }
+        }
 
             Spacer(modifier = Modifier.height(18.dp))
 
@@ -592,3 +631,4 @@ fun CustomRequestsScreen(
         )
     }
 }
+

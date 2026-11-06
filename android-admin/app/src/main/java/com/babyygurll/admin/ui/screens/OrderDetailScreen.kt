@@ -333,7 +333,8 @@ fun OrderDetailScreen(
 
                             Column {
                                 Text(
-                                    text = order.shippingAddress?.recipientName ?: "Aarohi Mehta",
+                                    text = order.shippingAddress?.recipientName?.ifBlank { null }
+                                        ?: (if (order.userEmail.contains("@")) order.userEmail.substringBefore("@") else "Valued Customer"),
                                     fontSize = 15.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = MidnightNavy
@@ -604,12 +605,54 @@ fun OrderDetailScreen(
                                         fontWeight = FontWeight.Bold,
                                         color = if (isPaid) RoyalBlue else Color(0xFFD97706)
                                     )
-                                    val txId = order.razorpayPaymentId ?: order.razorpayOrderId ?: "pay_Ns82KX2391"
+                                    val txId = order.razorpayPaymentId ?: order.razorpayOrderId ?: (if (!isPaid) "Pending on delivery" else "Direct verification")
                                     Text(
                                         text = "Transaction ID · $txId",
                                         fontSize = 11.sp,
                                         color = CharcoalGray.copy(alpha = 0.7f)
                                     )
+                                }
+                            }
+                        }
+
+                        // Razorpay Refund Banner if refunded or cancel refund processed
+                        val isRefunded = order.paymentStatus == "refunded" || !order.razorpayRefundId.isNullOrBlank()
+                        if (isRefunded) {
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Surface(
+                                shape = RoundedCornerShape(12.dp),
+                                color = Color(0xFFEFF6FF),
+                                border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFBFDBFE)),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(12.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        Icons.Outlined.CurrencyExchange,
+                                        contentDescription = null,
+                                        tint = RoyalBlue,
+                                        modifier = Modifier.size(22.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(10.dp))
+                                    Column {
+                                        Text(
+                                            text = "Razorpay Refund Processed",
+                                            fontSize = 13.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = RoyalBlue
+                                        )
+                                        val refId = order.razorpayRefundId?.ifBlank { null } ?: "Processed to customer"
+                                        val amt = if (order.refundAmount > 0) order.refundAmount else order.total
+                                        Text(
+                                            text = "Refund ID: $refId · ₹$amt credited back to source account / UPI",
+                                            fontSize = 11.sp,
+                                            color = CharcoalGray.copy(alpha = 0.8f)
+                                        )
+                                    }
                                 }
                             }
                         }

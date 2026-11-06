@@ -42,6 +42,7 @@ fun MoreScreen(
     onNavigateCustomRequests: () -> Unit = {},
     onNavigateProductionQueue: () -> Unit = {},
     onNavigateShipping: () -> Unit = {},
+    onNavigateRefunds: () -> Unit = {},
     onCheckUpdates: () -> Unit,
     onOpenServerConfig: () -> Unit,
     onLogout: () -> Unit
@@ -210,6 +211,16 @@ fun MoreScreen(
             }
 
             // STORE OPERATIONS Section
+            val realCustomCount = remember(state.orders) {
+                state.orders.sumOf { ord -> ord.items.count { !it.customNote.isNullOrBlank() } }
+            }
+            val realQueueCount = remember(state.orders) {
+                state.orders.filter { it.statusCode !in listOf("delivered", "cancelled") }.sumOf { it.items.size }
+            }
+            val realShippingCount = remember(state.orders) {
+                state.orders.count { it.statusCode !in listOf("delivered", "cancelled") }
+            }
+
             CategoryHeader("STORE OPERATIONS")
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Row(
@@ -220,14 +231,14 @@ fun MoreScreen(
                         modifier = Modifier.weight(1f),
                         icon = Icons.Outlined.Inventory2,
                         title = "Inventory",
-                        subtitle = "${if (state.products.isNotEmpty()) state.products.size else 46} tracked",
+                        subtitle = "${state.products.size} tracked",
                         onClick = onNavigateInventory
                     )
                     MoreToolCard(
                         modifier = Modifier.weight(1f),
                         icon = Icons.Outlined.AutoAwesome,
                         title = "Custom Requests",
-                        subtitle = "7 open",
+                        subtitle = "$realCustomCount open",
                         onClick = onNavigateCustomRequests
                     )
                 }
@@ -240,14 +251,14 @@ fun MoreScreen(
                         modifier = Modifier.weight(1f),
                         icon = Icons.Outlined.Schedule,
                         title = "Production Queue",
-                        subtitle = "9 active",
+                        subtitle = "$realQueueCount active",
                         onClick = onNavigateProductionQueue
                     )
                     MoreToolCard(
                         modifier = Modifier.weight(1f),
                         icon = Icons.Outlined.LocalShipping,
                         title = "Shipping",
-                        subtitle = "12 in progress",
+                        subtitle = "$realShippingCount in progress",
                         onClick = onNavigateShipping
                     )
                 }
@@ -264,7 +275,7 @@ fun MoreScreen(
                         modifier = Modifier.weight(1f),
                         icon = Icons.Outlined.ConfirmationNumber,
                         title = "Coupons",
-                        subtitle = "${state.coupons.size.coerceAtLeast(8)} active",
+                        subtitle = "${state.coupons.size} active",
                         onClick = onNavigateCoupons
                     )
                     MoreToolCard(
@@ -319,11 +330,9 @@ fun MoreScreen(
                     MoreToolCard(
                         modifier = Modifier.weight(1f),
                         icon = Icons.Outlined.CreditCard,
-                        title = "Payments",
-                        subtitle = "Settlements",
-                        onClick = {
-                            showFeatureDialog = "Razorpay Settlements" to "Automatic T+1 daily bank deposits enabled. All UPI and card payments verified."
-                        }
+                        title = "Refunds & Payments",
+                        subtitle = if (state.refunds.isNotEmpty()) "${state.refunds.size} records" else "Razorpay live",
+                        onClick = onNavigateRefunds
                     )
                     MoreToolCard(
                         modifier = Modifier.weight(1f),

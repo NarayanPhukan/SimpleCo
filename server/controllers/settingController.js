@@ -19,10 +19,10 @@ const DEFAULT_CONFIG = {
   adminPassword: 'admin123',
   adminRazorpayAccountId: '',
   appVersion: {
-    latestVersionCode: 7,
-    latestVersionName: '1.3.2',
+    latestVersionCode: 14,
+    latestVersionName: '1.3.9',
     minRequiredVersionCode: 1,
-    releaseNotes: '• Fixed product update & delete reliability across MongoDB and memory\n• Separated admin app updates from customer app updates\n• Direct deletion support by slug and MongoDB _id\n• Enhanced error message reporting',
+    releaseNotes: '• 100% real database metrics and live customer profiles\n• Razorpay Refunds management screen with instant & normal settlement tracking\n• Real inventory counts and active order production queue',
     downloadUrl: 'https://raw.githubusercontent.com/NarayanPhukan/SimpleCo/main/android-admin/babyygurll-admin.apk',
     releaseDate: '2026-11-06',
     critical: false

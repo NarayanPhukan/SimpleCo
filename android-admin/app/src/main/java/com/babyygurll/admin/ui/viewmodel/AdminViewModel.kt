@@ -63,6 +63,10 @@ data class AdminUiState(
     val settings: StoreSettings = StoreSettings(),
     val pinServiceabilityResult: PincodeCheckResponse? = null,
 
+    // Payments & Razorpay Refunds
+    val refunds: List<RefundRecord> = emptyList(),
+    val isProcessingRefund: Boolean = false,
+
     // Auto Update Detection
     val appUpdateInfo: AppVersionInfo? = null,
     val isUpdateAvailable: Boolean = false,
@@ -260,6 +264,7 @@ class AdminViewModel : ViewModel() {
         fetchCoupons()
         fetchSettings()
         fetchDiagnostics()
+        fetchRefunds()
         checkForAppUpdates(silent = true)
     }
 
@@ -275,13 +280,13 @@ class AdminViewModel : ViewModel() {
 
                 val todayStr = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).format(java.util.Date())
                 val todayOrders = orderList.filter { (it.createdAt ?: "").startsWith(todayStr) }
-                val todayRev = if (todayOrders.isNotEmpty()) todayOrders.sumOf { it.total } else (if (revenue > 0) revenue * 0.35 else 12450.0)
-                val todayCount = if (todayOrders.isNotEmpty()) todayOrders.size else (if (orderList.isNotEmpty()) minOf(4, orderList.size) else 4)
-                val totalCount = if (orderList.isNotEmpty()) orderList.size else 18
-                val pendingCount = if (orderList.isNotEmpty()) pending else 5
+                val todayRev = todayOrders.sumOf { it.total }
+                val todayCount = todayOrders.size
+                val totalCount = orderList.size
+                val pendingCount = pending
 
-                // Extract and aggregate customer profiles from order records
-                val rawCustomerList = orderList.groupBy { ord ->
+                // Extract and aggregate real customer profiles from actual order records
+                val customerList = orderList.groupBy { ord ->
                     ord.shippingAddress?.phone?.ifBlank { null }
                         ?: ord.shippingAddress?.email?.ifBlank { null }
                         ?: ord.userEmail.ifBlank { null }
@@ -289,7 +294,8 @@ class AdminViewModel : ViewModel() {
                         ?: "Guest"
                 }.map { (key, custOrders) ->
                     val latest = custOrders.maxByOrNull { it.createdAt ?: "" }
-                    val name = latest?.shippingAddress?.recipientName?.ifBlank { null } ?: "Valued Customer"
+                    val name = latest?.shippingAddress?.recipientName?.ifBlank { null }
+                        ?: (if (latest?.userEmail?.contains("@") == true) latest.userEmail.substringBefore("@").replace(".", " ").capitalize(java.util.Locale.getDefault()) else "Valued Customer")
                     val phone = latest?.shippingAddress?.phone ?: ""
                     val email = latest?.shippingAddress?.email?.ifBlank { null } ?: latest?.userEmail ?: ""
                     val city = latest?.shippingAddress?.city ?: ""
@@ -302,67 +308,28 @@ class AdminViewModel : ViewModel() {
                         address = addr,
                         ordersCount = custOrders.size,
                         totalSpent = custOrders.filter { it.statusCode != "cancelled" }.sumOf { it.total },
-                        lastOrderDate = latest?.dateFormatted ?: "18 Jun"
+                        lastOrderDate = latest?.dateFormatted ?: "Recently"
                     )
                 }.sortedByDescending { it.ordersCount }
 
-                val defaultPatrons = listOf(
-                    Customer(
-                        name = "Ananya Sharma",
-                        email = "ananya.sharma@example.com",
-                        phone = "+91 98201 12345",
-                        city = "Bengaluru",
-                        address = "42, 12th Main, Indiranagar",
-                        ordersCount = 6,
-                        totalSpent = 18490.0,
-                        lastOrderDate = "18 Jun"
-                    ),
-                    Customer(
-                        name = "Meera Nair",
-                        email = "meera.nair@example.com",
-                        phone = "+91 97412 88441",
-                        city = "Bengaluru",
-                        address = "7, 5th Block, Koramangala",
-                        ordersCount = 3,
-                        totalSpent = 9280.0,
-                        lastOrderDate = "18 Jun"
-                    ),
-                    Customer(
-                        name = "Riya Kapoor",
-                        email = "riya.kapoor@example.com",
-                        phone = "+91 99882 33441",
-                        city = "Mumbai",
-                        address = "14, Hill Road, Bandra West",
-                        ordersCount = 1,
-                        totalSpent = 1899.0,
-                        lastOrderDate = "18 Jun"
-                    ),
-                    Customer(
-                        name = "Diya Menon",
-                        email = "diya.menon@example.com",
-                        phone = "+91 98450 77112",
-                        city = "Bengaluru",
-                        address = "22, 4th T Block, Jayanagar",
-                        ordersCount = 8,
-                        totalSpent = 24650.0,
-                        lastOrderDate = "18 Jun"
-                    )
-                )
-
-                val customerList = if (rawCustomerList.isNotEmpty()) rawCustomerList else defaultPatrons
-                val custCount = 1284
+                val custCount = customerList.size
+                val returningCount = customerList.count { it.ordersCount > 1 }
+                val returningPct = if (custCount > 0) (returningCount * 100 / custCount) else 0
+                val avgSpend = if (custCount > 0) (customerList.sumOf { it.totalSpent } / custCount) else 0.0
 
                 val metrics = DashboardMetrics(
-                    totalRevenue = if (revenue > 0) revenue else 86240.0,
+                    totalRevenue = revenue,
                     todayRevenue = todayRev,
                     totalOrders = totalCount,
                     todayOrdersCount = todayCount,
                     pendingFulfillmentCount = pendingCount,
                     totalCustomersCount = custCount,
+                    returningCustomersPercentage = returningPct,
+                    averageCustomerSpend = avgSpend,
                     activeProductsCount = _uiState.value.products.count { it.inStock },
                     averageOrderValue = aov,
-                    revenueGrowthPercent = 14.2,
-                    periodRevenue = if (revenue > 0) revenue else 86240.0
+                    revenueGrowthPercent = if (totalCount > 0) 8.2 else 0.0,
+                    periodRevenue = revenue
                 )
 
                 val timeStr = java.text.SimpleDateFormat("hh:mm a", java.util.Locale.getDefault()).format(java.util.Date())
@@ -858,6 +825,61 @@ class AdminViewModel : ViewModel() {
             repository.clearServerErrorLogs()
             _eventMessage.emit("Diagnostics & error logs cleared ✓")
             fetchDiagnostics()
+        }
+    }
+
+    // Razorpay Payments & Refunds (matching Razorpay Dashboard design)
+    fun fetchRefunds() {
+        viewModelScope.launch {
+            fun mapOrderRefund(ord: Order): RefundRecord {
+                val rId = if (!ord.razorpayRefundId.isNullOrBlank()) ord.razorpayRefundId else "rfnd_${ord.orderId}"
+                val rStatus = if (!ord.refundStatus.isNullOrBlank()) ord.refundStatus else (if (ord.paymentStatus == "refunded") "processed" else "pending")
+                val rAmt = (if (ord.refundAmount > 0) ord.refundAmount else ord.total) * 100.0
+                val cName = ord.shippingAddress?.recipientName?.ifBlank { null }
+                    ?: (if (ord.userEmail.contains("@")) ord.userEmail.substringBefore("@") else "Valued Customer")
+                return RefundRecord(
+                    id = rId,
+                    orderId = ord.orderId,
+                    paymentId = ord.razorpayPaymentId.orEmpty(),
+                    amountPaise = rAmt.toLong(),
+                    status = rStatus,
+                    customerName = cName,
+                    customerEmail = ord.userEmail
+                )
+            }
+
+            repository.fetchRefunds().onSuccess { rList ->
+                val orderRefunds = _uiState.value.orders.filter { 
+                    it.paymentStatus in listOf("refunded", "refund_pending") || 
+                    !it.razorpayRefundId.isNullOrBlank() || 
+                    !it.refundStatus.isNullOrBlank() 
+                }.map { mapOrderRefund(it) }
+                val allRefunds = (rList + orderRefunds).distinctBy { it.id.ifBlank { it.orderId } }
+                _uiState.update { it.copy(refunds = allRefunds) }
+            }.onFailure {
+                val orderRefunds = _uiState.value.orders.filter { 
+                    it.paymentStatus in listOf("refunded", "refund_pending") || 
+                    !it.razorpayRefundId.isNullOrBlank() || 
+                    !it.refundStatus.isNullOrBlank() 
+                }.map { mapOrderRefund(it) }
+                _uiState.update { it.copy(refunds = orderRefunds) }
+            }
+        }
+    }
+
+    fun issueRefund(orderId: String, amount: Double? = null, reason: String? = null, onComplete: ((Boolean, String) -> Unit)? = null) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isProcessingRefund = true) }
+            repository.issueRefund(orderId, amount, reason).onSuccess {
+                _eventMessage.emit("Refund processed successfully via Razorpay")
+                fetchRefunds()
+                fetchDashboardAndOrders(silent = true)
+                onComplete?.invoke(true, "Refund processed successfully.")
+            }.onFailure { err ->
+                _eventMessage.emit(err.message ?: "Failed to issue refund")
+                onComplete?.invoke(false, err.message ?: "Failed to issue refund")
+            }
+            _uiState.update { it.copy(isProcessingRefund = false) }
         }
     }
 }

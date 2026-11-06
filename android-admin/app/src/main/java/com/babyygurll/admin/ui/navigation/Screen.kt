@@ -26,5 +26,6 @@ sealed class Screen(val route: String, val title: String) {
     object ProductionQueue : Screen("production_queue", "Production queue")
     object CustomRequests : Screen("custom_requests", "Custom requests")
     object Shipping : Screen("shipping", "Shipping")
+    object Refunds : Screen("refunds", "Refunds")
 }
 

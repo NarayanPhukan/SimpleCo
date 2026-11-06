@@ -36,22 +36,42 @@ fun ShippingScreen(
     onViewOrder: (String) -> Unit = {}
 ) {
     var searchQuery by remember { mutableStateOf("") }
-    var selectedFilter by remember { mutableStateOf("Ready") } // "Ready", "In transit", "Delivered"
+    var selectedFilter by remember { mutableStateOf("All") } // "All", "Ready", "In transit", "Delivered"
     var selectedShipmentForDetail by remember { mutableStateOf<ShipmentItem?>(null) }
     var showDispatchDialog by remember { mutableStateOf(false) }
 
-    val defaultShipments = remember {
-        listOf(
-            ShipmentItem("ship-1", "#BG1047", "Bengaluru", "Shiprocket · 0.8 kg", "Ready to ship", "Ananya Sharma"),
-            ShipmentItem("ship-2", "#BG1042", "Kochi", "AWB 1439826402", "In transit", "Meera Nair"),
-            ShipmentItem("ship-3", "#BG1038", "Mumbai", "Delivered 18 Jun", "Delivered", "Diya Menon"),
-            ShipmentItem("ship-4", "#BG1052", "Delhi NCR", "Delhivery · 0.5 kg", "Ready to ship", "Riya Kapoor"),
-            ShipmentItem("ship-5", "#BG1035", "Pune", "AWB 9982410291", "In transit", "Tanvi Verma")
-        )
+    // Real shipment manifests extracted directly from live orders
+    val realShipments = remember(state.orders) {
+        val nonCancelledOrders = state.orders.filter { it.statusCode != "cancelled" }
+        nonCancelledOrders.map { ord ->
+            val city = ord.shippingAddress?.city?.ifBlank { null }
+                ?: ord.shippingAddress?.state?.ifBlank { null }
+                ?: "India"
+            val carrierText = if (!ord.trackingNumber.isNullOrBlank()) {
+                "${ord.carrier ?: "Courier"} · ${ord.trackingNumber}"
+            } else {
+                "${ord.carrier ?: "Express"} · Est ${ord.estimatedDelivery ?: "2-3 days"}"
+            }
+            val status = when (ord.statusCode.lowercase()) {
+                "delivered" -> "Delivered"
+                "shipped" -> "In transit"
+                else -> "Ready to ship"
+            }
+            ShipmentItem(
+                id = ord.orderId,
+                orderRef = "#${ord.orderId}",
+                destinationCity = city,
+                carrierDetail = carrierText,
+                status = status,
+                recipientName = ord.shippingAddress?.recipientName?.ifBlank { null }
+                    ?: (if (ord.userEmail.contains("@")) ord.userEmail.substringBefore("@") else "Valued Customer"),
+                trackingUrl = null
+            )
+        }
     }
 
-    val filteredList = remember(defaultShipments, searchQuery, selectedFilter) {
-        defaultShipments.filter { item ->
+    val filteredList = remember(realShipments, searchQuery, selectedFilter) {
+        realShipments.filter { item ->
             val matchesSearch = searchQuery.isBlank() ||
                 item.orderRef.contains(searchQuery, ignoreCase = true) ||
                 item.destinationCity.contains(searchQuery, ignoreCase = true) ||
@@ -174,7 +194,7 @@ fun ShippingScreen(
 
                         Column {
                             Text(
-                                text = "12",
+                                text = "${realShipments.size}",
                                 fontSize = 28.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = Color.White
@@ -275,14 +295,14 @@ fun ShippingScreen(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Filter Pills: Ready | In transit | Delivered
+            // Filter Pills: All | Ready | In transit | Delivered
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .horizontalScroll(rememberScrollState()),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                listOf("Ready", "In transit", "Delivered").forEach { pill ->
+                listOf("All", "Ready", "In transit", "Delivered").forEach { pill ->
                     val isSelected = selectedFilter.equals(pill, ignoreCase = true)
                     Surface(
                         shape = RoundedCornerShape(20.dp),
@@ -350,8 +370,31 @@ fun ShippingScreen(
                 border = androidx.compose.foundation.BorderStroke(1.dp, BrandBorder),
                 elevation = CardDefaults.cardElevation(defaultElevation = 0.5.dp)
             ) {
-                Column(modifier = Modifier.fillMaxWidth()) {
-                    filteredList.forEachIndexed { index, item ->
+                if (filteredList.isEmpty()) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 36.dp, horizontal = 16.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(
+                                text = if (realShipments.isEmpty()) "No shipments in progress" else "No matching shipments",
+                                fontWeight = FontWeight.Bold,
+                                color = MidnightNavy,
+                                fontSize = 15.sp
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = if (realShipments.isEmpty()) "When orders are packed and dispatched, shipment manifests will appear here." else "Try adjusting your search query or filter.",
+                                color = TextMuted,
+                                fontSize = 12.sp
+                            )
+                        }
+                    }
+                } else {
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        filteredList.forEachIndexed { index, item ->
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -441,6 +484,7 @@ fun ShippingScreen(
                     }
                 }
             }
+        }
 
             Spacer(modifier = Modifier.height(18.dp))
 
@@ -580,3 +624,4 @@ fun ShippingScreen(
         )
     }
 }
+

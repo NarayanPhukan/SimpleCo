@@ -275,5 +275,33 @@ class AdminRepository(
             Result.failure(e)
         }
     }
+
+    // Razorpay Refunds
+    suspend fun fetchRefunds(): Result<List<RefundRecord>> = withContext(Dispatchers.IO) {
+        try {
+            val response = api.getRefunds()
+            val body = response.body()
+            if (response.isSuccessful && body != null) {
+                Result.success(body.refunds)
+            } else {
+                Result.failure(Exception("Failed to fetch refunds from server"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun issueRefund(orderId: String, amount: Double? = null, reason: String? = null): Result<Unit> = withContext(Dispatchers.IO) {
+        try {
+            val response = api.issueRefund(IssueRefundRequest(orderId = orderId, amount = amount, reason = reason))
+            if (response.isSuccessful) {
+                Result.success(Unit)
+            } else {
+                Result.failure(Exception(response.body()?.message ?: "Failed to issue refund"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
 }
 

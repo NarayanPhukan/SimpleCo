@@ -86,6 +86,19 @@ fun DashboardScreen(
     val shippedCount = remember(state.orders) {
         state.orders.count { it.statusCode == "shipped" }
     }
+    val lowStockCount = remember(state.products) {
+        state.products.count { it.inStock && it.stockCount in 1..3 }
+    }
+    val delayedCount = remember(state.orders) {
+        state.orders.count { it.statusCode in listOf("received", "pending") }
+    }
+    val failedPayCount = remember(state.orders) {
+        state.orders.count { it.paymentStatus == "failed" }
+    }
+    val customRequestsCount = remember(state.orders) {
+        state.orders.count { it.items.any { item -> !item.customNote.isNullOrBlank() } }
+    }
+    val totalAttention = lowStockCount + delayedCount + failedPayCount + customRequestsCount
 
     Scaffold(
         containerColor = SoftIvory
@@ -236,7 +249,7 @@ fun DashboardScreen(
                                     )
                                     Spacer(modifier = Modifier.height(2.dp))
                                     Text(
-                                        text = "+12.8%",
+                                        text = "${state.metrics.todayOrdersCount} today",
                                         fontSize = 12.sp,
                                         fontWeight = FontWeight.SemiBold,
                                         color = Color(0xFF60A5FA)
@@ -250,7 +263,7 @@ fun DashboardScreen(
                             title = "Total Orders",
                             icon = Icons.Outlined.ReceiptLong,
                             value = "${state.metrics.totalOrders}",
-                            subtext = "+${state.metrics.todayOrdersCount} today",
+                            subtext = "${state.metrics.todayOrdersCount} today",
                             subtextColor = RoyalBlue,
                             modifier = Modifier
                                 .weight(1f)
@@ -280,7 +293,7 @@ fun DashboardScreen(
                             title = "Total Customers",
                             icon = Icons.Outlined.Person,
                             value = NumberFormat.getNumberInstance(Locale.US).format(state.metrics.totalCustomersCount),
-                            subtext = "+18 this week",
+                            subtext = "${state.metrics.totalCustomersCount} registered",
                             subtextColor = RoyalBlue,
                             modifier = Modifier
                                 .weight(1f)
@@ -518,7 +531,7 @@ fun DashboardScreen(
                         ProductionFlowItem(
                             label = "Pending payment",
                             subtext = "orders",
-                            count = if (pendingPaymentCount > 0) pendingPaymentCount else 3,
+                            count = pendingPaymentCount,
                             color = Color(0xFF93C5FD),
                             onClick = { onNavigateOrders("pending") }
                         )
@@ -526,7 +539,7 @@ fun DashboardScreen(
                         ProductionFlowItem(
                             label = "Preparing",
                             subtext = "orders",
-                            count = if (preparingCount > 0) preparingCount else 4,
+                            count = preparingCount,
                             color = RoyalBlue,
                             onClick = { onNavigateOrders("preparing") }
                         )
@@ -534,7 +547,7 @@ fun DashboardScreen(
                         ProductionFlowItem(
                             label = "Being handmade",
                             subtext = "orders",
-                            count = if (beingHandmadeCount > 0) beingHandmadeCount else 6,
+                            count = beingHandmadeCount,
                             color = MidnightNavy,
                             onClick = { onNavigateOrders("handmade") }
                         )
@@ -542,7 +555,7 @@ fun DashboardScreen(
                         ProductionFlowItem(
                             label = "Ready to ship",
                             subtext = "orders",
-                            count = if (readyToShipCount > 0) readyToShipCount else 2,
+                            count = readyToShipCount,
                             color = RoyalBlue,
                             onClick = { onNavigateOrders("ready") }
                         )
@@ -550,7 +563,7 @@ fun DashboardScreen(
                         ProductionFlowItem(
                             label = "Shipped",
                             subtext = "orders",
-                            count = if (shippedCount > 0) shippedCount else 12,
+                            count = shippedCount,
                             color = MidnightNavy,
                             onClick = { onNavigateOrders("shipped") }
                         )
@@ -578,7 +591,7 @@ fun DashboardScreen(
                             color = Color(0xFFEEF4FF)
                         ) {
                             Text(
-                                text = "10",
+                                text = "$totalAttention",
                                 color = RoyalBlue,
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 11.sp,
@@ -588,7 +601,7 @@ fun DashboardScreen(
                     }
 
                     Text(
-                        text = "Test error",
+                        text = "Refresh",
                         fontSize = 11.sp,
                         color = TextMuted,
                         modifier = Modifier.clickable { onRefresh() }
@@ -605,14 +618,14 @@ fun DashboardScreen(
                         AttentionCard(
                             icon = Icons.Outlined.Archive,
                             title = "Low-stock products",
-                            desc = "4 products below threshold",
+                            desc = "$lowStockCount products below threshold",
                             modifier = Modifier.weight(1f),
                             onClick = onNavigateProducts
                         )
                         AttentionCard(
                             icon = Icons.Outlined.Schedule,
-                            title = "Orders delayed",
-                            desc = "2 orders need an update",
+                            title = "Orders awaiting action",
+                            desc = "$delayedCount orders need action",
                             modifier = Modifier.weight(1f),
                             onClick = { onNavigateOrders("pending") }
                         )
@@ -624,15 +637,15 @@ fun DashboardScreen(
                     ) {
                         AttentionCard(
                             icon = Icons.Outlined.CreditCard,
-                            title = "Failed payments",
-                            desc = "1 payment to review",
+                            title = "Pending payments",
+                            desc = "$failedPayCount payments to review",
                             modifier = Modifier.weight(1f),
                             onClick = { onNavigateOrders("pending") }
                         )
                         AttentionCard(
                             icon = Icons.Outlined.AutoAwesome,
                             title = "Custom requests",
-                            desc = "3 awaiting approval",
+                            desc = "$customRequestsCount custom inquiries",
                             modifier = Modifier.weight(1f),
                             onClick = { onNavigateOrders("handmade") }
                         )
@@ -668,15 +681,34 @@ fun DashboardScreen(
             val recentList = if (state.orders.isNotEmpty()) state.orders.take(4) else emptyList()
             if (recentList.isEmpty()) {
                 item {
-                    // Fallback sample cards matching Image 2
-                    SampleRecentOrderCard(
-                        orderId = "#BG1048",
-                        statusLabel = "Being handmade",
-                        customerName = "Aarohi Mehta",
-                        time = "Today · 10:24 AM",
-                        amount = "₹2,380",
-                        onClick = { onNavigateOrders(null) }
-                    )
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp),
+                        color = Color.White,
+                        border = androidx.compose.foundation.BorderStroke(1.dp, BrandBorder)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 32.dp, horizontal = 16.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text(
+                                    text = "No orders placed yet",
+                                    fontWeight = FontWeight.Bold,
+                                    color = MidnightNavy,
+                                    fontSize = 15.sp
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = "Live orders from your storefront will appear here automatically.",
+                                    color = TextMuted,
+                                    fontSize = 12.sp
+                                )
+                            }
+                        }
+                    }
                 }
             } else {
                 items(recentList) { order ->

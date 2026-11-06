@@ -95,7 +95,8 @@ class MainActivity : ComponentActivity() {
                             Screen.Inventory.route,
                             Screen.ProductionQueue.route,
                             Screen.CustomRequests.route,
-                            Screen.Shipping.route
+                            Screen.Shipping.route,
+                            Screen.Refunds.route
                         )
                     }
 
@@ -374,6 +375,7 @@ class MainActivity : ComponentActivity() {
                                     onNavigateCustomRequests = { navController.navigate(Screen.CustomRequests.route) },
                                     onNavigateProductionQueue = { navController.navigate(Screen.ProductionQueue.route) },
                                     onNavigateShipping = { navController.navigate(Screen.Shipping.route) },
+                                    onNavigateRefunds = { navController.navigate(Screen.Refunds.route) },
                                     onCheckUpdates = { viewModel.checkForAppUpdates(silent = false) },
                                     onOpenServerConfig = { showServerConfigDialog = true },
                                     onLogout = { viewModel.logout() }
@@ -417,6 +419,23 @@ class MainActivity : ComponentActivity() {
                                         if (order != null) viewModel.selectOrder(order)
                                         navController.navigate(Screen.OrderDetail.createRoute(orderId))
                                     }
+                                )
+                            }
+
+                            // Razorpay Payments & Refunds Screen (Screenshot 1)
+                            composable(Screen.Refunds.route) {
+                                RefundsScreen(
+                                    state = uiState,
+                                    onBack = { navController.popBackStack() },
+                                    onViewOrder = { orderId ->
+                                        val order = uiState.orders.find { it.orderId == orderId }
+                                        if (order != null) viewModel.selectOrder(order)
+                                        navController.navigate(Screen.OrderDetail.createRoute(orderId))
+                                    },
+                                    onIssueRefund = { orderId, amount, reason ->
+                                        viewModel.issueRefund(orderId, amount, reason)
+                                    },
+                                    onRefresh = { viewModel.fetchRefunds() }
                                 )
                             }
 

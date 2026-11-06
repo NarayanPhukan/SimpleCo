@@ -157,7 +157,12 @@ data class Order(
     @SerializedName("timeline") val timeline: List<TimelineEvent> = emptyList(),
     @SerializedName("customerInstructions") val customerInstructions: String? = null,
     @SerializedName("internalNotes") val internalNotes: List<String> = emptyList(),
-    @SerializedName("productionChecklist") val productionChecklist: Map<String, Boolean> = emptyMap()
+    @SerializedName("productionChecklist") val productionChecklist: Map<String, Boolean> = emptyMap(),
+    @SerializedName("razorpayRefundId") val razorpayRefundId: String? = null,
+    @SerializedName("refundStatus") val refundStatus: String? = null,
+    @SerializedName("refundAmount") val refundAmount: Double = 0.0,
+    @SerializedName("cancelReason") val cancelReason: String? = null,
+    @SerializedName("cancelledAt") val cancelledAt: String? = null
 )
 
 data class OrderTrackingUpdateRequest(
@@ -246,24 +251,18 @@ data class PincodeCheckResponse(
 // Computed Dashboard Metrics
 data class DashboardMetrics(
     val totalRevenue: Double = 0.0,
-    val todayRevenue: Double = 12450.0,
-    val totalOrders: Int = 18,
-    val todayOrdersCount: Int = 4,
-    val pendingFulfillmentCount: Int = 5,
-    val totalCustomersCount: Int = 1284,
+    val todayRevenue: Double = 0.0,
+    val totalOrders: Int = 0,
+    val todayOrdersCount: Int = 0,
+    val pendingFulfillmentCount: Int = 0,
+    val totalCustomersCount: Int = 0,
+    val returningCustomersPercentage: Int = 0,
+    val averageCustomerSpend: Double = 0.0,
     val activeProductsCount: Int = 0,
     val averageOrderValue: Double = 0.0,
-    val revenueGrowthPercent: Double = 14.2,
-    val periodRevenue: Double = 86240.0,
-    val chartDays: List<Pair<String, Double>> = listOf(
-        "Mon" to 12000.0,
-        "Tue" to 14500.0,
-        "Wed" to 11800.0,
-        "Thu" to 15400.0,
-        "Fri" to 16820.0,
-        "Sat" to 14200.0,
-        "Sun" to 15800.0
-    )
+    val revenueGrowthPercent: Double = 0.0,
+    val periodRevenue: Double = 0.0,
+    val chartDays: List<Pair<String, Double>> = emptyList()
 )
 
 data class Customer(
@@ -404,5 +403,40 @@ data class ShipmentItem(
     val status: String, // "Ready to ship", "In transit", "Delivered"
     val recipientName: String = "Valued Customer",
     val trackingUrl: String? = null
+)
+
+// Razorpay Refunds & Payments Models (matching Razorpay Dashboard design)
+data class RefundRecord(
+    @SerializedName("id") val id: String = "",
+    @SerializedName("orderId") val orderId: String = "",
+    @SerializedName("paymentId") val paymentId: String = "",
+    @SerializedName("amount") val amountPaise: Long = 0L,
+    @SerializedName("currency") val currency: String = "INR",
+    @SerializedName("status") val status: String = "processed", // "processed", "pending", "failed"
+    @SerializedName("speed_processed") val speed: String = "optimum",
+    @SerializedName("created_at") val createdAtTimestamp: Long = 0L,
+    @SerializedName("customerName") val customerName: String = "",
+    @SerializedName("customerEmail") val customerEmail: String = "",
+    @SerializedName("notes") val notes: Map<String, String>? = null
+) {
+    val amountRupees: Double get() = if (amountPaise > 0) amountPaise / 100.0 else 0.0
+    val displayStatus: String
+        get() = when (status.lowercase()) {
+            "processed", "refunded" -> "Processed"
+            "pending", "refund_pending", "manual_review" -> "Processing"
+            else -> if (status.startsWith("failed")) "Failed" else status.replaceFirstChar { it.uppercase() }
+        }
+}
+
+data class RefundsResponse(
+    @SerializedName("success") val success: Boolean = true,
+    @SerializedName("count") val count: Int = 0,
+    @SerializedName("refunds") val refunds: List<RefundRecord> = emptyList()
+)
+
+data class IssueRefundRequest(
+    @SerializedName("orderId") val orderId: String,
+    @SerializedName("amount") val amount: Double? = null,
+    @SerializedName("reason") val reason: String? = null
 )
 

@@ -75,7 +75,7 @@ fun CustomersScreen(
                 )
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(
-                    text = "1,284 customer profiles",
+                    text = "${state.customers.size} ${if (state.customers.size == 1) "customer profile" else "customer profiles"}",
                     style = MaterialTheme.typography.bodySmall,
                     color = TextMuted,
                     fontSize = 13.sp
@@ -166,7 +166,7 @@ fun CustomersScreen(
                         modifier = Modifier.weight(1f)
                     ) {
                         Text(
-                            text = "1,284",
+                            text = "${state.metrics.totalCustomersCount}",
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color.White
@@ -192,7 +192,7 @@ fun CustomersScreen(
                         modifier = Modifier.weight(1f)
                     ) {
                         Text(
-                            text = "38%",
+                            text = "${state.metrics.returningCustomersPercentage}%",
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color.White
@@ -218,7 +218,7 @@ fun CustomersScreen(
                         modifier = Modifier.weight(1f)
                     ) {
                         Text(
-                            text = "₹4,820",
+                            text = currencyFormat.format(state.metrics.averageCustomerSpend),
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color.White
