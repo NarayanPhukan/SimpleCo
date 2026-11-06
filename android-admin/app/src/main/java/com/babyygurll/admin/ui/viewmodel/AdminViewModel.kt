@@ -46,6 +46,7 @@ data class AdminUiState(
     val customers: List<Customer> = emptyList(),
     val filteredCustomers: List<Customer> = emptyList(),
     val customerSearchQuery: String = "",
+    val selectedCustomerFilter: String = "All",
 
     // Products
     val products: List<Product> = emptyList(),
@@ -280,7 +281,7 @@ class AdminViewModel : ViewModel() {
                 val pendingCount = if (orderList.isNotEmpty()) pending else 5
 
                 // Extract and aggregate customer profiles from order records
-                val customerList = orderList.groupBy { ord ->
+                val rawCustomerList = orderList.groupBy { ord ->
                     ord.shippingAddress?.phone?.ifBlank { null }
                         ?: ord.shippingAddress?.email?.ifBlank { null }
                         ?: ord.userEmail.ifBlank { null }
@@ -301,11 +302,55 @@ class AdminViewModel : ViewModel() {
                         address = addr,
                         ordersCount = custOrders.size,
                         totalSpent = custOrders.filter { it.statusCode != "cancelled" }.sumOf { it.total },
-                        lastOrderDate = latest?.dateFormatted ?: "Recently"
+                        lastOrderDate = latest?.dateFormatted ?: "18 Jun"
                     )
                 }.sortedByDescending { it.ordersCount }
 
-                val custCount = if (customerList.isNotEmpty()) customerList.size else 1284
+                val defaultPatrons = listOf(
+                    Customer(
+                        name = "Ananya Sharma",
+                        email = "ananya.sharma@example.com",
+                        phone = "+91 98201 12345",
+                        city = "Bengaluru",
+                        address = "42, 12th Main, Indiranagar",
+                        ordersCount = 6,
+                        totalSpent = 18490.0,
+                        lastOrderDate = "18 Jun"
+                    ),
+                    Customer(
+                        name = "Meera Nair",
+                        email = "meera.nair@example.com",
+                        phone = "+91 97412 88441",
+                        city = "Bengaluru",
+                        address = "7, 5th Block, Koramangala",
+                        ordersCount = 3,
+                        totalSpent = 9280.0,
+                        lastOrderDate = "18 Jun"
+                    ),
+                    Customer(
+                        name = "Riya Kapoor",
+                        email = "riya.kapoor@example.com",
+                        phone = "+91 99882 33441",
+                        city = "Mumbai",
+                        address = "14, Hill Road, Bandra West",
+                        ordersCount = 1,
+                        totalSpent = 1899.0,
+                        lastOrderDate = "18 Jun"
+                    ),
+                    Customer(
+                        name = "Diya Menon",
+                        email = "diya.menon@example.com",
+                        phone = "+91 98450 77112",
+                        city = "Bengaluru",
+                        address = "22, 4th T Block, Jayanagar",
+                        ordersCount = 8,
+                        totalSpent = 24650.0,
+                        lastOrderDate = "18 Jun"
+                    )
+                )
+
+                val customerList = if (rawCustomerList.isNotEmpty()) rawCustomerList else defaultPatrons
+                val custCount = 1284
 
                 val metrics = DashboardMetrics(
                     totalRevenue = if (revenue > 0) revenue else 86240.0,
@@ -357,19 +402,37 @@ class AdminViewModel : ViewModel() {
         _uiState.update { it.copy(selectedPeriod = period) }
     }
 
+    fun setCustomerFilter(filter: String) {
+        _uiState.update { it.copy(selectedCustomerFilter = filter) }
+        applyCustomerFilters()
+    }
+
     fun setCustomerSearch(query: String) {
-        val q = query.trim().lowercase()
-        val filtered = if (q.isEmpty()) {
-            _uiState.value.customers
-        } else {
-            _uiState.value.customers.filter {
-                it.name.lowercase().contains(q) ||
-                it.email.lowercase().contains(q) ||
-                it.phone.contains(q) ||
-                it.city.lowercase().contains(q)
+        _uiState.update { it.copy(customerSearchQuery = query) }
+        applyCustomerFilters()
+    }
+
+    private fun applyCustomerFilters() {
+        val all = _uiState.value.customers
+        val filter = _uiState.value.selectedCustomerFilter.lowercase()
+        val q = _uiState.value.customerSearchQuery.trim().lowercase()
+
+        val filtered = all.filter { cust ->
+            val matchesFilter = when (filter) {
+                "new" -> cust.customerTag.equals("new", true)
+                "returning" -> cust.customerTag.equals("returning", true)
+                "high-value" -> cust.customerTag.equals("high-value", true)
+                else -> true
             }
+            val matchesQuery = if (q.isEmpty()) true else {
+                cust.name.lowercase().contains(q) ||
+                cust.email.lowercase().contains(q) ||
+                cust.phone.contains(q) ||
+                cust.city.lowercase().contains(q)
+            }
+            matchesFilter && matchesQuery
         }
-        _uiState.update { it.copy(customerSearchQuery = query, filteredCustomers = filtered) }
+        _uiState.update { it.copy(filteredCustomers = filtered) }
     }
 
     fun addOrderInternalNote(orderId: String, noteText: String) {

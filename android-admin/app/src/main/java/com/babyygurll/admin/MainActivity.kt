@@ -328,6 +328,7 @@ class MainActivity : ComponentActivity() {
                                 CustomersScreen(
                                     state = uiState,
                                     onSearchChange = { viewModel.setCustomerSearch(it) },
+                                    onFilterChange = { viewModel.setCustomerFilter(it) },
                                     onRefresh = { viewModel.fetchDashboardAndOrders() },
                                     onNavigateOrders = { custQuery ->
                                         viewModel.setOrderSearch(custQuery)

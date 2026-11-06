@@ -378,7 +378,7 @@ exports.cancelOrder = async (req, res) => {
     const now = new Date();
     const cancelDateFormatted = now.toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' });
     const isPrepaid = order.paymentStatus === 'paid' || 
-      (order.paymentMethod && order.paymentMethod.toLowerCase().includes('razorpay') && order.paymentStatus !== 'failed');
+      (!order.paymentMethod?.toLowerCase().includes('cod') && order.paymentStatus !== 'failed');
 
     let refundSuccess = false;
     let refundId = null;
@@ -387,6 +387,16 @@ exports.cancelOrder = async (req, res) => {
     if (isPrepaid) {
       try {
         let paymentId = order.razorpayPaymentId;
+
+        // Try extracting payment ID from paymentMethod if not recorded in razorpayPaymentId
+        if (!paymentId && order.paymentMethod && order.paymentMethod.includes('pay_')) {
+          const match = order.paymentMethod.match(/pay_[A-Za-z0-9]+/);
+          if (match) {
+            paymentId = match[0];
+            order.razorpayPaymentId = paymentId;
+          }
+        }
+
         if (!paymentId && order.razorpayOrderId) {
           paymentId = await paymentController.fetchPaymentForOrder(order.razorpayOrderId);
           if (paymentId) {
@@ -411,9 +421,15 @@ exports.cancelOrder = async (req, res) => {
           order.refundStatus = 'manual_review';
         }
       } catch (refundError) {
-        console.error(`Razorpay Refund failed for Order #${cleanId}:`, refundError.message);
-        order.paymentStatus = 'refund_pending';
-        order.refundStatus = 'failed: ' + refundError.message;
+        console.error(`Razorpay Refund processing for Order #${cleanId}:`, refundError.message);
+        if (refundError.message && refundError.message.toLowerCase().includes('already been refunded')) {
+          order.paymentStatus = 'refunded';
+          order.refundStatus = 'processed';
+          refundSuccess = true;
+        } else {
+          order.paymentStatus = 'refund_pending';
+          order.refundStatus = 'failed: ' + refundError.message;
+        }
       }
     } else {
       order.paymentStatus = 'cancelled';

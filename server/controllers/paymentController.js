@@ -181,7 +181,10 @@ exports.issueRefund = async (paymentId, amountInPaise, notes = {}) => {
   if (!razorpay) {
     throw new Error('Razorpay credentials not configured');
   }
-  const refundOptions = { notes };
+  const refundOptions = { 
+    notes,
+    speed: 'optimum' // Attempt instant refund if supported by customer's bank/UPI, fallback to normal
+  };
   if (amountInPaise && amountInPaise > 0) {
     refundOptions.amount = Math.round(amountInPaise);
   }

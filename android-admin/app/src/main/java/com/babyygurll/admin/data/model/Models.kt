@@ -275,7 +275,27 @@ data class Customer(
     val ordersCount: Int = 0,
     val totalSpent: Double = 0.0,
     val lastOrderDate: String = ""
-)
+) {
+    val initials: String
+        get() {
+            val parts = name.trim().split("\\s+".toRegex())
+            return when {
+                parts.size >= 2 -> "${parts[0].firstOrNull()?.uppercaseChar() ?: ""}${parts[1].firstOrNull()?.uppercaseChar() ?: ""}"
+                parts.size == 1 && parts[0].isNotEmpty() -> parts[0].take(2).uppercase()
+                else -> "CU"
+            }
+        }
+
+    val customerTag: String
+        get() = when {
+            totalSpent >= 12000 || ordersCount >= 5 -> "High-value"
+            ordersCount > 1 -> "Returning"
+            else -> "New"
+        }
+
+    val displayLastOrder: String
+        get() = if (lastOrderDate.isNotBlank() && lastOrderDate != "Recently") lastOrderDate else "18 Jun"
+}
 
 
 

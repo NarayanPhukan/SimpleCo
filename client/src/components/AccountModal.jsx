@@ -444,7 +444,7 @@ export const AccountModal = ({ isOpen, onClose, onOpenAddressModal, onShowToast 
                             </div>
 
                             {/* ========================================================
-                                BUTTON UNDER THE IN-PROGRESS ORDER
+                                ACTION BUTTONS UNDER ORDER ITEM
                                ======================================================== */}
                             <div className="in-progress-btn-wrapper" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
                               <button 
@@ -454,7 +454,7 @@ export const AccountModal = ({ isOpen, onClose, onOpenAddressModal, onShowToast 
                                 style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '0.45rem' }}
                               >
                                 <IconTruck size={15} />
-                                <span>{isExpanded ? 'Collapse Tracking' : 'Track Order'}</span>
+                                <span>{isExpanded ? 'Hide Order Details' : 'View Order Details & Tracking'}</span>
                               </button>
                               <button 
                                 type="button"
@@ -465,22 +465,14 @@ export const AccountModal = ({ isOpen, onClose, onOpenAddressModal, onShowToast 
                                 <IconPrinter size={13} />
                                 <span>Receipt & Care Guide</span>
                               </button>
-                              <button 
-                                type="button"
-                                className="btn-cancel-order"
-                                onClick={() => handleCancelOrder(ord.orderId)}
-                                title={`Cancel Order #${ord.orderId}`}
-                              >
-                                Cancel Order
-                              </button>
                             </div>
 
-                            {/* EXPANDED LIVE TRACKING CONTAINER */}
+                            {/* EXPANDED LIVE ORDER DETAILS CONTAINER (Only place Cancel appears) */}
                             {isExpanded && (
                               <div className="inline-live-tracking-panel">
                                 <div className="tracking-courier-banner">
                                   <div>
-                                    <span className="courier-badge">Delivery Details</span>
+                                    <span className="courier-badge">Order Details</span>
                                     <div className="courier-name">Tracked Express Delivery</div>
                                     <div className="waybill-code">Waybill / Tracking: <code>{ord.trackingNumber}</code></div>
                                   </div>
@@ -522,6 +514,37 @@ export const AccountModal = ({ isOpen, onClose, onOpenAddressModal, onShowToast 
                                 <div className="tracking-destination-strip">
                                   <span><strong>Delivery Destination:</strong> {ord.shippingAddress?.recipientName}, {ord.shippingAddress?.street}, {ord.shippingAddress?.city}, {ord.shippingAddress?.state} {ord.shippingAddress?.zip}</span>
                                 </div>
+
+                                {/* Order Financial & Payment Info */}
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem', background: '#F8FAFC', padding: '0.75rem 1rem', borderRadius: '8px', border: '1px solid #E2E8F0', marginTop: '0.75rem', fontSize: '0.82rem' }}>
+                                  <div>
+                                    <span style={{ color: '#64748B' }}>Payment: </span>
+                                    <strong style={{ color: '#0F172A' }}>{ord.paymentMethod || 'Razorpay Online'}</strong>
+                                    <span style={{ marginLeft: '0.5rem', padding: '0.15rem 0.45rem', borderRadius: '4px', background: ord.paymentStatus === 'paid' ? '#DCFCE7' : '#FEF3C7', color: ord.paymentStatus === 'paid' ? '#166534' : '#92400E', fontWeight: 600, fontSize: '0.75rem' }}>
+                                      {(ord.paymentStatus || 'paid').toUpperCase()}
+                                    </span>
+                                  </div>
+                                  <div style={{ color: '#0F172A', fontWeight: 700 }}>
+                                    Total: {formatPrice(ord.total)}
+                                  </div>
+                                </div>
+
+                                {/* CANCEL ORDER BUTTON ONLY IN ORDER DETAILS */}
+                                {ord.statusCode !== 'cancelled' && ord.statusCode !== 'delivered' && (
+                                  <div style={{ marginTop: '1rem', paddingTop: '0.85rem', borderTop: '1px dashed #E2E8F0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
+                                    <div style={{ fontSize: '0.8rem', color: '#64748B', maxWidth: '380px' }}>
+                                      Need to cancel? If paid online via Razorpay, a 100% full refund of {formatPrice(ord.total)} will be issued back to your source account / UPI.
+                                    </div>
+                                    <button 
+                                      type="button"
+                                      className="btn-cancel-order"
+                                      onClick={() => handleCancelOrder(ord.orderId)}
+                                      title={`Cancel Order #${ord.orderId}`}
+                                    >
+                                      Cancel Order
+                                    </button>
+                                  </div>
+                                )}
                               </div>
                             )}
                           </div>
