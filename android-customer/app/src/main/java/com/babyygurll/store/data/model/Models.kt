@@ -45,11 +45,23 @@ data class Product(
         get() = id.ifBlank { mongoId ?: "" }
 
     val resolvedPrimaryImage: String
-        get() = ImageUrlUtils.resolveImageUrl(image)
+        get() {
+            val candidate = if (image.startsWith("/assets/images/") && images.any { !it.startsWith("/assets/images/") }) {
+                images.firstOrNull { !it.startsWith("/assets/images/") } ?: image
+            } else {
+                image.ifBlank { images.firstOrNull() ?: "" }
+            }
+            return ImageUrlUtils.resolveImageUrl(candidate)
+        }
 
     val allImages: List<String>
         get() {
-            val list = if (images.isNotEmpty()) images else if (image.isNotBlank()) listOf(image) else emptyList()
+            val list = if (images.isNotEmpty()) {
+                val real = images.filter { !it.startsWith("/assets/images/") }
+                if (real.isNotEmpty()) real else images
+            } else if (image.isNotBlank()) {
+                listOf(image)
+            } else emptyList()
             return list.map { ImageUrlUtils.resolveImageUrl(it) }
         }
 

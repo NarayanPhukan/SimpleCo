@@ -183,13 +183,10 @@ fun ProductDetailScreen(
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
             val allImages = remember(product) {
-                val list = mutableListOf<String>()
-                if (product.image.isNotBlank()) list.add(product.image)
-                product.images.forEach { if (it.isNotBlank() && !list.contains(it)) list.add(it) }
-                list
+                if (product.allImages.isNotEmpty()) product.allImages else listOf(product.resolvedPrimaryImage)
             }
             var selectedImageIdx by remember(product.id) { mutableIntStateOf(0) }
-            val activeImageUrl = allImages.getOrNull(selectedImageIdx) ?: product.image
+            val activeImageUrl = allImages.getOrNull(selectedImageIdx) ?: product.resolvedPrimaryImage
 
             // Hero Image Card with Dynamic Counter Badge
             Box(

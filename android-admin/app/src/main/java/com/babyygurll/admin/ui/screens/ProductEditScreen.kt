@@ -104,8 +104,8 @@ fun ProductEditScreen(
     // Step 2: Images
     val initialImages = remember(product?.id, product?.images, product?.image) {
         when {
-            product != null && product.images.isNotEmpty() -> product.images
-            product != null && product.image.isNotBlank() -> listOf(product.image)
+            product != null && product.allImages.isNotEmpty() -> product.allImages
+            product != null && product.resolvedPrimaryImage.isNotBlank() -> listOf(product.resolvedPrimaryImage)
             else -> emptyList()
         }
     }
@@ -809,91 +809,162 @@ fun ProductEditScreen(
                                 )
 
                                 val primaryImg = imagesList.firstOrNull() ?: ""
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .height(260.dp)
-                                        .clip(RoundedCornerShape(16.dp))
-                                        .background(Color(0xFFF1F5F9))
-                                ) {
-                                    AdminProductImage(
-                                        model = primaryImg,
-                                        contentDescription = "Primary Image",
-                                        serverUrl = serverUrl,
-                                        fallbackIcon = Icons.Outlined.PhotoCamera,
-                                        modifier = Modifier.fillMaxSize()
-                                    )
 
-                                    Surface(
-                                        shape = RoundedCornerShape(6.dp),
-                                        color = RoyalBlue,
+                                if (primaryImg.isNotBlank()) {
+                                    Box(
                                         modifier = Modifier
-                                            .align(Alignment.TopStart)
-                                            .padding(12.dp)
+                                            .fillMaxWidth()
+                                            .height(260.dp)
+                                            .clip(RoundedCornerShape(16.dp))
+                                            .background(Color(0xFFF1F5F9))
                                     ) {
-                                        Text(
-                                            text = "PRIMARY",
-                                            fontSize = 10.sp,
-                                            fontWeight = FontWeight.Bold,
-                                            color = Color.White,
-                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                        AdminProductImage(
+                                            model = primaryImg,
+                                            contentDescription = "Primary Image",
+                                            serverUrl = serverUrl,
+                                            fallbackIcon = Icons.Outlined.PhotoCamera,
+                                            modifier = Modifier.fillMaxSize()
                                         )
-                                    }
 
+                                        Surface(
+                                            shape = RoundedCornerShape(6.dp),
+                                            color = RoyalBlue,
+                                            modifier = Modifier
+                                                .align(Alignment.TopStart)
+                                                .padding(12.dp)
+                                        ) {
+                                            Text(
+                                                text = "PRIMARY",
+                                                fontSize = 10.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = Color.White,
+                                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                            )
+                                        }
+
+                                        Surface(
+                                            shape = RoundedCornerShape(8.dp),
+                                            color = Color.White,
+                                            shadowElevation = 2.dp,
+                                            modifier = Modifier
+                                                .align(Alignment.BottomEnd)
+                                                .padding(12.dp)
+                                                .clip(RoundedCornerShape(8.dp))
+                                                .clickable { photoPickerLauncher.launch("image/*") }
+                                        ) {
+                                            Row(
+                                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                Icon(Icons.Outlined.Edit, contentDescription = null, tint = MidnightNavy, modifier = Modifier.size(14.dp))
+                                                Spacer(modifier = Modifier.width(4.dp))
+                                                Text(text = "Change", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = MidnightNavy)
+                                            }
+                                        }
+                                    }
+                                } else {
                                     Surface(
-                                        shape = RoundedCornerShape(8.dp),
-                                        color = Color.White,
-                                        shadowElevation = 2.dp,
+                                        shape = RoundedCornerShape(16.dp),
+                                        color = Color(0xFFF8FAFC),
+                                        border = androidx.compose.foundation.BorderStroke(1.5.dp, Color(0xFFCBD5E1)),
                                         modifier = Modifier
-                                            .align(Alignment.BottomEnd)
-                                            .padding(12.dp)
-                                            .clip(RoundedCornerShape(8.dp))
+                                            .fillMaxWidth()
+                                            .height(200.dp)
+                                            .clip(RoundedCornerShape(16.dp))
                                             .clickable { photoPickerLauncher.launch("image/*") }
                                     ) {
-                                        Row(
-                                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                                            verticalAlignment = Alignment.CenterVertically
+                                        Column(
+                                            modifier = Modifier.fillMaxSize(),
+                                            horizontalAlignment = Alignment.CenterHorizontally,
+                                            verticalArrangement = Arrangement.Center
                                         ) {
-                                            Icon(Icons.Outlined.Edit, contentDescription = null, tint = MidnightNavy, modifier = Modifier.size(14.dp))
-                                            Spacer(modifier = Modifier.width(4.dp))
-                                            Text(text = "Change", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = MidnightNavy)
+                                            Icon(
+                                                Icons.Outlined.PhotoCamera,
+                                                contentDescription = null,
+                                                tint = RoyalBlue,
+                                                modifier = Modifier.size(42.dp)
+                                            )
+                                            Spacer(modifier = Modifier.height(10.dp))
+                                            Text(
+                                                text = "Upload Product Photos",
+                                                fontSize = 15.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = MidnightNavy
+                                            )
+                                            Spacer(modifier = Modifier.height(4.dp))
+                                            Text(
+                                                text = "Tap to choose images from gallery (JPG, PNG)",
+                                                fontSize = 12.sp,
+                                                color = TextMuted
+                                            )
                                         }
                                     }
                                 }
 
                                 Row(
-                                    modifier = Modifier.fillMaxWidth(),
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .horizontalScroll(rememberScrollState()),
                                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                                 ) {
-                                    imagesList.drop(1).take(2).forEachIndexed { idx, img ->
-                                        val realIdx = idx + 1
-                                        Box(
-                                            modifier = Modifier
-                                                .weight(1f)
-                                                .height(86.dp)
-                                                .clip(RoundedCornerShape(12.dp))
-                                                .background(Color(0xFFF1F5F9))
-                                        ) {
-                                            AdminProductImage(
-                                                model = img,
-                                                contentDescription = null,
-                                                serverUrl = serverUrl,
-                                                modifier = Modifier.fillMaxSize()
-                                            )
-
+                                    imagesList.forEachIndexed { idx, img ->
+                                        if (idx > 0) {
                                             Box(
                                                 modifier = Modifier
-                                                    .align(Alignment.TopEnd)
-                                                    .padding(4.dp)
-                                                    .size(20.dp)
-                                                    .clip(CircleShape)
-                                                    .background(Color.White.copy(alpha = 0.9f))
-                                                    .clickable {
-                                                        imagesList = imagesList.toMutableList().apply { removeAt(realIdx) }
-                                                    },
-                                                contentAlignment = Alignment.Center
+                                                    .size(92.dp)
+                                                    .clip(RoundedCornerShape(12.dp))
+                                                    .background(Color(0xFFF1F5F9))
                                             ) {
-                                                Icon(Icons.Default.Close, contentDescription = "Remove", tint = MidnightNavy, modifier = Modifier.size(12.dp))
+                                                AdminProductImage(
+                                                    model = img,
+                                                    contentDescription = null,
+                                                    serverUrl = serverUrl,
+                                                    modifier = Modifier.fillMaxSize()
+                                                )
+
+                                                Box(
+                                                    modifier = Modifier
+                                                        .align(Alignment.BottomCenter)
+                                                        .fillMaxWidth()
+                                                        .background(Color(0xCC0F172A))
+                                                        .clickable {
+                                                            val list = imagesList.toMutableList()
+                                                            val selected = list.removeAt(idx)
+                                                            list.add(0, selected)
+                                                            imagesList = list
+                                                        }
+                                                        .padding(vertical = 3.dp),
+                                                    contentAlignment = Alignment.Center
+                                                ) {
+                                                    Text(
+                                                        text = "Set Primary",
+                                                        color = Color.White,
+                                                        fontSize = 9.sp,
+                                                        fontWeight = FontWeight.Bold
+                                                    )
+                                                }
+
+                                                Box(
+                                                    modifier = Modifier
+                                                        .align(Alignment.TopEnd)
+                                                        .padding(4.dp)
+                                                        .size(20.dp)
+                                                        .clip(CircleShape)
+                                                        .background(Color.White.copy(alpha = 0.9f))
+                                                        .clickable {
+                                                            val list = imagesList.toMutableList()
+                                                            list.removeAt(idx)
+                                                            imagesList = list
+                                                        },
+                                                    contentAlignment = Alignment.Center
+                                                ) {
+                                                    Icon(
+                                                        imageVector = Icons.Default.Close,
+                                                        contentDescription = "Remove",
+                                                        tint = MidnightNavy,
+                                                        modifier = Modifier.size(12.dp)
+                                                    )
+                                                }
                                             }
                                         }
                                     }
@@ -903,8 +974,7 @@ fun ProductEditScreen(
                                         color = Color(0xFFEFF6FF),
                                         border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFBFDBFE)),
                                         modifier = Modifier
-                                            .weight(1f)
-                                            .height(86.dp)
+                                            .size(92.dp)
                                             .clip(RoundedCornerShape(12.dp))
                                             .clickable { photoPickerLauncher.launch("image/*") }
                                     ) {

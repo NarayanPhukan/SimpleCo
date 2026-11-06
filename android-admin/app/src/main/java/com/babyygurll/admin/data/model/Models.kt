@@ -49,6 +49,25 @@ data class Product(
     @SerializedName("sizes") val sizes: List<String> = emptyList(),
     @SerializedName("variants") val variants: List<ProductVariant> = emptyList()
 ) {
+    val resolvedPrimaryImage: String
+        get() {
+            if (image.startsWith("/assets/images/") && images.any { !it.startsWith("/assets/images/") }) {
+                return images.firstOrNull { !it.startsWith("/assets/images/") } ?: image
+            }
+            return image.ifBlank { images.firstOrNull() ?: "" }
+        }
+
+    val allImages: List<String>
+        get() {
+            val list = if (images.isNotEmpty()) {
+                val real = images.filter { !it.startsWith("/assets/images/") }
+                if (real.isNotEmpty()) real else images
+            } else if (image.isNotBlank()) {
+                listOf(image)
+            } else emptyList()
+            return list
+        }
+
     val sku: String
         get() {
             val prefix = when {

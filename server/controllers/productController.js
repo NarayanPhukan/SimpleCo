@@ -102,7 +102,9 @@ exports.createProduct = async (req, res) => {
     const imagesList = Array.isArray(images) && images.length > 0 
       ? images 
       : (image ? [image] : []);
-    const primaryImage = (imagesList.length > 0 ? imagesList[0] : image) || '/assets/images/strawberry-cow.jpg';
+    const validImages = imagesList.filter(img => img && img.trim().length > 0);
+    const nonMockImage = validImages.find(img => !img.includes('/assets/images/'));
+    const primaryImage = nonMockImage || validImages[0] || (image && !image.includes('/assets/images/') ? image : '') || '';
 
     const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '') + '-' + Math.floor(100 + Math.random() * 900);
 
@@ -114,7 +116,7 @@ exports.createProduct = async (req, res) => {
       price: Number(price),
       originalPrice: originalPrice ? Number(originalPrice) : Math.round(Number(price) * 1.3),
       image: primaryImage,
-      images: imagesList.length > 0 ? imagesList : [primaryImage],
+      images: validImages.length > 0 ? validImages : (primaryImage ? [primaryImage] : []),
       badge: badge || 'Handcrafted',
       rating: 5.0,
       reviewsCount: 1,
@@ -147,7 +149,10 @@ exports.updateProduct = async (req, res) => {
     if (updates.price !== undefined) updates.price = Number(updates.price);
     if (updates.originalPrice !== undefined) updates.originalPrice = Number(updates.originalPrice);
     if (updates.images && Array.isArray(updates.images) && updates.images.length > 0) {
-      if (!updates.image) {
+      const nonMockImage = updates.images.find(img => !img.includes('/assets/images/'));
+      if (nonMockImage && (!updates.image || updates.image.includes('/assets/images/'))) {
+        updates.image = nonMockImage;
+      } else if (!updates.image) {
         updates.image = updates.images[0];
       }
     }

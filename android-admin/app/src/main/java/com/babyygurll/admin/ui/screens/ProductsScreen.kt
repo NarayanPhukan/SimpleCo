@@ -357,7 +357,7 @@ fun ProductCatalogueCard(
                     .background(Color(0xFFF1F5F9))
             ) {
                 AdminProductImage(
-                    model = product.image,
+                    model = product.resolvedPrimaryImage,
                     contentDescription = product.name,
                     serverUrl = serverUrl,
                     fallbackEmoji = "🧶",
