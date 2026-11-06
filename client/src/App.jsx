@@ -149,42 +149,48 @@ export const App = () => {
     return () => clearInterval(timer);
   }, [activeCategory, searchQuery, sortOrder]);
 
-  // Listen for #admin, #studio, #custom, #wishlist, #account, #orders, #checkout hash in URL
+  // Listen for routes and #admin, #studio, #custom, #wishlist, #account, #orders, #checkout in URL
   useEffect(() => {
-    const handleHash = () => {
-      const hash = window.location.hash;
-      if (hash === '#admin') {
+    const handleNavigation = () => {
+      const hash = (window.location.hash || '').toLowerCase();
+      const path = (window.location.pathname || '').toLowerCase();
+
+      if (hash === '#admin' || path === '/admin') {
         setIsAdminOpen(true);
-      } else if (hash === '#studio' || hash === '#custom' || hash === '#builder') {
+      } else if (hash === '#studio' || hash === '#custom' || hash === '#builder' || path === '/custom' || path === '/studio') {
         setIsCustomStudioOpen(true);
-      } else if (hash === '#wishlist') {
+      } else if (hash === '#wishlist' || path === '/wishlist') {
         setIsWishlistOpen(true);
-      } else if (hash === '#account' || hash === '#orders') {
+      } else if (hash === '#account' || hash === '#orders' || path === '/account' || path === '/orders') {
         setIsAccountOpen(true);
-      } else if (hash === '#checkout') {
+      } else if (hash === '#checkout' || path === '/checkout') {
         setIsCheckoutOpen(true);
-      } else if (hash === '#app' || hash === '#download') {
+      } else if (hash === '#app' || hash === '#download' || path === '/app' || path === '/download') {
         setIsAppDownloadOpen(true);
-      } else if (hash === '#refund-policy' || hash === '#refund' || hash === '#cancellation') {
+      } else if (hash === '#refund-policy' || hash === '#refund' || hash === '#cancellation' || path === '/refund' || path === '/cancellation' || path === '/refund-policy') {
         setPolicyInitialTab('refund');
         setIsPolicyModalOpen(true);
-      } else if (hash === '#shipping-policy' || hash === '#shipping') {
+      } else if (hash === '#shipping-policy' || hash === '#shipping' || path === '/shipping' || path === '/shipping-policy') {
         setPolicyInitialTab('shipping');
         setIsPolicyModalOpen(true);
-      } else if (hash === '#terms' || hash === '#conditions') {
+      } else if (hash === '#terms' || hash === '#conditions' || path === '/terms' || path === '/terms-and-conditions') {
         setPolicyInitialTab('terms');
         setIsPolicyModalOpen(true);
-      } else if (hash === '#privacy') {
+      } else if (hash === '#privacy' || path === '/privacy' || path === '/privacy-policy') {
         setPolicyInitialTab('privacy');
         setIsPolicyModalOpen(true);
-      } else if (hash === '#contact' || hash === '#merchant') {
+      } else if (hash === '#contact' || hash === '#merchant' || path === '/contact' || path === '/contact-us') {
         setPolicyInitialTab('contact');
         setIsPolicyModalOpen(true);
       }
     };
-    handleHash();
-    window.addEventListener('hashchange', handleHash);
-    return () => window.removeEventListener('hashchange', handleHash);
+    handleNavigation();
+    window.addEventListener('hashchange', handleNavigation);
+    window.addEventListener('popstate', handleNavigation);
+    return () => {
+      window.removeEventListener('hashchange', handleNavigation);
+      window.removeEventListener('popstate', handleNavigation);
+    };
   }, []);
 
   // Confetti Animation

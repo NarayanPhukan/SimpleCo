@@ -27,11 +27,11 @@ export const AppDownloadModal = ({ isOpen, onClose }) => {
         </h3>
         
         <div style={{ display: 'inline-block', background: '#DCFCE7', color: '#166534', padding: '0.2rem 0.65rem', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 700, marginBottom: '1rem' }}>
-          Official Android Release • v1.1.0
+          Official Android Release • v1.2.0
         </div>
 
         <p style={{ fontSize: '0.88rem', color: '#64748B', lineHeight: '1.6', marginBottom: '1.5rem' }}>
-          Experience our slow-crafted crochet collection on your Android device. Features one-tap Razorpay UPI instant payments, live order stage tracking, and bespoke custom design commissions.
+          Experience our slow-crafted crochet collection on your Android device. Features one-tap Razorpay UPI instant payments, swipe photo carousels, dynamic custom variants, and live order tracking.
         </p>
 
         <div style={{ background: '#F8FAFC', borderRadius: '12px', padding: '1rem', textAlign: 'left', marginBottom: '1.5rem', border: '1px solid #E2E8F0', fontSize: '0.82rem', color: '#334155' }}>
