@@ -22,5 +22,9 @@ sealed class Screen(val route: String, val title: String) {
     object OrderCreatedSuccess : Screen("order_created_success/{orderId}", "Order Created") {
         fun createRoute(orderId: String) = "order_created_success/$orderId"
     }
+    object Inventory : Screen("inventory", "Inventory")
+    object ProductionQueue : Screen("production_queue", "Production queue")
+    object CustomRequests : Screen("custom_requests", "Custom requests")
+    object Shipping : Screen("shipping", "Shipping")
 }
 

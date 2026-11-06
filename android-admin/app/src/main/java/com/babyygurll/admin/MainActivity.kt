@@ -90,8 +90,17 @@ class MainActivity : ComponentActivity() {
                         )
                     }
 
-                    // Show bottom bar on primary tabs
-                    val showBottomBar = currentRoute in bottomNavItems.map { it.route }
+                    val operationsSubRoutes = remember {
+                        setOf(
+                            Screen.Inventory.route,
+                            Screen.ProductionQueue.route,
+                            Screen.CustomRequests.route,
+                            Screen.Shipping.route
+                        )
+                    }
+
+                    // Show bottom bar on primary tabs and store operations screens (matching design)
+                    val showBottomBar = currentRoute in bottomNavItems.map { it.route } || currentRoute in operationsSubRoutes
 
                     Scaffold(
                         modifier = Modifier.fillMaxSize(),
@@ -112,7 +121,7 @@ class MainActivity : ComponentActivity() {
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
                                         bottomNavItems.forEach { item ->
-                                            val isSelected = currentRoute == item.route
+                                            val isSelected = currentRoute == item.route || (item == BottomNavItem.More && currentRoute in operationsSubRoutes)
 
                                             Column(
                                                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -361,9 +370,53 @@ class MainActivity : ComponentActivity() {
                                             launchSingleTop = true
                                         }
                                     },
+                                    onNavigateInventory = { navController.navigate(Screen.Inventory.route) },
+                                    onNavigateCustomRequests = { navController.navigate(Screen.CustomRequests.route) },
+                                    onNavigateProductionQueue = { navController.navigate(Screen.ProductionQueue.route) },
+                                    onNavigateShipping = { navController.navigate(Screen.Shipping.route) },
                                     onCheckUpdates = { viewModel.checkForAppUpdates(silent = false) },
                                     onOpenServerConfig = { showServerConfigDialog = true },
                                     onLogout = { viewModel.logout() }
+                                )
+                            }
+
+                            // Operations: Inventory Screen (Screenshot 1)
+                            composable(Screen.Inventory.route) {
+                                InventoryScreen(
+                                    state = uiState,
+                                    onBack = { navController.popBackStack() },
+                                    onNewProduct = { navController.navigate(Screen.ProductEdit.createRoute(null)) },
+                                    onSelectProduct = { prodId -> navController.navigate(Screen.ProductDetail.createRoute(prodId)) }
+                                )
+                            }
+
+                            // Operations: Production Queue Screen (Screenshot 2)
+                            composable(Screen.ProductionQueue.route) {
+                                ProductionQueueScreen(
+                                    state = uiState,
+                                    onBack = { navController.popBackStack() },
+                                    onAdvanceStage = { id -> viewModel.advanceOrder(id) }
+                                )
+                            }
+
+                            // Operations: Custom Requests Screen (Screenshot 3)
+                            composable(Screen.CustomRequests.route) {
+                                CustomRequestsScreen(
+                                    state = uiState,
+                                    onBack = { navController.popBackStack() }
+                                )
+                            }
+
+                            // Operations: Shipping Screen (Screenshot 4)
+                            composable(Screen.Shipping.route) {
+                                ShippingScreen(
+                                    state = uiState,
+                                    onBack = { navController.popBackStack() },
+                                    onViewOrder = { orderId ->
+                                        val order = uiState.orders.find { it.orderId == orderId }
+                                        if (order != null) viewModel.selectOrder(order)
+                                        navController.navigate(Screen.OrderDetail.createRoute(orderId))
+                                    }
                                 )
                             }
 

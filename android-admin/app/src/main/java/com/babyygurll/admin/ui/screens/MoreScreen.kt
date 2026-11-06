@@ -38,6 +38,10 @@ fun MoreScreen(
     onNavigateCoupons: () -> Unit,
     onNavigateProducts: () -> Unit = {},
     onNavigateOrders: (String?) -> Unit = {},
+    onNavigateInventory: () -> Unit = {},
+    onNavigateCustomRequests: () -> Unit = {},
+    onNavigateProductionQueue: () -> Unit = {},
+    onNavigateShipping: () -> Unit = {},
     onCheckUpdates: () -> Unit,
     onOpenServerConfig: () -> Unit,
     onLogout: () -> Unit
@@ -216,17 +220,15 @@ fun MoreScreen(
                         modifier = Modifier.weight(1f),
                         icon = Icons.Outlined.Inventory2,
                         title = "Inventory",
-                        subtitle = "${if (state.products.isNotEmpty()) state.products.size else 248} SKUs",
-                        onClick = onNavigateProducts
+                        subtitle = "${if (state.products.isNotEmpty()) state.products.size else 46} tracked",
+                        onClick = onNavigateInventory
                     )
                     MoreToolCard(
                         modifier = Modifier.weight(1f),
                         icon = Icons.Outlined.AutoAwesome,
                         title = "Custom Requests",
-                        subtitle = "3 pending",
-                        onClick = {
-                            showFeatureDialog = "Custom Requests" to "3 bespoke crochet requests awaiting artisan approval and yarn allocation."
-                        }
+                        subtitle = "7 open",
+                        onClick = onNavigateCustomRequests
                     )
                 }
 
@@ -238,15 +240,15 @@ fun MoreScreen(
                         modifier = Modifier.weight(1f),
                         icon = Icons.Outlined.Schedule,
                         title = "Production Queue",
-                        subtitle = "${state.metrics.pendingFulfillmentCount.coerceAtLeast(6)} active",
-                        onClick = { onNavigateOrders("handmade") }
+                        subtitle = "9 active",
+                        onClick = onNavigateProductionQueue
                     )
                     MoreToolCard(
                         modifier = Modifier.weight(1f),
                         icon = Icons.Outlined.LocalShipping,
                         title = "Shipping",
-                        subtitle = "2 ready",
-                        onClick = { onNavigateOrders("ready") }
+                        subtitle = "12 in progress",
+                        onClick = onNavigateShipping
                     )
                 }
             }

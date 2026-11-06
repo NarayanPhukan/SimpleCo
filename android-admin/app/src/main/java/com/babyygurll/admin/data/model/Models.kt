@@ -372,3 +372,37 @@ data class ClientErrorLog(
     val message: String,
     val stackTrace: String? = null
 )
+
+// Operations Department Models
+data class ProductionQueueItem(
+    val id: String,
+    val orderRef: String,
+    val itemName: String,
+    val dueDate: String,
+    val stage: String, // "Being crocheted", "Quality check", "Waiting"
+    val artisan: String = "Master Crafter",
+    val progressPercent: Int = 50
+)
+
+data class CustomRequestItem(
+    val id: String,
+    val title: String,
+    val customerName: String,
+    val customerPhone: String = "+91 98201 12345",
+    val customerEmail: String = "client@example.com",
+    val status: String, // "New", "Reviewing", "Quoted"
+    val budget: String = "₹2,500 - ₹3,500",
+    val notes: String = "Bespoke color palette and personalized crochet monogram.",
+    val requestedDate: String = "18 Jun"
+)
+
+data class ShipmentItem(
+    val id: String,
+    val orderRef: String,
+    val destinationCity: String,
+    val carrierDetail: String, // "Shiprocket · 0.8 kg", "AWB 1439826402", "Delivered 18 Jun"
+    val status: String, // "Ready to ship", "In transit", "Delivered"
+    val recipientName: String = "Valued Customer",
+    val trackingUrl: String? = null
+)
+
