@@ -1,8 +1,8 @@
 {
-  "latestVersionCode": 10,
-  "latestVersionName": "1.0.9",
+  "latestVersionCode": 11,
+  "latestVersionName": "1.1.0",
   "minRequiredVersionCode": 1,
-  "releaseNotes": "• Cancel order button placed exclusively in My Orders > Order Details\n• Automatic Razorpay refund integration for cancelled prepaid orders\n• Live UPI intent payment support & quiet luxury boutique UI",
+  "releaseNotes": "• Performance optimizations & quiet luxury UI updates\n• Seamless Razorpay UPI instant checkout & live order tracking\n• Automatic refund tracking for cancelled prepaid orders",
   "downloadUrl": "https://raw.githubusercontent.com/NarayanPhukan/SimpleCo/main/android-customer/babyygurll-boutique.apk",
   "releaseDate": "2026-11-06",
   "critical": false

@@ -239,13 +239,30 @@ class AdminRepository(
             val response = api.getAppVersion()
             val body = response.body()
             if (response.isSuccessful && body?.data != null) {
-                Result.success(body.data)
-            } else {
-                Result.failure(Exception(body?.message ?: "Failed to check for updates"))
+                return@withContext Result.success(body.data)
             }
         } catch (e: Exception) {
-            Result.failure(e)
+            // Render cold start fallback
         }
+
+        try {
+            val rawUrl = "https://raw.githubusercontent.com/NarayanPhukan/SimpleCo/main/client/public/android-admin-version.json"
+            val connection = java.net.URL(rawUrl).openConnection() as java.net.HttpURLConnection
+            connection.connectTimeout = 8000
+            connection.readTimeout = 8000
+            connection.requestMethod = "GET"
+            if (connection.responseCode == 200) {
+                val stream = connection.inputStream.bufferedReader().use { it.readText() }
+                val info = com.google.gson.Gson().fromJson(stream, AppVersionInfo::class.java)
+                if (info != null) {
+                    return@withContext Result.success(info)
+                }
+            }
+        } catch (e: Exception) {
+            // Ignore
+        }
+
+        Result.failure(Exception("Failed to check for updates"))
     }
 
     // Diagnostics & System Health

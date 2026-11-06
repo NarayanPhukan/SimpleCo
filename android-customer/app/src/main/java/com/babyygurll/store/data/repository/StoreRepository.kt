@@ -59,13 +59,30 @@ class StoreRepository(private val context: Context) {
             try {
                 val response = api.getCustomerAppVersion()
                 if (response.isSuccessful && response.body()?.data != null) {
-                    Result.success(response.body()!!.data!!)
-                } else {
-                    Result.failure(Exception("Failed to get customer app version"))
+                    return@withContext Result.success(response.body()!!.data!!)
                 }
             } catch (e: Exception) {
-                Result.failure(e)
+                // Render cold start fallback
             }
+
+            try {
+                val rawUrl = "https://raw.githubusercontent.com/NarayanPhukan/SimpleCo/main/client/public/android-customer-version.json"
+                val connection = java.net.URL(rawUrl).openConnection() as java.net.HttpURLConnection
+                connection.connectTimeout = 8000
+                connection.readTimeout = 8000
+                connection.requestMethod = "GET"
+                if (connection.responseCode == 200) {
+                    val stream = connection.inputStream.bufferedReader().use { it.readText() }
+                    val info = com.google.gson.Gson().fromJson(stream, AppVersionInfo::class.java)
+                    if (info != null) {
+                        return@withContext Result.success(info)
+                    }
+                }
+            } catch (e: Exception) {
+                // Ignore
+            }
+
+            Result.failure(Exception("Failed to get customer app version"))
         }
 
     suspend fun getCoupons(): Result<List<Coupon>> =

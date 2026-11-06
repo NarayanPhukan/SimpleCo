@@ -28,10 +28,10 @@ const DEFAULT_CONFIG = {
     critical: false
   },
   customerAppVersion: {
-    latestVersionCode: 10,
-    latestVersionName: '1.0.9',
+    latestVersionCode: 11,
+    latestVersionName: '1.1.0',
     minRequiredVersionCode: 1,
-    releaseNotes: '• Cancel order button placed exclusively in My Orders > Order Details\n• Automatic Razorpay refund integration for cancelled prepaid orders\n• Live UPI intent payment support & quiet luxury boutique UI',
+    releaseNotes: '• Performance optimizations & quiet luxury UI updates\n• Seamless Razorpay UPI instant checkout & live order tracking\n• Automatic refund tracking for cancelled prepaid orders',
     downloadUrl: 'https://raw.githubusercontent.com/NarayanPhukan/SimpleCo/main/android-customer/babyygurll-boutique.apk',
     releaseDate: '2026-11-06',
     critical: false
@@ -68,16 +68,43 @@ async function resolveSettingsDoc() {
         doc = await StoreSetting.create(DEFAULT_CONFIG);
       } else {
         let changed = false;
-        if (!doc.customerAppVersion || !doc.customerAppVersion.latestVersionCode) {
-          doc.customerAppVersion = DEFAULT_CONFIG.customerAppVersion;
+
+        // Auto-upgrade admin appVersion if DEFAULT_CONFIG defines a newer release
+        const currentAdminCode = doc.appVersion?.latestVersionCode || 0;
+        if (!doc.appVersion || DEFAULT_CONFIG.appVersion.latestVersionCode > currentAdminCode ||
+            (doc.appVersion.downloadUrl && doc.appVersion.downloadUrl.includes('babyygurll-boutique'))) {
+          doc.appVersion = {
+            ...(doc.appVersion ? (doc.appVersion.toObject ? doc.appVersion.toObject() : doc.appVersion) : {}),
+            latestVersionCode: Math.max(DEFAULT_CONFIG.appVersion.latestVersionCode, currentAdminCode),
+            latestVersionName: DEFAULT_CONFIG.appVersion.latestVersionName,
+            releaseNotes: DEFAULT_CONFIG.appVersion.releaseNotes,
+            downloadUrl: DEFAULT_CONFIG.appVersion.downloadUrl,
+            releaseDate: DEFAULT_CONFIG.appVersion.releaseDate,
+            critical: DEFAULT_CONFIG.appVersion.critical || false
+          };
           changed = true;
         }
-        // Self-healing: if appVersion was erroneously overwritten with customer app APK info, restore it to admin app
-        if (doc.appVersion && doc.appVersion.downloadUrl && doc.appVersion.downloadUrl.includes('babyygurll-boutique')) {
-          doc.appVersion = DEFAULT_CONFIG.appVersion;
+
+        // Auto-upgrade customerAppVersion if DEFAULT_CONFIG defines a newer release
+        const currentCustCode = doc.customerAppVersion?.latestVersionCode || 0;
+        if (!doc.customerAppVersion || DEFAULT_CONFIG.customerAppVersion.latestVersionCode > currentCustCode) {
+          doc.customerAppVersion = {
+            ...(doc.customerAppVersion ? (doc.customerAppVersion.toObject ? doc.customerAppVersion.toObject() : doc.customerAppVersion) : {}),
+            latestVersionCode: Math.max(DEFAULT_CONFIG.customerAppVersion.latestVersionCode, currentCustCode),
+            latestVersionName: DEFAULT_CONFIG.customerAppVersion.latestVersionName,
+            releaseNotes: DEFAULT_CONFIG.customerAppVersion.releaseNotes,
+            downloadUrl: DEFAULT_CONFIG.customerAppVersion.downloadUrl,
+            releaseDate: DEFAULT_CONFIG.customerAppVersion.releaseDate,
+            critical: DEFAULT_CONFIG.customerAppVersion.critical || false
+          };
           changed = true;
         }
+
         if (changed) {
+          if (doc.markModified) {
+            doc.markModified('appVersion');
+            doc.markModified('customerAppVersion');
+          }
           await doc.save();
         }
       }
@@ -164,9 +191,15 @@ exports.getAppVersion = async (req, res) => {
   try {
     const { doc } = await resolveSettingsDoc();
     const isCustomer = req.query.app === 'customer';
-    const versionInfo = isCustomer
-      ? (doc?.customerAppVersion || DEFAULT_CONFIG.customerAppVersion)
-      : (doc?.appVersion || DEFAULT_CONFIG.appVersion);
+    let versionInfo = isCustomer
+      ? (doc?.customerAppVersion ? (doc.customerAppVersion.toObject ? doc.customerAppVersion.toObject() : doc.customerAppVersion) : DEFAULT_CONFIG.customerAppVersion)
+      : (doc?.appVersion ? (doc.appVersion.toObject ? doc.appVersion.toObject() : doc.appVersion) : DEFAULT_CONFIG.appVersion);
+
+    // Safeguard: Ensure served version is never lower than the latest DEFAULT_CONFIG defined in codebase
+    const targetConfig = isCustomer ? DEFAULT_CONFIG.customerAppVersion : DEFAULT_CONFIG.appVersion;
+    if (targetConfig && targetConfig.latestVersionCode > (versionInfo?.latestVersionCode || 0)) {
+      versionInfo = targetConfig;
+    }
 
     res.json({
       success: true,
