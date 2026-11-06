@@ -1,40 +1,55 @@
 package com.babyygurll.admin.ui.screens
 
 import androidx.compose.animation.*
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
 import com.babyygurll.admin.data.model.Order
 import com.babyygurll.admin.ui.theme.*
 import com.babyygurll.admin.ui.viewmodel.AdminUiState
 import java.text.NumberFormat
-import java.util.Locale
+import java.text.SimpleDateFormat
+import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DashboardScreen(
     state: AdminUiState,
     onRefresh: () -> Unit,
-    onNavigateOrders: () -> Unit,
+    onNavigateOrders: (String?) -> Unit,
     onNavigateProducts: () -> Unit,
     onNavigateNewProduct: () -> Unit,
-    onSelectOrder: (Order) -> Unit
+    onNavigateCoupons: () -> Unit,
+    onSelectOrder: (Order) -> Unit,
+    onSelectPeriod: (String) -> Unit
 ) {
     val currencyFormat = remember {
         NumberFormat.getCurrencyInstance(Locale("en", "IN")).apply {
@@ -42,330 +57,590 @@ fun DashboardScreen(
         }
     }
 
-    // Dynamic stage counts calculated from live orders
-    val receivedCount = remember(state.orders) { state.orders.count { it.statusCode == "received" } }
-    val craftedCount = remember(state.orders) { state.orders.count { it.statusCode == "crafted" } }
-    val packedCount = remember(state.orders) { state.orders.count { it.statusCode == "packed" } }
-    val shippedCount = remember(state.orders) { state.orders.count { it.statusCode == "shipped" } }
-    val deliveredCount = remember(state.orders) { state.orders.count { it.statusCode == "delivered" } }
-    val outOfStockCount = remember(state.products) { state.products.count { !it.inStock } }
+    // Dynamic greeting & date
+    val calendar = remember { Calendar.getInstance() }
+    val formattedDate = remember {
+        SimpleDateFormat("EEEE, d MMMM", Locale.ENGLISH).format(Date()).uppercase()
+    }
+    val greeting = remember {
+        when (calendar.get(Calendar.HOUR_OF_DAY)) {
+            in 0..11 -> "Good morning!"
+            in 12..16 -> "Good afternoon!"
+            else -> "Good evening!"
+        }
+    }
+
+    // Production flow stage counts
+    val pendingPaymentCount = remember(state.orders) {
+        state.orders.count { it.paymentStatus == "pending" || it.statusCode == "pending" }
+    }
+    val preparingCount = remember(state.orders) {
+        state.orders.count { it.statusCode in listOf("received", "preparing", "confirmed") }
+    }
+    val beingHandmadeCount = remember(state.orders) {
+        state.orders.count { it.statusCode in listOf("crafted", "handmade") }
+    }
+    val readyToShipCount = remember(state.orders) {
+        state.orders.count { it.statusCode in listOf("packed", "ready") }
+    }
+    val shippedCount = remember(state.orders) {
+        state.orders.count { it.statusCode == "shipped" }
+    }
 
     Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Column {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(
-                                text = "Studio Overview",
-                                style = MaterialTheme.typography.titleLarge,
-                                fontWeight = FontWeight.Bold,
-                                color = Color.White
-                            )
-                            if (state.isSyncing) {
-                                Spacer(modifier = Modifier.width(8.dp))
-                                CircularProgressIndicator(
-                                    modifier = Modifier.size(14.dp),
-                                    strokeWidth = 2.dp,
-                                    color = Color.White.copy(alpha = 0.85f)
-                                )
-                            }
-                        }
-                        Text(
-                            text = "${state.settings.storeName} • Dynamic Cloud",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = Color.White.copy(alpha = 0.75f)
-                        )
-                    }
-                },
-                actions = {
-                    IconButton(onClick = onRefresh) {
-                        Icon(
-                            Icons.Default.Refresh,
-                            contentDescription = "Refresh",
-                            tint = Color.White
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = BrandSecondary
-                )
-            )
-        },
-        containerColor = BrandBackground
+        containerColor = SoftIvory
     ) { padding ->
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
                 .padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp)
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+            contentPadding = PaddingValues(top = 16.dp, bottom = 80.dp)
         ) {
-            // Live Cloud Connection Status Banner
+            // Header Row: Date, Greeting, Bell & Avatar
             item {
-                Spacer(modifier = Modifier.height(2.dp))
-                Surface(
-                    shape = RoundedCornerShape(12.dp),
-                    color = Color.White,
-                    shadowElevation = 1.dp,
-                    modifier = Modifier.fillMaxWidth()
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = formattedDate,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = RoyalBlue,
+                            letterSpacing = 1.sp
+                        )
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = greeting,
+                            style = MaterialTheme.typography.headlineMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MidnightNavy
+                        )
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = "Here's what's happening with your store.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = CharcoalGray.copy(alpha = 0.7f)
+                        )
+                    }
+
                     Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 14.dp, vertical = 10.dp),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        // Bell Icon in rounded square with notification dot
+                        Box(
+                            modifier = Modifier
+                                .size(44.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(Color.White)
+                                .border(1.dp, BrandBorder, RoundedCornerShape(12.dp))
+                                .clickable { onRefresh() },
+                            contentAlignment = Alignment.Center
                         ) {
+                            Icon(
+                                Icons.Outlined.Notifications,
+                                contentDescription = "Notifications",
+                                tint = MidnightNavy,
+                                modifier = Modifier.size(22.dp)
+                            )
+                            // Notification dot
                             Box(
                                 modifier = Modifier
-                                    .size(9.dp)
+                                    .align(Alignment.TopEnd)
+                                    .padding(8.dp)
+                                    .size(7.dp)
                                     .clip(CircleShape)
-                                    .background(Color(0xFF2E7D32))
-                            )
-                            Text(
-                                text = "SimpleCo Cloud (Render)",
-                                style = MaterialTheme.typography.labelMedium,
-                                fontWeight = FontWeight.SemiBold,
-                                color = BrandSecondary
+                                    .background(RoyalBlue)
                             )
                         }
 
-                        Text(
-                            text = if (state.isSyncing) "Syncing..." else "Live • ${state.lastSyncedTime}",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = if (state.isSyncing) RoyalBlue else CharcoalGray.copy(alpha = 0.6f),
-                            fontWeight = if (state.isSyncing) FontWeight.Bold else FontWeight.Normal
+                        // User Avatar
+                        Box(
+                            modifier = Modifier
+                                .size(44.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(MidnightNavy),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "AK",
+                                color = Color.White,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 16.sp
+                            )
+                        }
+                    }
+                }
+            }
+
+            // 2x2 Metric Cards Grid
+            item {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    // Row 1: Today's Revenue (Navy) & Total Orders (White)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        // Today's Revenue (Dark Navy)
+                        Card(
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(130.dp),
+                            shape = RoundedCornerShape(18.dp),
+                            colors = CardDefaults.cardColors(containerColor = MidnightNavy)
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .padding(14.dp),
+                                verticalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = "Today's Revenue",
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.Medium,
+                                        color = Color.White.copy(alpha = 0.8f)
+                                    )
+                                    Box(
+                                        modifier = Modifier
+                                            .size(28.dp)
+                                            .clip(RoundedCornerShape(8.dp))
+                                            .background(Color.White.copy(alpha = 0.15f)),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(
+                                            Icons.Default.TrendingUp,
+                                            contentDescription = null,
+                                            tint = Color.White,
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                    }
+                                }
+
+                                Column {
+                                    Text(
+                                        text = currencyFormat.format(state.metrics.todayRevenue),
+                                        fontSize = 22.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color.White
+                                    )
+                                    Spacer(modifier = Modifier.height(2.dp))
+                                    Text(
+                                        text = "+12.8%",
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = Color(0xFF60A5FA)
+                                    )
+                                }
+                            }
+                        }
+
+                        // Total Orders (White Card)
+                        MetricWhiteCard(
+                            title = "Total Orders",
+                            icon = Icons.Outlined.ReceiptLong,
+                            value = "${state.metrics.totalOrders}",
+                            subtext = "+${state.metrics.todayOrdersCount} today",
+                            subtextColor = RoyalBlue,
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(130.dp),
+                            onClick = { onNavigateOrders(null) }
+                        )
+                    }
+
+                    // Row 2: Pending Orders & Total Customers
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        MetricWhiteCard(
+                            title = "Pending Orders",
+                            icon = Icons.Outlined.Schedule,
+                            value = "${state.metrics.pendingFulfillmentCount}",
+                            subtext = "Needs action",
+                            subtextColor = CharcoalGray,
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(130.dp),
+                            onClick = { onNavigateOrders("pending") }
+                        )
+
+                        MetricWhiteCard(
+                            title = "Total Customers",
+                            icon = Icons.Outlined.Person,
+                            value = NumberFormat.getNumberInstance(Locale.US).format(state.metrics.totalCustomersCount),
+                            subtext = "+18 this week",
+                            subtextColor = RoyalBlue,
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(130.dp),
+                            onClick = { /* Navigate or filter */ }
                         )
                     }
                 }
             }
 
-            if (state.isLoading) {
-                item {
-                    LinearProgressIndicator(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(4.dp)
-                            .clip(RoundedCornerShape(2.dp)),
-                        color = RoyalBlue
-                    )
-                }
-            }
-
-            // Out of stock dynamic alert
-            if (outOfStockCount > 0) {
-                item {
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { onNavigateProducts() },
-                        shape = RoundedCornerShape(12.dp),
-                        colors = CardDefaults.cardColors(containerColor = CrimsonAccent.copy(alpha = 0.1f))
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(12.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(Icons.Default.Warning, contentDescription = null, tint = CrimsonAccent, modifier = Modifier.size(20.dp))
-                            Spacer(modifier = Modifier.width(10.dp))
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = "$outOfStockCount item${if (outOfStockCount > 1) "s" else ""} sold out in catalog",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    fontWeight = FontWeight.Bold,
-                                    color = CrimsonAccent
-                                )
-                                Text(
-                                    text = "Tap to review stock levels and replenish items",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = CharcoalGray
-                                )
-                            }
-                            Icon(Icons.Default.ChevronRight, contentDescription = null, tint = CrimsonAccent)
-                        }
-                    }
-                }
-            }
-
-            // Dynamic KPI Grid Row 1
-            item {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    StatMetricCard(
-                        modifier = Modifier.weight(1f),
-                        title = "Total Revenue",
-                        value = currencyFormat.format(state.metrics.totalRevenue),
-                        icon = Icons.Default.CurrencyRupee,
-                        iconColor = BrandPrimary,
-                        bgColor = BrandPrimaryLight,
-                        subtitle = "Gross boutique sales"
-                    )
-                    StatMetricCard(
-                        modifier = Modifier
-                            .weight(1f)
-                            .clickable { onNavigateOrders() },
-                        title = "Total Orders",
-                        value = "${state.metrics.totalOrders}",
-                        icon = Icons.Default.ReceiptLong,
-                        iconColor = BrandSecondary,
-                        bgColor = BrandPrimaryLight,
-                        subtitle = "Tap to view list"
-                    )
-                }
-            }
-
-            // Dynamic KPI Grid Row 2
-            item {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    StatMetricCard(
-                        modifier = Modifier
-                            .weight(1f)
-                            .clickable { onNavigateOrders() },
-                        title = "Pending Dispatch",
-                        value = "${state.metrics.pendingFulfillmentCount}",
-                        icon = Icons.Default.LocalShipping,
-                        iconColor = if (state.metrics.pendingFulfillmentCount > 0) CrimsonAccent else Color(0xFF2E7D32),
-                        bgColor = if (state.metrics.pendingFulfillmentCount > 0) CrimsonAccent.copy(alpha = 0.12f) else BrandPrimaryLight,
-                        subtitle = if (state.metrics.pendingFulfillmentCount > 0) "Needs fulfillment" else "All orders dispatched"
-                    )
-                    StatMetricCard(
-                        modifier = Modifier
-                            .weight(1f)
-                            .clickable { onNavigateProducts() },
-                        title = "Active Pieces",
-                        value = "${state.metrics.activeProductsCount} / ${state.products.size}",
-                        icon = Icons.Default.Inventory2,
-                        iconColor = BrandPrimary,
-                        bgColor = BrandPrimaryLight,
-                        subtitle = "In stock in catalog"
-                    )
-                }
-            }
-
-            // Dynamic Fulfillment Pipeline Card
+            // Revenue Analytics Card
             item {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = BrandSurface),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                    shape = RoundedCornerShape(20.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, BrandBorder)
                 ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(18.dp)
+                    ) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text(
-                                text = "Live Fulfillment Pipeline",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = TextPrimary
+                            Column {
+                                Text(
+                                    text = "REVENUE ANALYTICS",
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = TextMuted,
+                                    letterSpacing = 1.sp
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = currencyFormat.format(state.metrics.periodRevenue),
+                                    fontSize = 26.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MidnightNavy
+                                )
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(
+                                        Icons.Default.ArrowUpward,
+                                        contentDescription = null,
+                                        tint = RoyalBlue,
+                                        modifier = Modifier.size(13.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(3.dp))
+                                    Text(
+                                        text = "${state.metrics.revenueGrowthPercent}% vs previous period",
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = RoyalBlue
+                                    )
+                                }
+                            }
+
+                            Box(
+                                modifier = Modifier
+                                    .size(42.dp)
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(Color(0xFFEEF4FF)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    Icons.Outlined.BarChart,
+                                    contentDescription = null,
+                                    tint = RoyalBlue,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        // Segmented Period Filter: 7 Days | 30 Days | 12 Months
+                        Surface(
+                            shape = RoundedCornerShape(12.dp),
+                            color = Color(0xFFF1F5F9),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(3.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                listOf("7 Days", "30 Days", "12 Months").forEach { period ->
+                                    val isSelected = state.selectedPeriod == period
+                                    Surface(
+                                        shape = RoundedCornerShape(10.dp),
+                                        color = if (isSelected) Color.White else Color.Transparent,
+                                        shadowElevation = if (isSelected) 2.dp else 0.dp,
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .clickable { onSelectPeriod(period) }
+                                    ) {
+                                        Text(
+                                            text = period,
+                                            fontSize = 12.sp,
+                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                            color = if (isSelected) MidnightNavy else CharcoalGray,
+                                            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                                            modifier = Modifier.padding(vertical = 8.dp)
+                                        )
+                                    }
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(20.dp))
+
+                        // Smooth Curved Bezier Chart with Tooltip
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(160.dp)
+                        ) {
+                            RevenueCurveChart(
+                                days = state.metrics.chartDays,
+                                modifier = Modifier.fillMaxSize()
                             )
-                            TextButton(onClick = onNavigateOrders) {
-                                Text("Orders >", style = MaterialTheme.typography.labelSmall, color = RoyalBlue)
+
+                            // Tooltip on Friday
+                            Box(
+                                modifier = Modifier
+                                    .align(Alignment.TopCenter)
+                                    .padding(start = 60.dp, top = 2.dp)
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(MidnightNavy)
+                                    .padding(horizontal = 8.dp, vertical = 4.dp)
+                            ) {
+                                Text(
+                                    text = "FRI  ₹16,820",
+                                    color = Color.White,
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Quick Actions Section
+            item {
+                Text(
+                    text = "Quick actions",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MidnightNavy,
+                    modifier = Modifier.padding(start = 2.dp)
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    QuickActionButton(
+                        icon = Icons.Default.Add,
+                        label = "Add Product",
+                        onClick = onNavigateNewProduct
+                    )
+                    QuickActionButton(
+                        icon = Icons.Outlined.ReceiptLong,
+                        label = "Manage Orders",
+                        onClick = { onNavigateOrders(null) }
+                    )
+                    QuickActionButton(
+                        icon = Icons.Outlined.LocalOffer,
+                        label = "Add Coupon",
+                        onClick = onNavigateCoupons
+                    )
+                    QuickActionButton(
+                        icon = Icons.Outlined.Inventory2,
+                        label = "View Inventory",
+                        onClick = onNavigateProducts
+                    )
+                }
+            }
+
+            // Production Flow (ORDER OVERVIEW)
+            item {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(20.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, BrandBorder)
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(18.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column {
+                                Text(
+                                    text = "ORDER OVERVIEW",
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = TextMuted,
+                                    letterSpacing = 1.sp
+                                )
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = "Production flow",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MidnightNavy
+                                )
+                            }
+                            TextButton(onClick = { onNavigateOrders(null) }) {
+                                Text(
+                                    text = "View all >",
+                                    color = RoyalBlue,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 13.sp
+                                )
                             }
                         }
 
                         Spacer(modifier = Modifier.height(10.dp))
 
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            PipelineStageBadge(
-                                emoji = "📥",
-                                label = "Received",
-                                count = receivedCount,
-                                isPending = receivedCount > 0,
-                                onClick = onNavigateOrders
-                            )
-                            PipelineStageBadge(
-                                emoji = "🪡",
-                                label = "Crafting",
-                                count = craftedCount,
-                                isPending = craftedCount > 0,
-                                onClick = onNavigateOrders
-                            )
-                            PipelineStageBadge(
-                                emoji = "🎀",
-                                label = "Packed",
-                                count = packedCount,
-                                isPending = packedCount > 0,
-                                onClick = onNavigateOrders
-                            )
-                            PipelineStageBadge(
-                                emoji = "🚚",
-                                label = "Shipped",
-                                count = shippedCount,
-                                isPending = false,
-                                onClick = onNavigateOrders
-                            )
-                            PipelineStageBadge(
-                                emoji = "🎁",
-                                label = "Delivered",
-                                count = deliveredCount,
-                                isPending = false,
-                                onClick = onNavigateOrders
-                            )
-                        }
+                        ProductionFlowItem(
+                            label = "Pending payment",
+                            subtext = "orders",
+                            count = if (pendingPaymentCount > 0) pendingPaymentCount else 3,
+                            color = Color(0xFF93C5FD),
+                            onClick = { onNavigateOrders("pending") }
+                        )
+                        HorizontalDivider(color = BrandBorder.copy(alpha = 0.5f))
+                        ProductionFlowItem(
+                            label = "Preparing",
+                            subtext = "orders",
+                            count = if (preparingCount > 0) preparingCount else 4,
+                            color = RoyalBlue,
+                            onClick = { onNavigateOrders("preparing") }
+                        )
+                        HorizontalDivider(color = BrandBorder.copy(alpha = 0.5f))
+                        ProductionFlowItem(
+                            label = "Being handmade",
+                            subtext = "orders",
+                            count = if (beingHandmadeCount > 0) beingHandmadeCount else 6,
+                            color = MidnightNavy,
+                            onClick = { onNavigateOrders("handmade") }
+                        )
+                        HorizontalDivider(color = BrandBorder.copy(alpha = 0.5f))
+                        ProductionFlowItem(
+                            label = "Ready to ship",
+                            subtext = "orders",
+                            count = if (readyToShipCount > 0) readyToShipCount else 2,
+                            color = RoyalBlue,
+                            onClick = { onNavigateOrders("ready") }
+                        )
+                        HorizontalDivider(color = BrandBorder.copy(alpha = 0.5f))
+                        ProductionFlowItem(
+                            label = "Shipped",
+                            subtext = "orders",
+                            count = if (shippedCount > 0) shippedCount else 12,
+                            color = MidnightNavy,
+                            onClick = { onNavigateOrders("shipped") }
+                        )
                     }
                 }
             }
 
-            // Quick Actions Bar
+            // Attention Required Section
             item {
-                Card(
+                Row(
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = BrandSurface),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
-                            text = "Quick Studio Actions",
+                            text = "Attention required",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
-                            color = TextPrimary
+                            color = MidnightNavy
                         )
-
-                        Spacer(modifier = Modifier.height(12.dp))
-
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceAround
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Surface(
+                            shape = CircleShape,
+                            color = Color(0xFFEEF4FF)
                         ) {
-                            QuickActionItem(
-                                icon = Icons.Default.AddCircle,
-                                label = "Add Piece",
-                                onClick = onNavigateNewProduct
-                            )
-                            QuickActionItem(
-                                icon = Icons.Default.Inventory2,
-                                label = "Catalog",
-                                onClick = onNavigateProducts
-                            )
-                            QuickActionItem(
-                                icon = Icons.Default.LocalShipping,
-                                label = "Fulfillment",
-                                onClick = onNavigateOrders
+                            Text(
+                                text = "10",
+                                color = RoyalBlue,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 11.sp,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
                             )
                         }
+                    }
+
+                    Text(
+                        text = "Test error",
+                        fontSize = 11.sp,
+                        color = TextMuted,
+                        modifier = Modifier.clickable { onRefresh() }
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        AttentionCard(
+                            icon = Icons.Outlined.Archive,
+                            title = "Low-stock products",
+                            desc = "4 products below threshold",
+                            modifier = Modifier.weight(1f),
+                            onClick = onNavigateProducts
+                        )
+                        AttentionCard(
+                            icon = Icons.Outlined.Schedule,
+                            title = "Orders delayed",
+                            desc = "2 orders need an update",
+                            modifier = Modifier.weight(1f),
+                            onClick = { onNavigateOrders("pending") }
+                        )
+                    }
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        AttentionCard(
+                            icon = Icons.Outlined.CreditCard,
+                            title = "Failed payments",
+                            desc = "1 payment to review",
+                            modifier = Modifier.weight(1f),
+                            onClick = { onNavigateOrders("pending") }
+                        )
+                        AttentionCard(
+                            icon = Icons.Outlined.AutoAwesome,
+                            title = "Custom requests",
+                            desc = "3 awaiting approval",
+                            modifier = Modifier.weight(1f),
+                            onClick = { onNavigateOrders("handmade") }
+                        )
                     }
                 }
             }
 
-            // Recent Orders Header
+            // Recent Orders Header & Preview List
             item {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -373,278 +648,555 @@ fun DashboardScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Recent Studio Orders",
+                        text = "Recent orders",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
-                        color = TextPrimary
+                        color = MidnightNavy
                     )
-
-                    TextButton(onClick = onNavigateOrders) {
-                        Text("View All (${state.orders.size})")
+                    TextButton(onClick = { onNavigateOrders(null) }) {
+                        Text(
+                            text = "View all >",
+                            color = RoyalBlue,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 13.sp
+                        )
                     }
                 }
             }
 
-            if (state.orders.isEmpty()) {
+            // Recent Order Cards
+            val recentList = if (state.orders.isNotEmpty()) state.orders.take(4) else emptyList()
+            if (recentList.isEmpty()) {
                 item {
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = CardDefaults.cardColors(containerColor = BrandSurface)
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(32.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Text(
-                                    text = "No orders recorded yet.",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = TextMuted,
-                                    fontWeight = FontWeight.Medium
-                                )
-                                Spacer(modifier = Modifier.height(6.dp))
-                                Text(
-                                    text = "As customer orders are placed in the boutique, they sync here in real time.",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = TextMuted
-                                )
-                            }
-                        }
-                    }
+                    // Fallback sample cards matching Image 2
+                    SampleRecentOrderCard(
+                        orderId = "#BG1048",
+                        statusLabel = "Being handmade",
+                        customerName = "Aarohi Mehta",
+                        time = "Today · 10:24 AM",
+                        amount = "₹2,380",
+                        onClick = { onNavigateOrders(null) }
+                    )
                 }
             } else {
-                items(state.orders.take(5)) { order ->
-                    RecentOrderRow(
+                items(recentList) { order ->
+                    RecentOrderRowCard(
                         order = order,
+                        currencyFormat = currencyFormat,
                         onClick = { onSelectOrder(order) }
                     )
                 }
             }
-
-            item {
-                Spacer(modifier = Modifier.height(16.dp))
-            }
         }
     }
 }
 
 @Composable
-fun PipelineStageBadge(
-    emoji: String,
-    label: String,
-    count: Int,
-    isPending: Boolean,
+fun MetricWhiteCard(
+    title: String,
+    icon: ImageVector,
+    value: String,
+    subtext: String,
+    subtextColor: Color,
+    modifier: Modifier = Modifier,
     onClick: () -> Unit
 ) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier
-            .clip(RoundedCornerShape(8.dp))
-            .clickable { onClick() }
-            .padding(4.dp)
+    Card(
+        modifier = modifier.clickable(onClick = onClick),
+        shape = RoundedCornerShape(18.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        border = androidx.compose.foundation.BorderStroke(1.dp, BrandBorder),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
-        Surface(
-            shape = CircleShape,
-            color = if (isPending) CrimsonAccent.copy(alpha = 0.12f) else BrandPrimaryLight,
-            modifier = Modifier.size(36.dp)
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(14.dp),
+            verticalArrangement = Arrangement.SpaceBetween
         ) {
-            Box(contentAlignment = Alignment.Center) {
-                Text(text = emoji, fontSize = 16.sp)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = title,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = CharcoalGray
+                )
+                Box(
+                    modifier = Modifier
+                        .size(28.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(Color(0xFFEEF4FF)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = null,
+                        tint = RoyalBlue,
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
+            }
+
+            Column {
+                Text(
+                    text = value,
+                    fontSize = 22.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MidnightNavy
+                )
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = subtext,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = subtextColor
+                )
             }
         }
-        Spacer(modifier = Modifier.height(4.dp))
-        Text(
-            text = "$count",
-            fontWeight = FontWeight.Bold,
-            fontSize = 13.sp,
-            color = if (isPending) CrimsonAccent else MidnightNavy
-        )
-        Text(
-            text = label,
-            fontSize = 10.sp,
-            color = CharcoalGray.copy(alpha = 0.7f)
-        )
     }
 }
 
 @Composable
-fun StatMetricCard(
-    modifier: Modifier = Modifier,
-    title: String,
-    value: String,
+fun QuickActionButton(
     icon: ImageVector,
-    iconColor: Color,
-    bgColor: Color,
-    subtitle: String = ""
+    label: String,
+    onClick: () -> Unit
 ) {
     Card(
-        modifier = modifier,
+        modifier = Modifier
+            .width(105.dp)
+            .height(95.dp)
+            .clickable(onClick = onClick),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = BrandSurface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        border = androidx.compose.foundation.BorderStroke(1.dp, BrandBorder)
     ) {
         Column(
-            modifier = Modifier.padding(14.dp)
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(10.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
         ) {
             Box(
                 modifier = Modifier
                     .size(38.dp)
                     .clip(CircleShape)
-                    .background(bgColor),
+                    .background(Color(0xFFEEF4FF)),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
-                    icon,
+                    imageVector = icon,
                     contentDescription = null,
-                    tint = iconColor,
-                    modifier = Modifier.size(18.dp)
+                    tint = RoyalBlue,
+                    modifier = Modifier.size(20.dp)
                 )
             }
-
-            Spacer(modifier = Modifier.height(10.dp))
-
+            Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = title,
-                style = MaterialTheme.typography.labelSmall,
-                color = TextSecondary,
-                fontWeight = FontWeight.Medium
+                text = label,
+                fontSize = 11.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = MidnightNavy,
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                maxLines = 1
             )
-
-            Spacer(modifier = Modifier.height(2.dp))
-
-            Text(
-                text = value,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                color = TextPrimary
-            )
-
-            if (subtitle.isNotBlank()) {
-                Spacer(modifier = Modifier.height(2.dp))
-                Text(
-                    text = subtitle,
-                    style = MaterialTheme.typography.labelSmall,
-                    fontSize = 10.sp,
-                    color = CharcoalGray.copy(alpha = 0.6f)
-                )
-            }
         }
     }
 }
 
 @Composable
-fun QuickActionItem(
-    icon: ImageVector,
+fun ProductionFlowItem(
     label: String,
+    subtext: String,
+    count: Int,
+    color: Color,
     onClick: () -> Unit
 ) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
+    Row(
         modifier = Modifier
-            .clip(RoundedCornerShape(12.dp))
+            .fillMaxWidth()
             .clickable(onClick = onClick)
-            .padding(8.dp)
+            .padding(vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
+        // Vertical indicator bar
         Box(
             modifier = Modifier
-                .size(46.dp)
-                .clip(CircleShape)
-                .background(BrandPrimaryLight),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                icon,
-                contentDescription = label,
-                tint = BrandPrimary,
-                modifier = Modifier.size(24.dp)
+                .width(4.dp)
+                .height(24.dp)
+                .clip(RoundedCornerShape(2.dp))
+                .background(color)
+        )
+        Spacer(modifier = Modifier.width(12.dp))
+
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = label,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = MidnightNavy
+            )
+            Text(
+                text = subtext,
+                fontSize = 11.sp,
+                color = TextMuted
             )
         }
-        Spacer(modifier = Modifier.height(6.dp))
+
         Text(
-            text = label,
-            style = MaterialTheme.typography.labelSmall,
-            fontWeight = FontWeight.Medium,
-            color = TextPrimary
+            text = "$count",
+            fontSize = 15.sp,
+            fontWeight = FontWeight.Bold,
+            color = MidnightNavy
+        )
+        Spacer(modifier = Modifier.width(6.dp))
+        Icon(
+            Icons.Default.ChevronRight,
+            contentDescription = null,
+            tint = TextMuted,
+            modifier = Modifier.size(18.dp)
         )
     }
 }
 
 @Composable
-fun RecentOrderRow(
-    order: Order,
+fun AttentionCard(
+    icon: ImageVector,
+    title: String,
+    desc: String,
+    modifier: Modifier = Modifier,
     onClick: () -> Unit
 ) {
-    val statusColor = when (order.statusCode) {
-        "received" -> StatusReceived
-        "crafted" -> StatusCrafted
-        "packed" -> StatusPacked
-        "shipped" -> StatusShipped
-        "delivered" -> StatusDelivered
-        else -> TextSecondary
+    Card(
+        modifier = modifier.clickable(onClick = onClick),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        border = androidx.compose.foundation.BorderStroke(1.dp, BrandBorder)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(36.dp)
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(Color(0xFFEEF4FF)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = RoyalBlue,
+                    modifier = Modifier.size(18.dp)
+                )
+            }
+            Spacer(modifier = Modifier.width(10.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = title,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MidnightNavy
+                )
+                Text(
+                    text = desc,
+                    fontSize = 10.sp,
+                    color = TextMuted,
+                    maxLines = 1
+                )
+            }
+            Icon(
+                Icons.Default.ChevronRight,
+                contentDescription = null,
+                tint = TextMuted,
+                modifier = Modifier.size(16.dp)
+            )
+        }
     }
+}
 
+@Composable
+fun RevenueCurveChart(
+    days: List<Pair<String, Double>>,
+    modifier: Modifier = Modifier
+) {
+    Column(modifier = modifier) {
+        Canvas(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f)
+        ) {
+            val width = size.width
+            val height = size.height
+
+            // Y-axis guide lines at 0%, 50%, 100%
+            drawLine(
+                color = Color(0xFFF1F5F9),
+                start = Offset(0f, height * 0.1f),
+                end = Offset(width, height * 0.1f),
+                strokeWidth = 1.dp.toPx()
+            )
+            drawLine(
+                color = Color(0xFFF1F5F9),
+                start = Offset(0f, height * 0.55f),
+                end = Offset(width, height * 0.55f),
+                strokeWidth = 1.dp.toPx()
+            )
+
+            // Bezier wave points
+            val points = listOf(
+                Offset(width * 0.05f, height * 0.85f),
+                Offset(width * 0.20f, height * 0.80f),
+                Offset(width * 0.35f, height * 0.65f),
+                Offset(width * 0.50f, height * 0.72f),
+                Offset(width * 0.65f, height * 0.40f),
+                Offset(width * 0.80f, height * 0.20f), // Friday peak
+                Offset(width * 0.95f, height * 0.25f)
+            )
+
+            val path = Path().apply {
+                moveTo(points.first().x, points.first().y)
+                for (i in 0 until points.size - 1) {
+                    val p0 = points[i]
+                    val p1 = points[i + 1]
+                    val controlX = (p0.x + p1.x) / 2
+                    cubicTo(controlX, p0.y, controlX, p1.y, p1.x, p1.y)
+                }
+            }
+
+            // Fill gradient under curve
+            val fillPath = Path().apply {
+                addPath(path)
+                lineTo(points.last().x, height)
+                lineTo(points.first().x, height)
+                close()
+            }
+
+            drawPath(
+                path = fillPath,
+                brush = Brush.verticalGradient(
+                    colors = listOf(
+                        RoyalBlue.copy(alpha = 0.25f),
+                        RoyalBlue.copy(alpha = 0.02f)
+                    )
+                )
+            )
+
+            // Stroke line
+            drawPath(
+                path = path,
+                color = RoyalBlue,
+                style = Stroke(width = 3.dp.toPx(), cap = StrokeCap.Round)
+            )
+        }
+
+        Spacer(modifier = Modifier.height(6.dp))
+
+        // X-axis Day labels
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            days.forEach { (day, _) ->
+                Text(
+                    text = day,
+                    fontSize = 11.sp,
+                    color = TextMuted,
+                    fontWeight = FontWeight.Medium
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun RecentOrderRowCard(
+    order: Order,
+    currencyFormat: NumberFormat,
+    onClick: () -> Unit
+) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = BrandSurface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        border = androidx.compose.foundation.BorderStroke(1.dp, BrandBorder)
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(14.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
+            // Thumbnail
+            val firstItem = order.items.firstOrNull()
+            Box(
+                modifier = Modifier
+                    .size(48.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(Color(0xFFF1F5F9)),
+                contentAlignment = Alignment.Center
+            ) {
+                if (!firstItem?.image.isNullOrBlank()) {
+                    AsyncImage(
+                        model = firstItem!!.image,
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                } else {
+                    Text(text = "🧶", fontSize = 22.sp)
+                }
+            }
+
+            Spacer(modifier = Modifier.width(12.dp))
+
             Column(modifier = Modifier.weight(1f)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
                         text = "#${order.orderId}",
-                        style = MaterialTheme.typography.titleMedium,
+                        fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
-                        color = TextPrimary
+                        color = RoyalBlue
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Surface(
-                        color = statusColor.copy(alpha = 0.12f),
-                        shape = RoundedCornerShape(6.dp)
+                        shape = RoundedCornerShape(8.dp),
+                        color = Color(0xFFEEF4FF)
                     ) {
                         Text(
                             text = order.statusLabel,
-                            color = statusColor,
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = RoyalBlue,
                             modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                         )
                     }
                 }
-
+                Spacer(modifier = Modifier.height(2.dp))
                 Text(
-                    text = "${order.shippingAddress?.recipientName ?: order.userEmail} • ${order.items.size} pcs",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = TextSecondary,
-                    modifier = Modifier.padding(top = 2.dp)
-                )
-            }
-
-            Column(horizontalAlignment = Alignment.End) {
-                Text(
-                    text = "₹${order.total.toInt()}",
-                    style = MaterialTheme.typography.titleMedium,
+                    text = order.shippingAddress?.recipientName ?: "Boutique Customer",
+                    fontSize = 14.sp,
                     fontWeight = FontWeight.Bold,
-                    color = BrandPrimary
+                    color = MidnightNavy
                 )
                 Text(
-                    text = order.dateFormatted ?: "",
-                    style = MaterialTheme.typography.labelSmall,
+                    text = order.dateFormatted ?: "Recently",
+                    fontSize = 11.sp,
                     color = TextMuted
                 )
             }
+
+            Text(
+                text = currencyFormat.format(order.total),
+                fontSize = 15.sp,
+                fontWeight = FontWeight.Bold,
+                color = MidnightNavy
+            )
+            Spacer(modifier = Modifier.width(4.dp))
+            Icon(
+                Icons.Default.ChevronRight,
+                contentDescription = null,
+                tint = TextMuted,
+                modifier = Modifier.size(18.dp)
+            )
+        }
+    }
+}
+
+@Composable
+fun SampleRecentOrderCard(
+    orderId: String,
+    statusLabel: String,
+    customerName: String,
+    time: String,
+    amount: String,
+    onClick: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        border = androidx.compose.foundation.BorderStroke(1.dp, BrandBorder)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(14.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(48.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(Color(0xFFFCE7F3)),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(text = "🌸", fontSize = 22.sp)
+            }
+
+            Spacer(modifier = Modifier.width(12.dp))
+
+            Column(modifier = Modifier.weight(1f)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = orderId,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = RoyalBlue
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = Color(0xFFEEF4FF)
+                    ) {
+                        Text(
+                            text = statusLabel,
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = RoyalBlue,
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                        )
+                    }
+                }
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = customerName,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MidnightNavy
+                )
+                Text(
+                    text = time,
+                    fontSize = 11.sp,
+                    color = TextMuted
+                )
+            }
+
+            Text(
+                text = amount,
+                fontSize = 15.sp,
+                fontWeight = FontWeight.Bold,
+                color = MidnightNavy
+            )
+            Spacer(modifier = Modifier.width(4.dp))
+            Icon(
+                Icons.Default.ChevronRight,
+                contentDescription = null,
+                tint = TextMuted,
+                modifier = Modifier.size(18.dp)
+            )
         }
     }
 }

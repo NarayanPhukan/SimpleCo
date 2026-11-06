@@ -5,14 +5,18 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.compose.animation.*
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
@@ -27,6 +31,7 @@ import com.babyygurll.admin.ui.screens.*
 import com.babyygurll.admin.ui.theme.BabyyGurllAdminTheme
 import com.babyygurll.admin.ui.theme.MidnightNavy
 import com.babyygurll.admin.ui.theme.RoyalBlue
+import com.babyygurll.admin.ui.theme.TextMuted
 import com.babyygurll.admin.ui.viewmodel.AdminViewModel
 import kotlinx.coroutines.flow.collectLatest
 
@@ -36,11 +41,11 @@ sealed class BottomNavItem(
     val selectedIcon: ImageVector,
     val unselectedIcon: ImageVector
 ) {
-    object Dashboard : BottomNavItem(Screen.Dashboard.route, "Overview", Icons.Filled.Dashboard, Icons.Outlined.Dashboard)
+    object Dashboard : BottomNavItem(Screen.Dashboard.route, "Dashboard", Icons.Filled.GridView, Icons.Outlined.GridView)
     object Orders : BottomNavItem(Screen.Orders.route, "Orders", Icons.Filled.ReceiptLong, Icons.Outlined.ReceiptLong)
-    object Products : BottomNavItem(Screen.Products.route, "Catalog", Icons.Filled.Inventory2, Icons.Outlined.Inventory2)
-    object Coupons : BottomNavItem(Screen.Coupons.route, "Coupons", Icons.Filled.LocalOffer, Icons.Outlined.LocalOffer)
-    object Settings : BottomNavItem(Screen.Settings.route, "Settings", Icons.Filled.Tune, Icons.Outlined.Tune)
+    object Products : BottomNavItem(Screen.Products.route, "Products", Icons.Filled.ShoppingBag, Icons.Outlined.ShoppingBag)
+    object Customers : BottomNavItem(Screen.Customers.route, "Customers", Icons.Filled.Person, Icons.Outlined.Person)
+    object More : BottomNavItem(Screen.More.route, "More", Icons.Filled.Menu, Icons.Outlined.Menu)
 }
 
 class MainActivity : ComponentActivity() {
@@ -55,6 +60,7 @@ class MainActivity : ComponentActivity() {
             BabyyGurllAdminTheme {
                 val uiState by viewModel.uiState.collectAsState()
                 val snackbarHostState = remember { SnackbarHostState() }
+                var showServerConfigDialog by remember { mutableStateOf(false) }
 
                 // Collect transient toast / snackbar messages from ViewModel
                 LaunchedEffect(Unit) {
@@ -79,208 +85,291 @@ class MainActivity : ComponentActivity() {
                             BottomNavItem.Dashboard,
                             BottomNavItem.Orders,
                             BottomNavItem.Products,
-                            BottomNavItem.Coupons,
-                            BottomNavItem.Settings
+                            BottomNavItem.Customers,
+                            BottomNavItem.More
                         )
                     }
 
-                    // Hide bottom navigation on full-screen detail editors
+                    // Show bottom bar on primary tabs
                     val showBottomBar = currentRoute in bottomNavItems.map { it.route }
 
-                        Scaffold(
-                            modifier = Modifier.fillMaxSize(),
-                            snackbarHost = { SnackbarHost(snackbarHostState) },
-                            bottomBar = {
-                                if (showBottomBar) {
-                                    NavigationBar(
-                                        containerColor = Color.White,
-                                        tonalElevation = 8.dp
+                    Scaffold(
+                        modifier = Modifier.fillMaxSize(),
+                        snackbarHost = { SnackbarHost(snackbarHostState) },
+                        bottomBar = {
+                            if (showBottomBar) {
+                                Surface(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    color = Color.White,
+                                    shadowElevation = 8.dp,
+                                    border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFF1F5F9))
+                                ) {
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(vertical = 4.dp),
+                                        horizontalArrangement = Arrangement.SpaceAround,
+                                        verticalAlignment = Alignment.CenterVertically
                                     ) {
                                         bottomNavItems.forEach { item ->
                                             val isSelected = currentRoute == item.route
 
-                                            NavigationBarItem(
-                                                selected = isSelected,
-                                                onClick = {
-                                                    navController.navigate(item.route) {
-                                                        popUpTo(navController.graph.findStartDestination().id) {
-                                                            saveState = true
+                                            Column(
+                                                horizontalAlignment = Alignment.CenterHorizontally,
+                                                modifier = Modifier
+                                                    .weight(1f)
+                                                    .clickable {
+                                                        navController.navigate(item.route) {
+                                                            popUpTo(navController.graph.findStartDestination().id) {
+                                                                saveState = true
+                                                            }
+                                                            launchSingleTop = true
+                                                            restoreState = true
                                                         }
-                                                        launchSingleTop = true
-                                                        restoreState = true
                                                     }
-                                                },
-                                                icon = {
-                                                    BadgedBox(
-                                                        badge = {
-                                                            if (item == BottomNavItem.Orders && uiState.metrics.pendingFulfillmentCount > 0) {
-                                                                Badge(
-                                                                    containerColor = MaterialTheme.colorScheme.error,
-                                                                    contentColor = Color.White
-                                                                ) {
-                                                                    Text(
-                                                                        text = uiState.metrics.pendingFulfillmentCount.toString(),
-                                                                        fontSize = 10.sp,
-                                                                        fontWeight = FontWeight.Bold
-                                                                    )
-                                                                }
+                                                    .padding(vertical = 6.dp)
+                                            ) {
+                                                // Active Indicator Pill Bar on Top of Item
+                                                Box(
+                                                    modifier = Modifier
+                                                        .width(28.dp)
+                                                        .height(3.dp)
+                                                        .clip(RoundedCornerShape(2.dp))
+                                                        .background(if (isSelected) RoyalBlue else Color.Transparent)
+                                                )
+
+                                                Spacer(modifier = Modifier.height(4.dp))
+
+                                                BadgedBox(
+                                                    badge = {
+                                                        if (item == BottomNavItem.Orders && uiState.metrics.pendingFulfillmentCount > 0) {
+                                                            Badge(
+                                                                containerColor = RoyalBlue,
+                                                                contentColor = Color.White
+                                                            ) {
+                                                                Text(
+                                                                    text = uiState.metrics.pendingFulfillmentCount.toString(),
+                                                                    fontSize = 9.sp,
+                                                                    fontWeight = FontWeight.Bold
+                                                                )
                                                             }
                                                         }
-                                                    ) {
-                                                        Icon(
-                                                            imageVector = if (isSelected) item.selectedIcon else item.unselectedIcon,
-                                                            contentDescription = item.title
-                                                        )
                                                     }
-                                                },
-                                                label = {
-                                                    Text(
-                                                        text = item.title,
-                                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                                        fontSize = 11.sp
+                                                ) {
+                                                    Icon(
+                                                        imageVector = if (isSelected) item.selectedIcon else item.unselectedIcon,
+                                                        contentDescription = item.title,
+                                                        tint = if (isSelected) RoyalBlue else TextMuted,
+                                                        modifier = Modifier.size(24.dp)
                                                     )
-                                                },
-                                                colors = NavigationBarItemDefaults.colors(
-                                                    selectedIconColor = RoyalBlue,
-                                                    selectedTextColor = RoyalBlue,
-                                                    indicatorColor = RoyalBlue.copy(alpha = 0.12f),
-                                                    unselectedIconColor = MidnightNavy.copy(alpha = 0.5f),
-                                                    unselectedTextColor = MidnightNavy.copy(alpha = 0.6f)
+                                                }
+
+                                                Spacer(modifier = Modifier.height(2.dp))
+
+                                                Text(
+                                                    text = item.title,
+                                                    fontSize = 11.sp,
+                                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                                    color = if (isSelected) RoyalBlue else TextMuted
                                                 )
-                                            )
+                                            }
                                         }
                                     }
-                                }
-                            }
-                        ) { innerPadding ->
-                            NavHost(
-                                navController = navController,
-                                startDestination = Screen.Dashboard.route,
-                                modifier = Modifier.padding(innerPadding)
-                            ) {
-                                // Dashboard Screen
-                                composable(Screen.Dashboard.route) {
-                                    DashboardScreen(
-                                        state = uiState,
-                                        onRefresh = { viewModel.refreshAll() },
-                                        onNavigateOrders = {
-                                            navController.navigate(Screen.Orders.route) {
-                                                popUpTo(navController.graph.findStartDestination().id) { saveState = true }
-                                                launchSingleTop = true
-                                            }
-                                        },
-                                        onNavigateProducts = {
-                                            navController.navigate(Screen.Products.route) {
-                                                popUpTo(navController.graph.findStartDestination().id) { saveState = true }
-                                                launchSingleTop = true
-                                            }
-                                        },
-                                        onNavigateNewProduct = {
-                                            navController.navigate(Screen.ProductEdit.createRoute(null))
-                                        },
-                                        onSelectOrder = { order ->
-                                            viewModel.selectOrder(order)
-                                            navController.navigate(Screen.OrderDetail.createRoute(order.orderId))
-                                        }
-                                    )
-                                }
-
-                                // Orders Fulfillment Screen
-                                composable(Screen.Orders.route) {
-                                    OrdersScreen(
-                                        state = uiState,
-                                        onSearchChange = { viewModel.setOrderSearch(it) },
-                                        onFilterChange = { viewModel.setOrderFilter(it) },
-                                        onRefresh = { viewModel.fetchDashboardAndOrders() },
-                                        onSelectOrder = { order ->
-                                            viewModel.selectOrder(order)
-                                            navController.navigate(Screen.OrderDetail.createRoute(order.orderId))
-                                        }
-                                    )
-                                }
-
-                                // Order Details Screen
-                                composable(
-                                    route = Screen.OrderDetail.route,
-                                    arguments = listOf(navArgument("orderId") { type = NavType.StringType })
-                                ) { backStackEntry ->
-                                    val orderId = backStackEntry.arguments?.getString("orderId") ?: ""
-                                    val order = uiState.orders.find { it.orderId == orderId } ?: uiState.selectedOrder
-
-                                    OrderDetailScreen(
-                                        order = order,
-                                        serverUrl = uiState.serverUrl,
-                                        onBack = { navController.popBackStack() },
-                                        onAdvanceStage = { id -> viewModel.advanceOrder(id) },
-                                        onUpdateTracking = { id, carrier, tracking, estDate ->
-                                            viewModel.updateTracking(id, carrier, tracking, estDate)
-                                        }
-                                    )
-                                }
-
-                                // Products Catalog Screen
-                                composable(Screen.Products.route) {
-                                    ProductsScreen(
-                                        state = uiState,
-                                        serverUrl = uiState.serverUrl,
-                                        onSearchChange = { viewModel.setProductSearch(it) },
-                                        onCategoryChange = { viewModel.setProductCategoryFilter(it) },
-                                        onRefresh = { viewModel.fetchProducts() },
-                                        onToggleStock = { product -> viewModel.toggleProductStock(product) },
-                                        onEditProduct = { product ->
-                                            navController.navigate(Screen.ProductEdit.createRoute(product.id))
-                                        },
-                                        onDeleteProduct = { id -> viewModel.deleteProduct(id) },
-                                        onNewProduct = {
-                                            navController.navigate(Screen.ProductEdit.createRoute(null))
-                                        }
-                                    )
-                                }
-
-                                // Product Editor Screen (Add / Edit)
-                                composable(
-                                    route = Screen.ProductEdit.route,
-                                    arguments = listOf(
-                                        navArgument("id") {
-                                            type = NavType.StringType
-                                            nullable = true
-                                            defaultValue = null
-                                        }
-                                    )
-                                ) { backStackEntry ->
-                                    val productId = backStackEntry.arguments?.getString("id")
-                                    val existingProduct = remember(productId, uiState.products) {
-                                        if (!productId.isNullOrBlank()) {
-                                            uiState.products.find { it.id == productId || it.mongoId == productId }
-                                        } else null
-                                    }
-
-                                    ProductEditScreen(
-                                        product = existingProduct,
-                                        serverUrl = uiState.serverUrl,
-                                        onBack = { navController.popBackStack() },
-                                        onSave = { req, id ->
-                                            val cleanId = id?.trim()?.ifBlank { null }
-                                                ?: existingProduct?.id?.trim()?.ifBlank { null }
-                                                ?: existingProduct?.mongoId?.trim()?.ifBlank { null }
-                                            viewModel.saveProduct(req, cleanId) {
-                                                navController.popBackStack()
-                                            }
-                                        }
-                                    )
-                                }
-
-                                // Coupons & Promos Screen
-                                composable(Screen.Coupons.route) {
-                                    CouponsScreen(viewModel = viewModel)
-                                }
-
-                                // Settings Screen
-                                composable(Screen.Settings.route) {
-                                    SettingsScreen(viewModel = viewModel)
                                 }
                             }
                         }
+                    ) { innerPadding ->
+                        NavHost(
+                            navController = navController,
+                            startDestination = Screen.Dashboard.route,
+                            modifier = Modifier.padding(innerPadding)
+                        ) {
+                            // Dashboard Screen (Image 1 & 2)
+                            composable(Screen.Dashboard.route) {
+                                DashboardScreen(
+                                    state = uiState,
+                                    onRefresh = { viewModel.refreshAll() },
+                                    onNavigateOrders = { filter ->
+                                        if (filter != null) {
+                                            viewModel.setOrderFilter(filter)
+                                        }
+                                        navController.navigate(Screen.Orders.route) {
+                                            popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                                            launchSingleTop = true
+                                        }
+                                    },
+                                    onNavigateProducts = {
+                                        navController.navigate(Screen.Products.route) {
+                                            popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                                            launchSingleTop = true
+                                        }
+                                    },
+                                    onNavigateNewProduct = {
+                                        navController.navigate(Screen.ProductEdit.createRoute(null))
+                                    },
+                                    onNavigateCoupons = {
+                                        navController.navigate(Screen.Coupons.route)
+                                    },
+                                    onSelectOrder = { order ->
+                                        viewModel.selectOrder(order)
+                                        navController.navigate(Screen.OrderDetail.createRoute(order.orderId))
+                                    },
+                                    onSelectPeriod = { period ->
+                                        viewModel.setSelectedPeriod(period)
+                                    }
+                                )
+                            }
+
+                            // Orders Fulfillment Screen (Image 3)
+                            composable(Screen.Orders.route) {
+                                OrdersScreen(
+                                    state = uiState,
+                                    onSearchChange = { viewModel.setOrderSearch(it) },
+                                    onFilterChange = { viewModel.setOrderFilter(it) },
+                                    onRefresh = { viewModel.fetchDashboardAndOrders() },
+                                    onSelectOrder = { order ->
+                                        viewModel.selectOrder(order)
+                                        navController.navigate(Screen.OrderDetail.createRoute(order.orderId))
+                                    },
+                                    onOpenShippingChecker = {
+                                        navController.navigate(Screen.Settings.route)
+                                    },
+                                    onOpenMoreMenu = {
+                                        navController.navigate(Screen.More.route)
+                                    }
+                                )
+                            }
+
+                            // Order Details Screen (Image 4 & 5)
+                            composable(
+                                route = Screen.OrderDetail.route,
+                                arguments = listOf(navArgument("orderId") { type = NavType.StringType })
+                            ) { backStackEntry ->
+                                val orderId = backStackEntry.arguments?.getString("orderId") ?: ""
+                                val order = uiState.orders.find { it.orderId == orderId } ?: uiState.selectedOrder
+
+                                OrderDetailScreen(
+                                    order = order,
+                                    serverUrl = uiState.serverUrl,
+                                    onBack = { navController.popBackStack() },
+                                    onAdvanceStage = { id -> viewModel.advanceOrder(id) },
+                                    onUpdateTracking = { id, carrier, tracking, estDate ->
+                                        viewModel.updateTracking(id, carrier, tracking, estDate)
+                                    },
+                                    internalNotes = uiState.orderNotesMap[orderId] ?: emptyList(),
+                                    onAddInternalNote = { id, note ->
+                                        viewModel.addOrderInternalNote(id, note)
+                                    },
+                                    checklist = uiState.orderChecklistMap[orderId] ?: emptyMap(),
+                                    onToggleChecklistItem = { id, task, isDone ->
+                                        viewModel.toggleOrderChecklistItem(id, task, isDone)
+                                    }
+                                )
+                            }
+
+                            // Products Catalog Screen
+                            composable(Screen.Products.route) {
+                                ProductsScreen(
+                                    state = uiState,
+                                    serverUrl = uiState.serverUrl,
+                                    onSearchChange = { viewModel.setProductSearch(it) },
+                                    onCategoryChange = { viewModel.setProductCategoryFilter(it) },
+                                    onRefresh = { viewModel.fetchProducts() },
+                                    onToggleStock = { product -> viewModel.toggleProductStock(product) },
+                                    onEditProduct = { product ->
+                                        navController.navigate(Screen.ProductEdit.createRoute(product.id))
+                                    },
+                                    onDeleteProduct = { id -> viewModel.deleteProduct(id) },
+                                    onNewProduct = {
+                                        navController.navigate(Screen.ProductEdit.createRoute(null))
+                                    }
+                                )
+                            }
+
+                            // Customers Screen (Tab 4)
+                            composable(Screen.Customers.route) {
+                                CustomersScreen(
+                                    state = uiState,
+                                    onSearchChange = { viewModel.setCustomerSearch(it) },
+                                    onRefresh = { viewModel.fetchDashboardAndOrders() },
+                                    onNavigateOrders = { custQuery ->
+                                        viewModel.setOrderSearch(custQuery)
+                                        navController.navigate(Screen.Orders.route) {
+                                            popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                                            launchSingleTop = true
+                                        }
+                                    }
+                                )
+                            }
+
+                            // More Options Screen (Tab 5)
+                            composable(Screen.More.route) {
+                                MoreScreen(
+                                    state = uiState,
+                                    onNavigateSettings = { navController.navigate(Screen.Settings.route) },
+                                    onNavigateCoupons = { navController.navigate(Screen.Coupons.route) },
+                                    onCheckUpdates = { viewModel.checkForAppUpdates(silent = false) },
+                                    onOpenServerConfig = { showServerConfigDialog = true },
+                                    onLogout = { viewModel.logout() }
+                                )
+                            }
+
+                            // Product Editor Screen (Add / Edit)
+                            composable(
+                                route = Screen.ProductEdit.route,
+                                arguments = listOf(
+                                    navArgument("id") {
+                                        type = NavType.StringType
+                                        nullable = true
+                                        defaultValue = null
+                                    }
+                                )
+                            ) { backStackEntry ->
+                                val productId = backStackEntry.arguments?.getString("id")
+                                val existingProduct = remember(productId, uiState.products) {
+                                    if (!productId.isNullOrBlank()) {
+                                        uiState.products.find { it.id == productId || it.mongoId == productId }
+                                    } else null
+                                }
+
+                                ProductEditScreen(
+                                    product = existingProduct,
+                                    serverUrl = uiState.serverUrl,
+                                    onBack = { navController.popBackStack() },
+                                    onSave = { req, id ->
+                                        val cleanId = id?.trim()?.ifBlank { null }
+                                            ?: existingProduct?.id?.trim()?.ifBlank { null }
+                                            ?: existingProduct?.mongoId?.trim()?.ifBlank { null }
+                                        viewModel.saveProduct(req, cleanId) {
+                                            navController.popBackStack()
+                                        }
+                                    }
+                                )
+                            }
+
+                            // Coupons & Promos Screen
+                            composable(Screen.Coupons.route) {
+                                CouponsScreen(viewModel = viewModel)
+                            }
+
+                            // Settings Screen
+                            composable(Screen.Settings.route) {
+                                SettingsScreen(viewModel = viewModel)
+                            }
+                        }
+                    }
+
+                    // Server Config Dialog
+                    if (showServerConfigDialog) {
+                        ServerConfigDialog(
+                            currentUrl = uiState.serverUrl,
+                            onSave = { newUrl ->
+                                viewModel.updateServerUrl(newUrl)
+                                showServerConfigDialog = false
+                            },
+                            onDismiss = { showServerConfigDialog = false }
+                        )
+                    }
 
                     // Global Auto-Update Detection Dialog
                     if (uiState.isUpdateAvailable && uiState.appUpdateInfo != null) {
@@ -295,4 +384,3 @@ class MainActivity : ComponentActivity() {
         }
     }
 }
-

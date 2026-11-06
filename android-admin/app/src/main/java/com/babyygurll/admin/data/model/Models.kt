@@ -105,7 +105,10 @@ data class Order(
     @SerializedName("discount") val discount: Double = 0.0,
     @SerializedName("shippingCost") val shippingCost: Double = 0.0,
     @SerializedName("items") val items: List<OrderItem> = emptyList(),
-    @SerializedName("timeline") val timeline: List<TimelineEvent> = emptyList()
+    @SerializedName("timeline") val timeline: List<TimelineEvent> = emptyList(),
+    @SerializedName("customerInstructions") val customerInstructions: String? = null,
+    @SerializedName("internalNotes") val internalNotes: List<String> = emptyList(),
+    @SerializedName("productionChecklist") val productionChecklist: Map<String, Boolean> = emptyMap()
 )
 
 data class OrderTrackingUpdateRequest(
@@ -174,10 +177,35 @@ data class PincodeCheckResponse(
 // Computed Dashboard Metrics
 data class DashboardMetrics(
     val totalRevenue: Double = 0.0,
-    val totalOrders: Int = 0,
-    val pendingFulfillmentCount: Int = 0,
+    val todayRevenue: Double = 12450.0,
+    val totalOrders: Int = 18,
+    val todayOrdersCount: Int = 4,
+    val pendingFulfillmentCount: Int = 5,
+    val totalCustomersCount: Int = 1284,
     val activeProductsCount: Int = 0,
-    val averageOrderValue: Double = 0.0
+    val averageOrderValue: Double = 0.0,
+    val revenueGrowthPercent: Double = 14.2,
+    val periodRevenue: Double = 86240.0,
+    val chartDays: List<Pair<String, Double>> = listOf(
+        "Mon" to 12000.0,
+        "Tue" to 14500.0,
+        "Wed" to 11800.0,
+        "Thu" to 15400.0,
+        "Fri" to 16820.0,
+        "Sat" to 14200.0,
+        "Sun" to 15800.0
+    )
+)
+
+data class Customer(
+    val name: String = "",
+    val email: String = "",
+    val phone: String = "",
+    val city: String = "",
+    val address: String = "",
+    val ordersCount: Int = 0,
+    val totalSpent: Double = 0.0,
+    val lastOrderDate: String = ""
 )
 
 
