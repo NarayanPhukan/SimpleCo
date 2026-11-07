@@ -236,29 +236,19 @@ fun HomeScreen(
                                 }
                             }
 
-                            // Right section (Craft image)
+                            // Right section (Fixed Boutique Craft Hero Image)
                             Box(
                                 modifier = Modifier
                                     .weight(0.95f)
                                     .fillMaxHeight()
                                     .background(Color(0xFFF1F5F9))
                             ) {
-                                val featuredImage = products.firstOrNull()?.resolvedPrimaryImage
-                                if (!featuredImage.isNullOrBlank()) {
-                                    BoutiqueImage(
-                                        imageUrl = featuredImage,
-                                        contentDescription = "Handcrafted Piece",
-                                        modifier = Modifier.fillMaxSize(),
-                                        contentScale = ContentScale.Crop
-                                    )
-                                } else {
-                                    Image(
-                                        painter = painterResource(id = R.drawable.hero_banner),
-                                        contentDescription = "Handcrafted Piece",
-                                        modifier = Modifier.fillMaxSize(),
-                                        contentScale = ContentScale.Crop
-                                    )
-                                }
+                                Image(
+                                    painter = painterResource(id = R.drawable.hero_banner),
+                                    contentDescription = "Handcrafted Piece",
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentScale = ContentScale.Crop
+                                )
                             }
                         }
                     }

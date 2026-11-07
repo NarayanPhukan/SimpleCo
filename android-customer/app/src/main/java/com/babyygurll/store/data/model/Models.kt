@@ -117,21 +117,49 @@ data class Product(
 
     fun matchesSubcategory(subcatId: String): Boolean {
         if (subcatId.isBlank() || subcatId.equals("all", ignoreCase = true)) return true
-        val sub = (subcategory ?: "").lowercase().trim()
-        val subName = (subcategoryName ?: "").lowercase().trim()
+        val s = (subcategory ?: "").lowercase().trim()
+        val sn = (subcategoryName ?: "").lowercase().trim()
         val n = name.lowercase().trim()
         val target = subcatId.lowercase().trim()
-
-        if (sub == target) return true
-
         val cleanedTarget = target.replace("-", " ")
-        val keywords = cleanedTarget.split(" ").filter { it.isNotBlank() && it != "crochet" }
 
-        if (keywords.all { n.contains(it) || subName.contains(it) || sub.contains(it) }) {
-            return true
+        if (s == target || s == cleanedTarget || sn == target || sn == cleanedTarget) return true
+        if (s.isNotBlank() && (target.contains(s) || s.contains(target))) return true
+        if (sn.isNotBlank() && (cleanedTarget.contains(sn) || sn.contains(cleanedTarget))) return true
+
+        // Tokenize target into constituent noun groups (stripping "crochet" and common connectors)
+        val words = cleanedTarget.split(" ").filter { it.isNotBlank() && it != "crochet" && it != "and" && it != "&" }
+        if (words.isEmpty()) return true
+
+        fun getStems(w: String): List<String> {
+            val list = mutableListOf(w)
+            if (w.endsWith("ies") && w.length > 3) {
+                list.add(w.dropLast(3) + "y")
+                list.add(w.dropLast(3) + "ie")
+            }
+            if (w.endsWith("es") && w.length > 3) {
+                list.add(w.dropLast(2))
+            }
+            if (w.endsWith("s") && w.length > 2) {
+                list.add(w.dropLast(1))
+            }
+            if (w == "scarves") {
+                list.add("scarf")
+            }
+            return list
         }
 
-        return sub.contains(target) || subName.contains(cleanedTarget) || n.contains(cleanedTarget)
+        // For compound subcategories (e.g. "scarves-shawls", "hair-clips-ties", "beanies-hats"):
+        // A product matching ANY constituent word group (e.g. "scarf" or "shawl", "clip" or "tie") is a match!
+        val anyWordMatches = words.any { w ->
+            val stems = getStems(w)
+            stems.any { stem ->
+                n.contains(stem) || sn.contains(stem) || s.contains(stem)
+            }
+        }
+        if (anyWordMatches) return true
+
+        return s.contains(target) || sn.contains(cleanedTarget) || n.contains(cleanedTarget)
     }
 }
 
@@ -248,6 +276,7 @@ data class TimelineEvent(
 data class Order(
     @SerializedName("orderId") val orderId: String = "",
     @SerializedName("userEmail") val userEmail: String = "",
+    @SerializedName("createdAt") val createdAt: String? = null,
     @SerializedName("dateFormatted") val dateFormatted: String = "",
     @SerializedName("statusStage") val statusStage: Int = 0,
     @SerializedName("statusLabel") val statusLabel: String = "Order Placed & Yarn Selected",
@@ -275,6 +304,24 @@ data class Order(
 ) {
     val id: String
         get() = orderId
+
+    val displayDate: String
+        get() {
+            if (!createdAt.isNullOrBlank()) {
+                try {
+                    val sdfUtc = java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", java.util.Locale.US).apply {
+                        timeZone = java.util.TimeZone.getTimeZone("UTC")
+                    }
+                    val cleanCreated = createdAt.substringBefore(".")
+                    val parsed = sdfUtc.parse(cleanCreated)
+                    if (parsed != null) {
+                        val sdfOut = java.text.SimpleDateFormat("d MMM yyyy", java.util.Locale.ENGLISH)
+                        return sdfOut.format(parsed)
+                    }
+                } catch (_: Exception) {}
+            }
+            return dateFormatted.ifBlank { "Recent" }
+        }
 
     val status: String
         get() = statusCode.ifBlank { statusLabel }

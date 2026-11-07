@@ -287,8 +287,34 @@ class AdminViewModel : ViewModel() {
                 val pending = orderList.count { it.statusCode in listOf("received", "crafted", "packed") }
                 val aov = if (orderList.isNotEmpty()) revenue / orderList.size else 0.0
 
-                val todayStr = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).format(java.util.Date())
-                val todayOrders = orderList.filter { (it.createdAt ?: "").startsWith(todayStr) }
+                val sdfIsoLocal = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault())
+                val todayStr = sdfIsoLocal.format(java.util.Date())
+
+                fun parseOrderDate(ord: Order): java.util.Date? {
+                    val created = ord.createdAt
+                    if (!created.isNullOrBlank()) {
+                        try {
+                            val sdfUtc = java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", java.util.Locale.US).apply {
+                                timeZone = java.util.TimeZone.getTimeZone("UTC")
+                            }
+                            val cleanCreated = created.substringBefore(".")
+                            val parsed = sdfUtc.parse(cleanCreated)
+                            if (parsed != null) return parsed
+                        } catch (_: Exception) {}
+                    }
+                    if (!ord.dateFormatted.isNullOrBlank()) {
+                        try {
+                            val sdfDateFormatted = java.text.SimpleDateFormat("d MMM yyyy", java.util.Locale.ENGLISH)
+                            return sdfDateFormatted.parse(ord.dateFormatted!!)
+                        } catch (_: Exception) {}
+                    }
+                    return null
+                }
+
+                val todayOrders = orderList.filter { ord ->
+                    val d = parseOrderDate(ord)
+                    d != null && sdfIsoLocal.format(d) == todayStr
+                }
                 val todayRev = todayOrders.sumOf { it.total }
                 val todayCount = todayOrders.size
                 val totalCount = orderList.size
@@ -376,8 +402,12 @@ class AdminViewModel : ViewModel() {
             val created = ord.createdAt
             if (!created.isNullOrBlank()) {
                 try {
-                    val trimmed = created.take(10)
-                    return sdfIso.parse(trimmed)
+                    val sdfUtc = java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", java.util.Locale.US).apply {
+                        timeZone = java.util.TimeZone.getTimeZone("UTC")
+                    }
+                    val cleanCreated = created.substringBefore(".")
+                    val parsed = sdfUtc.parse(cleanCreated)
+                    if (parsed != null) return parsed
                 } catch (_: Exception) {}
             }
             if (!ord.dateFormatted.isNullOrBlank()) {
@@ -1008,18 +1038,18 @@ class AdminViewModel : ViewModel() {
         }
     }
 
-    private val notifiedAdminNotificationIds = mutableSetOf<String>()
-
     // Notification Center & Broadcast
     fun fetchNotifications(silent: Boolean = false) {
         viewModelScope.launch {
             if (!silent) _uiState.update { it.copy(isLoadingNotifications = true) }
             val result = repository.fetchNotifications()
             result.onSuccess { (list, unread) ->
-                val unnotified = list.filter { !it.isRead && it.id !in notifiedAdminNotificationIds }
-                if (unnotified.isNotEmpty()) {
-                    val latest = unnotified.first()
-                    notifiedAdminNotificationIds.add(latest.id)
+                val alreadyNotified = prefs.notifiedNotificationIds
+                // Only notify for new real order events, never spam for general/system/config notices
+                val unnotifiedOrders = list.filter { !it.isRead && it.type == "order" && it.id !in alreadyNotified }
+                if (unnotifiedOrders.isNotEmpty()) {
+                    val latest = unnotifiedOrders.first()
+                    prefs.notifiedNotificationIds = alreadyNotified + latest.id
                     NotificationHelper.showNotification(
                         BabyyGurllAdminApp.instance,
                         latest.id.hashCode(),

@@ -227,7 +227,25 @@ data class Order(
     @SerializedName("refundAmount") val refundAmount: Double = 0.0,
     @SerializedName("cancelReason") val cancelReason: String? = null,
     @SerializedName("cancelledAt") val cancelledAt: String? = null
-)
+) {
+    val displayDate: String
+        get() {
+            if (!createdAt.isNullOrBlank()) {
+                try {
+                    val sdfUtc = java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", java.util.Locale.US).apply {
+                        timeZone = java.util.TimeZone.getTimeZone("UTC")
+                    }
+                    val cleanCreated = createdAt.substringBefore(".")
+                    val parsed = sdfUtc.parse(cleanCreated)
+                    if (parsed != null) {
+                        val sdfOut = java.text.SimpleDateFormat("d MMM yyyy", java.util.Locale.ENGLISH)
+                        return sdfOut.format(parsed)
+                    }
+                } catch (_: Exception) {}
+            }
+            return dateFormatted ?: "Recently"
+        }
+}
 
 data class OrderTrackingUpdateRequest(
     @SerializedName("carrier") val carrier: String,

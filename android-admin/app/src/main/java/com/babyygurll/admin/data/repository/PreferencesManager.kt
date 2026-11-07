@@ -61,6 +61,10 @@ class PreferencesManager(context: Context) {
         get() = prefs.getInt("key_dismissed_update_version", 0)
         set(value) = prefs.edit().putInt("key_dismissed_update_version", value).apply()
 
+    var notifiedNotificationIds: Set<String>
+        get() = prefs.getStringSet("key_notified_notification_ids", emptySet()) ?: emptySet()
+        set(value) = prefs.edit().putStringSet("key_notified_notification_ids", value).apply()
+
     fun clearSession() {
         prefs.edit()
             .putBoolean(KEY_IS_LOGGED_IN, false)

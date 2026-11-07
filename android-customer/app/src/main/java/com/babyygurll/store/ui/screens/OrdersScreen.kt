@@ -240,7 +240,7 @@ fun OrderHistoryCard(
                     letterSpacing = 0.5.sp
                 )
                 Text(
-                    text = order.dateFormatted.ifBlank { "Recent" },
+                    text = order.displayDate,
                     fontSize = 11.sp,
                     color = TextMuted
                 )

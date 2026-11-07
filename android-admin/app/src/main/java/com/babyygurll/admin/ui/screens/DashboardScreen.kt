@@ -1201,7 +1201,7 @@ fun RecentOrderRowCard(
                     color = MidnightNavy
                 )
                 Text(
-                    text = order.dateFormatted ?: "Recently",
+                    text = order.displayDate,
                     fontSize = 11.sp,
                     color = TextMuted
                 )

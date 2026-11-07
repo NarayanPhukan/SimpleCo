@@ -489,7 +489,7 @@ fun OrderCardItem(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = order.dateFormatted ?: "Today · 10:24 AM",
+                        text = order.displayDate,
                         fontSize = 11.sp,
                         color = TextMuted
                     )

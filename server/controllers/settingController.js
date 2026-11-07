@@ -19,19 +19,19 @@ const DEFAULT_CONFIG = {
   adminPassword: 'admin123',
   adminRazorpayAccountId: '',
   appVersion: {
-    latestVersionCode: 18,
-    latestVersionName: '1.6.1',
+    latestVersionCode: 22,
+    latestVersionName: '1.7.3',
     minRequiredVersionCode: 1,
-    releaseNotes: '• Added all 8 boutique categories & 70+ dynamic subcategories in Product Studio\n• Instant subcategory dropdown sync when changing category\n• Real-time catalog and inventory subcategory searching',
+    releaseNotes: '• Fixed timezone and order revenue calculations (Saturday Nov 7)\n• Fixed subcategories matching across all 8 departments\n• Removed repeating notifications & silenced test alerts\n• Fixed customer hero banner and luxury brand identity\n• Official "BG" monogram studio icon & luxury branding',
     downloadUrl: 'https://raw.githubusercontent.com/NarayanPhukan/SimpleCo/main/android-admin/babyygurll-admin.apk',
     releaseDate: '2026-11-07',
     critical: false
   },
   customerAppVersion: {
-    latestVersionCode: 15,
-    latestVersionName: '1.3.2',
+    latestVersionCode: 19,
+    latestVersionName: '1.4.3',
     minRequiredVersionCode: 1,
-    releaseNotes: '• Added all 8 boutique departments & 70+ craft subcategories\n• Dedicated interactive department & subcategory catalog browser\n• Quick visual department directory with smooth filtering\n• Enhanced cold-boot auto-retry and offline caching',
+    releaseNotes: '• Fixed subcategory browsing across all 8 craft departments\n• Shows all newly published boutique creations instantly\n• Dedicated fixed luxury hero banner on home boutique\n• Official "BG" monogram launcher icon & luxury branding',
     downloadUrl: 'https://raw.githubusercontent.com/NarayanPhukan/SimpleCo/main/android-customer/babyygurll-boutique.apk',
     releaseDate: '2026-11-07',
     critical: false

@@ -1,8 +1,8 @@
 {
-  "latestVersionCode": 18,
+  "latestVersionCode": 22,
   "latestVersionName": "1.7.3",
   "minRequiredVersionCode": 1,
-  "releaseNotes": "• Official 'BG' monogram studio icon & luxury branding\n• Cloudflare Edge CDN high-speed download mirrors\n• Complete Notification Center & Customer Broadcasts\n• Package integrity check & dual signing",
+  "releaseNotes": "• Fixed timezone and order revenue calculations (Saturday Nov 7)\n• Fixed subcategories matching across all 8 departments\n• Removed repeating notifications & silenced test alerts\n• Fixed customer hero banner and luxury brand identity\n• Official 'BG' monogram studio icon & luxury branding",
   "downloadUrl": "https://raw.githubusercontent.com/NarayanPhukan/SimpleCo/main/android-admin/babyygurll-admin.apk",
   "releaseDate": "2026-11-07",
   "critical": false

@@ -29,8 +29,8 @@ exports.createOrder = async (req, res) => {
     const newOrderId = 'BGC-' + Math.floor(10000 + Math.random() * 90000);
     const trackingNumber = 'TRK-' + newOrderId + '-IN';
     const now = new Date();
-    const dateFormatted = now.toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' });
-    const estDate = new Date(now.getTime() + 4 * 24 * 60 * 60 * 1000).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' });
+    const dateFormatted = now.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', month: 'short', day: 'numeric', year: 'numeric' });
+    const estDate = new Date(now.getTime() + 4 * 24 * 60 * 60 * 1000).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', month: 'short', day: 'numeric', year: 'numeric' });
 
     const timeline = [
       {
@@ -411,7 +411,7 @@ exports.requestOrderReturn = async (req, res) => {
     order.statusCode = 'returned';
     order.statusLabel = 'Return Requested • Doorstep Pickup Scheduled';
     order.returnReason = reason || 'Customer requested return / exchange';
-    order.returnDate = new Date().toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' });
+    order.returnDate = new Date().toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', month: 'short', day: 'numeric', year: 'numeric' });
     order.returnStatus = 'Pickup Scheduled with Doorstep Courier';
 
     await order.save();
@@ -448,7 +448,7 @@ exports.cancelOrder = async (req, res) => {
     const { reason } = req.body;
     const cancelReason = (reason && reason.trim()) ? reason.trim() : 'Customer requested order cancellation';
     const now = new Date();
-    const cancelDateFormatted = now.toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' });
+    const cancelDateFormatted = now.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', month: 'short', day: 'numeric', year: 'numeric' });
     const isPrepaid = order.paymentStatus === 'paid' || 
       (!order.paymentMethod?.toLowerCase().includes('cod') && order.paymentStatus !== 'failed');
 
