@@ -56,6 +56,7 @@ import kotlin.math.roundToInt
 fun ProductEditScreen(
     product: Product?,
     serverUrl: String,
+    existingProducts: List<Product> = emptyList(),
     onBack: () -> Unit,
     onSave: (ProductCreateRequest, String?) -> Unit
 ) {
@@ -117,6 +118,43 @@ fun ProductEditScreen(
     var isSkuLocked by remember(product?.id) {
         mutableStateOf(product != null || (product?.sku?.isNotBlank() == true))
     }
+
+    val existingSkus = remember(existingProducts, product?.id) {
+        existingProducts
+            .filter { it.id != product?.id && it.mongoId != product?.mongoId && it.id != product?.mongoId }
+            .mapNotNull { it.sku.trim().uppercase().ifBlank { null } }
+            .toSet()
+    }
+
+    val isSkuDuplicate = remember(sku, existingSkus) {
+        val trimmed = sku.trim().uppercase()
+        trimmed.isNotBlank() && existingSkus.contains(trimmed)
+    }
+
+    val generateUniqueSku: (String) -> String = { cat ->
+        val prefix = when {
+            cat.contains("Bag", true) -> "BGB-OCB"
+            cat.contains("Plush", true) -> "BGB-PLS"
+            cat.contains("Floral", true) -> "BGB-FLR"
+            cat.contains("Apparel", true) -> "BGB-CKC"
+            else -> "BGB-PWS"
+        }
+        var candidate = "$prefix-0${(10..99).random()}"
+        var tries = 0
+        while (existingSkus.contains(candidate.uppercase()) && tries < 200) {
+            candidate = "$prefix-0${(10..99).random()}"
+            tries++
+        }
+        if (existingSkus.contains(candidate.uppercase())) {
+            tries = 0
+            while (existingSkus.contains(candidate.uppercase()) && tries < 500) {
+                candidate = "$prefix-${(1000..9999).random()}"
+                tries++
+            }
+        }
+        candidate
+    }
+
     var hasManuallyEditedTags by remember(product?.id) { mutableStateOf(false) }
 
     var productTags by remember(product?.id) {
@@ -380,38 +418,31 @@ fun ProductEditScreen(
             )
         }
 
-        val finalSku = if (sku.isNotBlank()) sku.trim() else {
-            val prefix = when {
-                selectedBoutiqueCategory.name.contains("Bag", true) -> "BGB-OCB"
-                selectedBoutiqueCategory.name.contains("Plush", true) -> "BGB-PLS"
-                selectedBoutiqueCategory.name.contains("Floral", true) -> "BGB-FLR"
-                selectedBoutiqueCategory.name.contains("Apparel", true) -> "BGB-CKC"
-                else -> "BGB-PWS"
-            }
-            "$prefix-0${(10..99).random()}"
-        }
+        if (!isSkuDuplicate) {
+            val finalSku = if (sku.isNotBlank()) sku.trim().uppercase() else generateUniqueSku(selectedBoutiqueCategory.name)
 
-        val req = ProductCreateRequest(
-            name = productName.trim(),
-            sku = finalSku,
-            category = selectedBoutiqueCategory.id,
-            categoryName = selectedBoutiqueCategory.name,
-            subcategory = selectedBoutiqueSubcategory.id,
-            subcategoryName = selectedBoutiqueSubcategory.name,
-            price = finalPrice,
-            originalPrice = finalOrigPrice,
-            image = primaryImg,
-            images = imagesList,
-            badge = if (isDraft) "Draft" else "Published",
-            leadTime = estimatedProductionTime,
-            description = shortDescription.trim(),
-            colors = effectiveColors.map { ProductColor(name = it, hex = "#255DCE") },
-            sizes = effectiveSizes,
-            variants = finalVariants,
-            tags = finalTags,
-            inStock = !isDraft && (availableQuantityText.toIntOrNull() ?: 0) > 0
-        )
-        onSave(req, product?.id ?: product?.mongoId)
+            val req = ProductCreateRequest(
+                name = productName.trim(),
+                sku = finalSku,
+                category = selectedBoutiqueCategory.id,
+                categoryName = selectedBoutiqueCategory.name,
+                subcategory = selectedBoutiqueSubcategory.id,
+                subcategoryName = selectedBoutiqueSubcategory.name,
+                price = finalPrice,
+                originalPrice = finalOrigPrice,
+                image = primaryImg,
+                images = imagesList,
+                badge = if (isDraft) "Draft" else "Published",
+                leadTime = estimatedProductionTime,
+                description = shortDescription.trim(),
+                colors = effectiveColors.map { ProductColor(name = it, hex = "#255DCE") },
+                sizes = effectiveSizes,
+                variants = finalVariants,
+                tags = finalTags,
+                inStock = !isDraft && (availableQuantityText.toIntOrNull() ?: 0) > 0
+            )
+            onSave(req, product?.id ?: product?.mongoId)
+        }
     }
 
     val triggerSaveNotification = {
@@ -814,7 +845,32 @@ fun ProductEditScreen(
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     FieldHeader("Product Code (SKU)", isRequired = true)
-                                    if (isSkuLocked) {
+                                    if (isSkuDuplicate) {
+                                        Surface(
+                                            shape = RoundedCornerShape(6.dp),
+                                            color = Color(0xFFFEF2F2),
+                                            border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFFCA5A5))
+                                        ) {
+                                            Row(
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Default.Warning,
+                                                    contentDescription = "Duplicate",
+                                                    tint = Color(0xFFDC2626),
+                                                    modifier = Modifier.size(11.dp)
+                                                )
+                                                Spacer(modifier = Modifier.width(4.dp))
+                                                Text(
+                                                    text = "Duplicate Code",
+                                                    fontSize = 11.sp,
+                                                    fontWeight = FontWeight.Bold,
+                                                    color = Color(0xFFDC2626)
+                                                )
+                                            }
+                                        }
+                                    } else if (isSkuLocked) {
                                         Surface(
                                             shape = RoundedCornerShape(6.dp),
                                             color = Color(0xFFF1F5F9),
@@ -832,7 +888,7 @@ fun ProductEditScreen(
                                                 )
                                                 Spacer(modifier = Modifier.width(4.dp))
                                                 Text(
-                                                    text = "Fixed / Locked",
+                                                    text = "Unique & Fixed",
                                                     fontSize = 11.sp,
                                                     fontWeight = FontWeight.Bold,
                                                     color = Color(0xFF475569)
@@ -846,7 +902,7 @@ fun ProductEditScreen(
                                     shape = RoundedCornerShape(10.dp),
                                     border = androidx.compose.foundation.BorderStroke(
                                         1.dp,
-                                        if (isSkuLocked) Color(0xFFE2E8F0) else BrandBorder
+                                        if (isSkuDuplicate) Color(0xFFDC2626) else if (isSkuLocked) Color(0xFFE2E8F0) else BrandBorder
                                     ),
                                     color = if (isSkuLocked) Color(0xFFF8FAFC) else Color.White
                                 ) {
@@ -873,8 +929,8 @@ fun ProductEditScreen(
                                                 focusedIndicatorColor = Color.Transparent,
                                                 unfocusedIndicatorColor = Color.Transparent,
                                                 disabledIndicatorColor = Color.Transparent,
-                                                focusedTextColor = if (isSkuLocked) Color(0xFF334155) else MidnightNavy,
-                                                unfocusedTextColor = if (isSkuLocked) Color(0xFF334155) else MidnightNavy
+                                                focusedTextColor = if (isSkuDuplicate) Color(0xFFDC2626) else if (isSkuLocked) Color(0xFF334155) else MidnightNavy,
+                                                unfocusedTextColor = if (isSkuDuplicate) Color(0xFFDC2626) else if (isSkuLocked) Color(0xFF334155) else MidnightNavy
                                             ),
                                             modifier = Modifier.weight(1f)
                                         )
@@ -885,14 +941,7 @@ fun ProductEditScreen(
                                                 modifier = Modifier
                                                     .clip(RoundedCornerShape(8.dp))
                                                     .clickable {
-                                                        val prefix = when {
-                                                            category.contains("Bag", true) -> "BGB-OCB"
-                                                            category.contains("Plush", true) -> "BGB-PLS"
-                                                            category.contains("Floral", true) -> "BGB-FLR"
-                                                            category.contains("Apparel", true) -> "BGB-CKC"
-                                                            else -> "BGB-PWS"
-                                                        }
-                                                        sku = "$prefix-0${(10..99).random()}"
+                                                        sku = generateUniqueSku(category)
                                                         isSkuLocked = true
                                                     }
                                             ) {
@@ -943,20 +992,39 @@ fun ProductEditScreen(
                                         }
                                     }
                                 }
-                                if (isSkuLocked) {
+                                if (isSkuDuplicate) {
                                     Row(
                                         verticalAlignment = Alignment.CenterVertically,
                                         modifier = Modifier.padding(top = 2.dp)
                                     ) {
                                         Icon(
-                                            imageVector = Icons.Default.Lock,
+                                            imageVector = Icons.Default.Warning,
+                                            contentDescription = null,
+                                            tint = Color(0xFFDC2626),
+                                            modifier = Modifier.size(12.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(4.dp))
+                                        Text(
+                                            text = "Product code '$sku' is already used by another product. Product codes must be strictly unique.",
+                                            fontSize = 11.sp,
+                                            fontWeight = FontWeight.Medium,
+                                            color = Color(0xFFDC2626)
+                                        )
+                                    }
+                                } else if (isSkuLocked) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        modifier = Modifier.padding(top = 2.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.CheckCircle,
                                             contentDescription = null,
                                             tint = Color(0xFF059669),
                                             modifier = Modifier.size(12.dp)
                                         )
                                         Spacer(modifier = Modifier.width(4.dp))
                                         Text(
-                                            text = "Product code is permanently fixed and can never be changed.",
+                                            text = "Product code is unique, permanently fixed, and can never be changed.",
                                             fontSize = 11.sp,
                                             fontWeight = FontWeight.Medium,
                                             color = Color(0xFF059669)
@@ -964,7 +1032,7 @@ fun ProductEditScreen(
                                     }
                                 } else {
                                     Text(
-                                        text = "Click Generate to assign a permanent SKU. Once generated, it is permanently locked.",
+                                        text = "Click Generate to assign a unique, permanent product code. Each code must be strictly unique.",
                                         fontSize = 11.sp,
                                         color = TextMuted,
                                         modifier = Modifier.padding(top = 2.dp)

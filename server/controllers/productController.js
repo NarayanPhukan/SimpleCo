@@ -80,6 +80,34 @@ exports.getProductById = async (req, res) => {
   }
 };
 
+/**
+ * Generate a guaranteed unique product code (SKU)
+ */
+async function generateUniqueSku(category) {
+  const cat = (category || '').toLowerCase();
+  const catPrefix = cat.includes('bag') ? 'BGB-OCB'
+    : cat.includes('plush') ? 'BGB-PLS'
+    : cat.includes('floral') ? 'BGB-FLR'
+    : cat.includes('apparel') ? 'BGB-CKC'
+    : 'BGB-PWS';
+
+  // Try standard 2-digit sequence first
+  for (let i = 0; i < 200; i++) {
+    const candidate = `${catPrefix}-0${Math.floor(10 + Math.random() * 90)}`;
+    const exists = await Product.findOne({ sku: candidate });
+    if (!exists) return candidate;
+  }
+
+  // Expand to 4-digit sequence if 2-digit is saturated
+  for (let i = 0; i < 500; i++) {
+    const candidate = `${catPrefix}-${Math.floor(1000 + Math.random() * 9000)}`;
+    const exists = await Product.findOne({ sku: candidate });
+    if (!exists) return candidate;
+  }
+
+  return `${catPrefix}-${Date.now().toString().slice(-6)}`;
+}
+
 // @desc    Create a new product (Admin)
 // @route   POST /api/products
 exports.createProduct = async (req, res) => {
@@ -134,16 +162,22 @@ exports.createProduct = async (req, res) => {
     });
     finalTags = Array.from(new Set([...finalTags, ...autoTags])).slice(0, 15);
 
-    // Generate or lock product code (SKU) - permanent once generated
-    let initialSku = (req.body.sku || '').trim();
-    if (!initialSku) {
-      const cat = (category || '').toLowerCase();
-      const catPrefix = cat.includes('bag') ? 'BGB-OCB'
-        : cat.includes('plush') ? 'BGB-PLS'
-        : cat.includes('floral') ? 'BGB-FLR'
-        : cat.includes('apparel') ? 'BGB-CKC'
-        : 'BGB-PWS';
-      initialSku = `${catPrefix}-0${Math.floor(10 + Math.random() * 90)}`;
+    // Product code (SKU) must be strictly unique and permanent
+    let initialSku = (req.body.sku || '').trim().toUpperCase();
+    if (initialSku) {
+      // Validate uniqueness against existing products
+      const existingProductWithSku = await Product.findOne({
+        sku: { $regex: new RegExp(`^${initialSku.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i') }
+      });
+      if (existingProductWithSku) {
+        return res.status(400).json({
+          success: false,
+          message: `Product code / SKU "${initialSku}" is already in use by "${existingProductWithSku.name}". Product codes must be strictly unique.`
+        });
+      }
+    } else {
+      // Auto-generate guaranteed unique SKU
+      initialSku = await generateUniqueSku(category);
     }
 
     const newProduct = await Product.create({
@@ -173,6 +207,12 @@ exports.createProduct = async (req, res) => {
 
     res.status(201).json({ success: true, data: newProduct });
   } catch (error) {
+    if (error.code === 11000 || (error.message && error.message.includes('sku'))) {
+      return res.status(400).json({
+        success: false,
+        message: 'Product code / SKU must be strictly unique. The specified code is already assigned to another product.'
+      });
+    }
     res.status(500).json({ success: false, message: error.message });
   }
 };
@@ -253,5 +293,53 @@ exports.deleteProduct = async (req, res) => {
     res.json({ success: true, message: 'Product deleted permanently', id: req.params.id });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// @desc    Check whether a product code (SKU) is unique and available
+// @route   GET /api/products/validate-sku?sku=...
+exports.validateSku = async (req, res) => {
+  try {
+    const sku = (req.query.sku || '').trim().toUpperCase();
+    const excludeId = (req.query.excludeId || '').trim();
+
+    if (!sku) {
+      return res.status(400).json({
+        success: false,
+        available: false,
+        message: 'Product code is required for validation'
+      });
+    }
+
+    const query = {
+      sku: { $regex: new RegExp(`^${sku.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i') }
+    };
+    if (excludeId) {
+      const mongoose = require('mongoose');
+      const isObjectId = mongoose.Types.ObjectId.isValid(excludeId);
+      if (isObjectId) {
+        query._id = { $ne: new mongoose.Types.ObjectId(excludeId) };
+      } else {
+        query.id = { $ne: excludeId };
+      }
+    }
+
+    const existing = await Product.findOne(query);
+    if (existing) {
+      return res.json({
+        success: true,
+        available: false,
+        message: `Product code "${sku}" is already assigned to "${existing.name}". Product codes must be strictly unique.`,
+        productName: existing.name
+      });
+    }
+
+    return res.json({
+      success: true,
+      available: true,
+      message: `Product code "${sku}" is unique and available.`
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, available: false, message: error.message });
   }
 };

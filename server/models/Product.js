@@ -21,7 +21,7 @@ const variantSchema = new mongoose.Schema({
 
 const productSchema = new mongoose.Schema({
   id: { type: String, unique: true },
-  sku: { type: String, default: '', index: true },
+  sku: { type: String, unique: true, sparse: true, trim: true },
   name: { type: String, required: true },
   category: { type: String, required: true, index: true },
   categoryName: { type: String, required: true },

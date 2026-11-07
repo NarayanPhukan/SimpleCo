@@ -352,6 +352,19 @@ export const AdminPanel = ({ isOpen, onClose, onShowToast, onProductCatalogUpdat
         return;
       }
 
+      // Enforce product code uniqueness
+      const existingSkusSet = new Set(
+        products
+          .filter(p => p._id !== productForm._id && p.id !== productForm.id)
+          .map(p => (p.sku || '').toUpperCase().trim())
+          .filter(Boolean)
+      );
+
+      if (productForm.sku && existingSkusSet.has(productForm.sku.toUpperCase().trim())) {
+        onShowToast(`Product code "${productForm.sku}" is already in use. Product codes must be strictly unique!`, '!');
+        return;
+      }
+
       let payload = { ...productForm };
       if (payload._id || payload.id) {
         const idToUpdate = payload._id || payload.id;
@@ -368,7 +381,18 @@ export const AdminPanel = ({ isOpen, onClose, onShowToast, onProductCatalogUpdat
             : cat.includes('floral') ? 'BGB-FLR'
             : cat.includes('apparel') ? 'BGB-CKC'
             : 'BGB-PWS';
-          payload.sku = `${prefix}-0${Math.floor(10 + Math.random() * 90)}`;
+          let candidate = '';
+          for (let i = 0; i < 200; i++) {
+            candidate = `${prefix}-0${Math.floor(10 + Math.random() * 90)}`;
+            if (!existingSkusSet.has(candidate.toUpperCase())) break;
+          }
+          if (existingSkusSet.has(candidate.toUpperCase())) {
+            for (let i = 0; i < 500; i++) {
+              candidate = `${prefix}-${Math.floor(1000 + Math.random() * 9000)}`;
+              if (!existingSkusSet.has(candidate.toUpperCase())) break;
+            }
+          }
+          payload.sku = candidate;
         }
         await api.createProduct(payload);
         onShowToast(`"${payload.name}" added to catalog`, '✓');
@@ -1691,68 +1715,106 @@ export const AdminPanel = ({ isOpen, onClose, onShowToast, onProductCatalogUpdat
                             </div>
                           </div>
 
-                          <div className="form-group">
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
-                              <label className="form-label" style={{ margin: 0 }}>Product Code (SKU) *</label>
-                              {(productForm._id || productForm.id || productForm.sku) && (
-                                <span style={{ fontSize: '0.72rem', background: '#F1F5F9', color: '#475569', border: '1px solid #CBD5E1', padding: '2px 8px', borderRadius: '4px', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                                  🔒 Fixed / Locked
+                          {(() => {
+                            const isSkuDuplicate = Boolean(
+                              productForm.sku &&
+                              products.some(p => 
+                                (p._id !== productForm._id && p.id !== productForm.id && (p.sku || '').toUpperCase().trim() === productForm.sku.toUpperCase().trim())
+                              )
+                            );
+                            const isLocked = Boolean(productForm._id || productForm.id || productForm.sku);
+
+                            return (
+                              <div className="form-group">
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
+                                  <label className="form-label" style={{ margin: 0 }}>Product Code (SKU) *</label>
+                                  {isSkuDuplicate ? (
+                                    <span style={{ fontSize: '0.72rem', background: '#FEF2F2', color: '#DC2626', border: '1px solid #FCA5A5', padding: '2px 8px', borderRadius: '4px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                                      ⚠️ Duplicate Code
+                                    </span>
+                                  ) : isLocked ? (
+                                    <span style={{ fontSize: '0.72rem', background: '#F1F5F9', color: '#475569', border: '1px solid #CBD5E1', padding: '2px 8px', borderRadius: '4px', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                                      🔒 Unique & Fixed
+                                    </span>
+                                  ) : null}
+                                </div>
+                                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                                  <input 
+                                    type="text" 
+                                    className="form-input" 
+                                    style={{ 
+                                      backgroundColor: isLocked ? '#F8FAFC' : '#FFFFFF',
+                                      color: isSkuDuplicate ? '#DC2626' : isLocked ? '#475569' : '#0F172A',
+                                      borderColor: isSkuDuplicate ? '#DC2626' : undefined,
+                                      cursor: isLocked ? 'not-allowed' : 'text',
+                                      fontWeight: 600
+                                    }}
+                                    readOnly={isLocked}
+                                    value={productForm.sku || ''}
+                                    onChange={e => {
+                                      if (!isLocked) {
+                                        setProductForm({ ...productForm, sku: e.target.value.toUpperCase() });
+                                      }
+                                    }}
+                                  />
+                                  {!isLocked ? (
+                                    <button
+                                      type="button"
+                                      className="btn btn-secondary"
+                                      style={{ padding: '0.55rem 0.85rem', fontSize: '0.78rem', whiteSpace: 'nowrap', fontWeight: 600 }}
+                                      onClick={() => {
+                                        const cat = (productForm.category || '').toLowerCase();
+                                        const prefix = cat.includes('bag') ? 'BGB-OCB'
+                                          : cat.includes('plush') ? 'BGB-PLS'
+                                          : cat.includes('floral') ? 'BGB-FLR'
+                                          : cat.includes('apparel') ? 'BGB-CKC'
+                                          : 'BGB-PWS';
+                                        
+                                        const existingSkus = new Set(
+                                          products
+                                            .filter(p => p._id !== productForm._id && p.id !== productForm.id)
+                                            .map(p => (p.sku || '').toUpperCase().trim())
+                                            .filter(Boolean)
+                                        );
+
+                                        let candidate = '';
+                                        for (let i = 0; i < 200; i++) {
+                                          candidate = `${prefix}-0${Math.floor(10 + Math.random() * 90)}`;
+                                          if (!existingSkus.has(candidate.toUpperCase())) break;
+                                        }
+                                        if (existingSkus.has(candidate.toUpperCase())) {
+                                          for (let i = 0; i < 500; i++) {
+                                            candidate = `${prefix}-${Math.floor(1000 + Math.random() * 9000)}`;
+                                            if (!existingSkus.has(candidate.toUpperCase())) break;
+                                          }
+                                        }
+
+                                        setProductForm(prev => ({ ...prev, sku: candidate }));
+                                      }}
+                                    >
+                                      ✦ Generate
+                                    </button>
+                                  ) : (
+                                    <button
+                                      type="button"
+                                      disabled
+                                      className="btn btn-secondary"
+                                      style={{ padding: '0.55rem 0.85rem', fontSize: '0.78rem', whiteSpace: 'nowrap', opacity: 0.6, cursor: 'not-allowed' }}
+                                    >
+                                      🔒 Fixed
+                                    </button>
+                                  )}
+                                </div>
+                                <span style={{ fontSize: '0.74rem', color: isSkuDuplicate ? '#DC2626' : isLocked ? '#059669' : '#64748B', marginTop: '4px', display: 'block' }}>
+                                  {isSkuDuplicate 
+                                    ? `⚠️ Product code "${productForm.sku}" is already assigned to another product. Product codes must be strictly unique.`
+                                    : isLocked 
+                                    ? '✓ Product code is unique, permanently fixed, and can never be changed.'
+                                    : 'Click Generate to assign a unique, permanent SKU. Product codes must be strictly unique.'}
                                 </span>
-                              )}
-                            </div>
-                            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                              <input 
-                                type="text" 
-                                className="form-input" 
-                                style={{ 
-                                  backgroundColor: (productForm._id || productForm.id || productForm.sku) ? '#F8FAFC' : '#FFFFFF',
-                                  color: (productForm._id || productForm.id || productForm.sku) ? '#475569' : '#0F172A',
-                                  cursor: (productForm._id || productForm.id || productForm.sku) ? 'not-allowed' : 'text',
-                                  fontWeight: 600
-                                }}
-                                readOnly={Boolean(productForm._id || productForm.id || productForm.sku)}
-                                value={productForm.sku || ''}
-                                onChange={e => {
-                                  if (!productForm._id && !productForm.id && !productForm.sku) {
-                                    setProductForm({ ...productForm, sku: e.target.value });
-                                  }
-                                }}
-                              />
-                              {!(productForm._id || productForm.id || productForm.sku) ? (
-                                <button
-                                  type="button"
-                                  className="btn btn-secondary"
-                                  style={{ padding: '0.55rem 0.85rem', fontSize: '0.78rem', whiteSpace: 'nowrap', fontWeight: 600 }}
-                                  onClick={() => {
-                                    const cat = (productForm.category || '').toLowerCase();
-                                    const prefix = cat.includes('bag') ? 'BGB-OCB'
-                                      : cat.includes('plush') ? 'BGB-PLS'
-                                      : cat.includes('floral') ? 'BGB-FLR'
-                                      : cat.includes('apparel') ? 'BGB-CKC'
-                                      : 'BGB-PWS';
-                                    const generatedSku = `${prefix}-0${Math.floor(10 + Math.random() * 90)}`;
-                                    setProductForm(prev => ({ ...prev, sku: generatedSku }));
-                                  }}
-                                >
-                                  ✦ Generate
-                                </button>
-                              ) : (
-                                <button
-                                  type="button"
-                                  disabled
-                                  className="btn btn-secondary"
-                                  style={{ padding: '0.55rem 0.85rem', fontSize: '0.78rem', whiteSpace: 'nowrap', opacity: 0.6, cursor: 'not-allowed' }}
-                                >
-                                  🔒 Fixed
-                                </button>
-                              )}
-                            </div>
-                            <span style={{ fontSize: '0.74rem', color: (productForm._id || productForm.id || productForm.sku) ? '#059669' : '#64748B', marginTop: '4px', display: 'block' }}>
-                              {(productForm._id || productForm.id || productForm.sku) 
-                                ? '✓ Product code is permanently fixed and can never be changed.'
-                                : 'Click Generate to assign a permanent SKU. Once generated, it is permanently locked.'}
-                            </span>
-                          </div>
+                              </div>
+                            );
+                          })()}
 
                           <div className="form-row">
                             <div className="form-group">

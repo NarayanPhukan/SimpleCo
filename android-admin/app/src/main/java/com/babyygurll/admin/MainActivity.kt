@@ -515,6 +515,7 @@ class MainActivity : ComponentActivity() {
                                 ProductEditScreen(
                                     product = existingProduct,
                                     serverUrl = uiState.serverUrl,
+                                    existingProducts = uiState.products,
                                     onBack = { navController.popBackStack() },
                                     onSave = { req, id ->
                                         val cleanId = id?.trim()?.ifBlank { null }
