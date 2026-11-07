@@ -2,8 +2,8 @@
   "latestVersionCode": 16,
   "latestVersionName": "1.4.0",
   "minRequiredVersionCode": 1,
-  "releaseNotes": "• Complete end-to-end boutique notifications with Android 13+ support\n• Sound, vibration, and heads-up banner alerts for orders & drops\n• One-tap test alert button to verify notifications on device\n• Seamless offline fallback and real-time backend sync",
-  "downloadUrl": "https://raw.githubusercontent.com/NarayanPhukan/SimpleCo/main/android-customer/babyygurll-boutique.apk",
+  "releaseNotes": "• Ultra-fast 4MB/s direct CDN update downloads\n• Complete end-to-end notification system with Android 13+ support\n• Sound, vibration, and heads-up banner alerts for boutique drops\n• Quick test notification action to verify alerts",
+  "downloadUrl": "https://simpleco.onrender.com/download/app",
   "releaseDate": "2026-11-07",
   "critical": false
 }

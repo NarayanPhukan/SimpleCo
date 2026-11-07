@@ -14,6 +14,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import java.io.BufferedInputStream
+import java.io.BufferedOutputStream
 import java.io.File
 import java.io.FileOutputStream
 import java.util.concurrent.TimeUnit
@@ -32,10 +34,11 @@ object CustomerUpdateDownloader {
 
     private val httpClient by lazy {
         OkHttpClient.Builder()
-            .connectTimeout(30, TimeUnit.SECONDS)
+            .connectTimeout(20, TimeUnit.SECONDS)
             .readTimeout(60, TimeUnit.SECONDS)
             .followRedirects(true)
             .followSslRedirects(true)
+            .retryOnConnectionFailure(true)
             .build()
     }
 
@@ -44,17 +47,38 @@ object CustomerUpdateDownloader {
             try {
                 _downloadState.value = UpdateDownloadState.Downloading(0, 0, 0)
 
-                val targetUrl = rawUrl.trim().ifBlank {
-                    "https://raw.githubusercontent.com/NarayanPhukan/SimpleCo/main/android-customer/babyygurll-boutique.apk"
+                // High-speed CDN mirror endpoints in order of performance
+                val candidates = mutableListOf<String>()
+                if (rawUrl.isNotBlank() && !rawUrl.contains("raw.githubusercontent.com")) {
+                    candidates.add(rawUrl.trim())
+                }
+                candidates.add("https://simpleco.onrender.com/download/app")
+                candidates.add("https://raw.githubusercontent.com/NarayanPhukan/SimpleCo/main/android-customer/babyygurll-boutique.apk")
+
+                var response: okhttp3.Response? = null
+                var lastErr: Exception? = null
+
+                for (url in candidates.distinct()) {
+                    try {
+                        val req = Request.Builder()
+                            .url(url)
+                            .header("Accept-Encoding", "identity")
+                            .header("User-Agent", "BabyyGurllCustomerApp/v$versionName")
+                            .build()
+                        val res = httpClient.newCall(req).execute()
+                        if (res.isSuccessful && res.body != null) {
+                            response = res
+                            break
+                        } else {
+                            res.close()
+                        }
+                    } catch (e: Exception) {
+                        lastErr = e
+                    }
                 }
 
-                val request = Request.Builder()
-                    .url(targetUrl)
-                    .build()
-
-                val response = httpClient.newCall(request).execute()
-                if (!response.isSuccessful) {
-                    throw Exception("Server returned HTTP ${response.code} when downloading update")
+                if (response == null || !response.isSuccessful) {
+                    throw lastErr ?: Exception("Failed to connect to update server")
                 }
 
                 val body = response.body ?: throw Exception("Empty response when downloading update")
@@ -64,25 +88,33 @@ object CustomerUpdateDownloader {
                 val apkFile = File(updatesDir, "BabyyGurll-Boutique-v$versionName.apk")
                 if (apkFile.exists()) apkFile.delete()
 
-                val inputStream = body.byteStream()
-                val outputStream = FileOutputStream(apkFile)
+                val inputStream = BufferedInputStream(body.byteStream(), 64 * 1024)
+                val outputStream = BufferedOutputStream(FileOutputStream(apkFile), 64 * 1024)
 
-                val buffer = ByteArray(8 * 1024)
+                val buffer = ByteArray(64 * 1024) // 64 KB high-speed buffer
                 var bytesCopied: Long = 0
                 var bytesRead: Int
+                var lastReportedPercent = -1
+                var lastReportedTime = 0L
 
                 while (inputStream.read(buffer).also { bytesRead = it } != -1) {
                     outputStream.write(buffer, 0, bytesRead)
                     bytesCopied += bytesRead
                     if (totalLength > 0) {
                         val progress = ((bytesCopied * 100) / totalLength).toInt()
-                        _downloadState.value = UpdateDownloadState.Downloading(progress, bytesCopied, totalLength)
+                        val now = System.currentTimeMillis()
+                        if (progress != lastReportedPercent && (now - lastReportedTime > 150 || progress == 100)) {
+                            lastReportedPercent = progress
+                            lastReportedTime = now
+                            _downloadState.value = UpdateDownloadState.Downloading(progress, bytesCopied, totalLength)
+                        }
                     }
                 }
 
                 outputStream.flush()
                 outputStream.close()
                 inputStream.close()
+                response.close()
 
                 _downloadState.value = UpdateDownloadState.ReadyToInstall(apkFile)
 
