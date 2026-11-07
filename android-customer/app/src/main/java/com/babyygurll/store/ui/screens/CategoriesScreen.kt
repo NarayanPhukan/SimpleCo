@@ -408,7 +408,7 @@ fun CategoriesScreen(
                         contentAlignment = Alignment.Center
                     ) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("🧶", fontSize = 42.sp)
+                            Text("🌸", fontSize = 42.sp)
                             Spacer(modifier = Modifier.height(8.dp))
                             Text(
                                 text = "No items in this collection yet",

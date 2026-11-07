@@ -424,7 +424,7 @@ fun HomeScreen(
                         contentAlignment = Alignment.Center
                     ) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("🧶", fontSize = 42.sp)
+                            Text("🌸", fontSize = 42.sp)
                             Spacer(modifier = Modifier.height(8.dp))
                             Text(
                                 text = "No treasures found",

@@ -81,14 +81,19 @@ fun LoginScreen(
             Spacer(modifier = Modifier.height(24.dp))
 
             // Studio Avatar Badge
-            Box(
-                modifier = Modifier
-                    .size(80.dp)
-                    .clip(CircleShape)
-                    .background(RoyalBlue.copy(alpha = 0.25f)),
-                contentAlignment = Alignment.Center
+            Surface(
+                modifier = Modifier.size(84.dp),
+                shape = CircleShape,
+                color = Color.White,
+                shadowElevation = 6.dp
             ) {
-                Text(text = "🧶", fontSize = 40.sp)
+                Box(contentAlignment = Alignment.Center) {
+                    androidx.compose.foundation.Image(
+                        painter = androidx.compose.ui.res.painterResource(id = com.babyygurll.admin.R.drawable.brand_logo_emblem),
+                        contentDescription = "BabyyGurll Monogram",
+                        modifier = Modifier.size(56.dp)
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(14.dp))

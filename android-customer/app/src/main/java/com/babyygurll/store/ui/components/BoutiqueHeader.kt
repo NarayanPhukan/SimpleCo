@@ -12,6 +12,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -55,12 +56,10 @@ fun BoutiqueHeader(
                     .clickable { onLogoClick() }
             ) {
                 Box(contentAlignment = Alignment.Center) {
-                    Text(
-                        text = "BG",
-                        color = BrandDarkNavy,
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 0.5.sp
+                    androidx.compose.foundation.Image(
+                        painter = painterResource(id = com.babyygurll.store.R.drawable.brand_logo_emblem),
+                        contentDescription = "BabyyGurll Emblem",
+                        modifier = Modifier.size(24.dp)
                     )
                 }
             }
