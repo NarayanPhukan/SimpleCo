@@ -13,12 +13,19 @@ android {
         applicationId = "com.babyygurll.admin"
         minSdk = 26
         targetSdk = 34
-        versionCode = 19
-        versionName = "1.7.0"
+        versionCode = 20
+        versionName = "1.7.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
             useSupportLibrary = true
+        }
+    }
+
+    signingConfigs {
+        getByName("debug") {
+            enableV1Signing = true
+            enableV2Signing = true
         }
     }
 
@@ -32,6 +39,7 @@ android {
         }
         debug {
             isDebuggable = true
+            signingConfig = signingConfigs.getByName("debug")
         }
     }
 

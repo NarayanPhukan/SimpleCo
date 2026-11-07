@@ -47,38 +47,22 @@ object CustomerUpdateDownloader {
             try {
                 _downloadState.value = UpdateDownloadState.Downloading(0, 0, 0)
 
-                // High-speed CDN mirror endpoints in order of performance
-                val candidates = mutableListOf<String>()
-                if (rawUrl.isNotBlank() && !rawUrl.contains("raw.githubusercontent.com")) {
-                    candidates.add(rawUrl.trim())
-                }
-                candidates.add("https://simpleco.onrender.com/download/app")
-                candidates.add("https://raw.githubusercontent.com/NarayanPhukan/SimpleCo/main/android-customer/babyygurll-boutique.apk")
-
-                var response: okhttp3.Response? = null
-                var lastErr: Exception? = null
-
-                for (url in candidates.distinct()) {
-                    try {
-                        val req = Request.Builder()
-                            .url(url)
-                            .header("Accept-Encoding", "identity")
-                            .header("User-Agent", "BabyyGurllCustomerApp/v$versionName")
-                            .build()
-                        val res = httpClient.newCall(req).execute()
-                        if (res.isSuccessful && res.body != null) {
-                            response = res
-                            break
-                        } else {
-                            res.close()
-                        }
-                    } catch (e: Exception) {
-                        lastErr = e
-                    }
+                // High-speed direct repository endpoint (contains latest build with new logo)
+                val targetUrl = if (rawUrl.isNotBlank() && !rawUrl.contains("onrender.com")) {
+                    rawUrl.trim()
+                } else {
+                    "https://raw.githubusercontent.com/NarayanPhukan/SimpleCo/main/android-customer/babyygurll-boutique.apk"
                 }
 
-                if (response == null || !response.isSuccessful) {
-                    throw lastErr ?: Exception("Failed to connect to update server")
+                val req = Request.Builder()
+                    .url(targetUrl)
+                    .header("Accept-Encoding", "identity")
+                    .header("User-Agent", "BabyyGurllCustomerApp/v$versionName")
+                    .build()
+
+                val response = httpClient.newCall(req).execute()
+                if (!response.isSuccessful) {
+                    throw Exception("Update server returned HTTP ${response.code}")
                 }
 
                 val body = response.body ?: throw Exception("Empty response when downloading update")
@@ -122,6 +106,11 @@ object CustomerUpdateDownloader {
                     installApk(context, apkFile)
                 }
             } catch (e: Exception) {
+                try {
+                    val updatesDir = File(context.cacheDir, "apk_updates")
+                    val apkFile = File(updatesDir, "BabyyGurll-Boutique-v$versionName.apk")
+                    if (apkFile.exists()) apkFile.delete()
+                } catch (_: Exception) {}
                 ErrorLogManager.logError("AUTO_UPDATE", "Failed to download update", e)
                 _downloadState.value = UpdateDownloadState.Error(e.message ?: "Failed to download update")
             }
@@ -132,6 +121,14 @@ object CustomerUpdateDownloader {
         try {
             if (!apkFile.exists()) {
                 _downloadState.value = UpdateDownloadState.Error("APK file not found on device")
+                return
+            }
+
+            // Verify package integrity before launching installer to prevent "Invalid package" error
+            val packageInfo = context.packageManager.getPackageArchiveInfo(apkFile.absolutePath, 0)
+            if (packageInfo == null) {
+                apkFile.delete()
+                _downloadState.value = UpdateDownloadState.Error("Downloaded package is incomplete or invalid. Please download again.")
                 return
             }
 

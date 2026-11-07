@@ -48,40 +48,22 @@ object ApkUpdateDownloader {
             try {
                 _downloadState.value = UpdateDownloadState.Downloading(0, 0, 0)
 
-                val prefs = PreferencesManager(context)
-                val candidates = mutableListOf<String>()
-
-                if (rawUrl.isNotBlank() && !rawUrl.contains("raw.githubusercontent.com")) {
-                    candidates.add(rawUrl.trim())
-                }
-                candidates.add("${prefs.serverUrl.trimEnd('/')}/download/admin")
-                candidates.add("https://simpleco.onrender.com/download/admin")
-                candidates.add("https://raw.githubusercontent.com/NarayanPhukan/SimpleCo/main/android-admin/babyygurll-admin.apk")
-
-                var response: okhttp3.Response? = null
-                var lastErr: Exception? = null
-
-                for (url in candidates.distinct()) {
-                    try {
-                        val req = Request.Builder()
-                            .url(url)
-                            .header("Accept-Encoding", "identity")
-                            .header("User-Agent", "BabyyGurllAdminApp/v$versionName")
-                            .build()
-                        val res = httpClient.newCall(req).execute()
-                        if (res.isSuccessful && res.body != null) {
-                            response = res
-                            break
-                        } else {
-                            res.close()
-                        }
-                    } catch (e: Exception) {
-                        lastErr = e
-                    }
+                // High-speed direct repository endpoint (contains latest build with new logo)
+                val targetUrl = if (rawUrl.isNotBlank() && !rawUrl.contains("onrender.com")) {
+                    rawUrl.trim()
+                } else {
+                    "https://raw.githubusercontent.com/NarayanPhukan/SimpleCo/main/android-admin/babyygurll-admin.apk"
                 }
 
-                if (response == null || !response.isSuccessful) {
-                    throw lastErr ?: Exception("Failed to connect to update server")
+                val req = Request.Builder()
+                    .url(targetUrl)
+                    .header("Accept-Encoding", "identity")
+                    .header("User-Agent", "BabyyGurllAdminApp/v$versionName")
+                    .build()
+
+                val response = httpClient.newCall(req).execute()
+                if (!response.isSuccessful) {
+                    throw Exception("Update server returned HTTP ${response.code}")
                 }
 
                 val body = response.body ?: throw Exception("Empty APK response from server")
@@ -127,6 +109,11 @@ object ApkUpdateDownloader {
                 }
 
             } catch (e: Exception) {
+                try {
+                    val updatesDir = File(context.cacheDir, "apk_updates")
+                    val apkFile = File(updatesDir, "BabyyGurll-Admin-v$versionName.apk")
+                    if (apkFile.exists()) apkFile.delete()
+                } catch (_: Exception) {}
                 ErrorLogManager.logError("APK_DOWNLOAD", "Failed to download update: ${e.message}", e)
                 _downloadState.value = UpdateDownloadState.Error(e.localizedMessage ?: "Failed to download update")
             }
@@ -135,6 +122,19 @@ object ApkUpdateDownloader {
 
     fun installApk(context: Context, apkFile: File) {
         try {
+            if (!apkFile.exists()) {
+                _downloadState.value = UpdateDownloadState.Error("APK file not found on device")
+                return
+            }
+
+            // Verify package integrity before launching installer to prevent "Invalid package" error
+            val packageInfo = context.packageManager.getPackageArchiveInfo(apkFile.absolutePath, 0)
+            if (packageInfo == null) {
+                apkFile.delete()
+                _downloadState.value = UpdateDownloadState.Error("Downloaded update is incomplete or invalid. Please download again.")
+                return
+            }
+
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 if (!context.packageManager.canRequestPackageInstalls()) {
                     val manageIntent = Intent(
