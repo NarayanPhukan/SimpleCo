@@ -59,7 +59,8 @@ fun BoutiqueHeader(
                     androidx.compose.foundation.Image(
                         painter = painterResource(id = com.babyygurll.store.R.drawable.brand_logo_emblem),
                         contentDescription = "BabyyGurll Emblem",
-                        modifier = Modifier.size(24.dp)
+                        modifier = Modifier.size(24.dp),
+                        contentScale = androidx.compose.ui.layout.ContentScale.Fit
                     )
                 }
             }

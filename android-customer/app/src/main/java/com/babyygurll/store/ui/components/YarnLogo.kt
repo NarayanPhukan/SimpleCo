@@ -34,7 +34,8 @@ fun YarnBoutiqueBranding(
             contentDescription = "BabyyGurll Boutique Logo",
             modifier = Modifier
                 .width(180.dp)
-                .height(124.dp)
+                .height(124.dp),
+            contentScale = androidx.compose.ui.layout.ContentScale.Fit
         )
 
         Spacer(modifier = Modifier.height(4.dp))

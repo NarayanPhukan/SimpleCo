@@ -275,7 +275,6 @@ class AdminViewModel : ViewModel() {
         fetchDiagnostics()
         fetchRefunds()
         fetchNotifications()
-        checkForAppUpdates(silent = true)
     }
 
     // Orders & Dashboard
@@ -852,8 +851,6 @@ class AdminViewModel : ViewModel() {
         }
     }
 
-    private var dismissedVersionCode: Int? = null
-
     // Auto-Update Detection
     fun checkForAppUpdates(silent: Boolean = false) {
         viewModelScope.launch {
@@ -867,8 +864,9 @@ class AdminViewModel : ViewModel() {
                 val hasUpdate = !isCustomerApk && (info.latestVersionCode > currentVersionCode)
                 val critical = hasUpdate && (currentVersionCode < info.minRequiredVersionCode || info.critical)
 
-                // If it's a background silent check and non-critical, don't nag if dismissed this session
-                val shouldShowDialog = hasUpdate && (!silent || critical || dismissedVersionCode != info.latestVersionCode)
+                // If it's a background silent check and non-critical, don't nag if dismissed previously
+                val isDismissed = prefs.dismissedUpdateVersion >= info.latestVersionCode
+                val shouldShowDialog = hasUpdate && (!silent || critical || !isDismissed)
 
                 _uiState.update {
                     it.copy(
@@ -898,7 +896,7 @@ class AdminViewModel : ViewModel() {
     fun dismissUpdateDialog() {
         val currentInfo = _uiState.value.appUpdateInfo
         if (currentInfo != null) {
-            dismissedVersionCode = currentInfo.latestVersionCode
+            prefs.dismissedUpdateVersion = currentInfo.latestVersionCode
         }
         _uiState.update { it.copy(isUpdateAvailable = false) }
     }

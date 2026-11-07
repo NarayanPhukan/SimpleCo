@@ -57,6 +57,10 @@ class PreferencesManager(context: Context) {
         get() = prefs.getString(KEY_AUTH_PROVIDER, "firebase") ?: "firebase"
         set(value) = prefs.edit().putString(KEY_AUTH_PROVIDER, value).apply()
 
+    var dismissedUpdateVersion: Int
+        get() = prefs.getInt("key_dismissed_update_version", 0)
+        set(value) = prefs.edit().putInt("key_dismissed_update_version", value).apply()
+
     fun clearSession() {
         prefs.edit()
             .putBoolean(KEY_IS_LOGGED_IN, false)

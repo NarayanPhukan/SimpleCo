@@ -80,35 +80,33 @@ fun LoginScreen(
         ) {
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Studio Avatar Badge
+            // Official Studio Brand Logo
+            androidx.compose.foundation.Image(
+                painter = androidx.compose.ui.res.painterResource(id = com.babyygurll.admin.R.drawable.brand_logo_white),
+                contentDescription = "BabyyGurll Boutique Logo",
+                modifier = Modifier
+                    .width(180.dp)
+                    .height(124.dp),
+                contentScale = androidx.compose.ui.layout.ContentScale.Fit
+            )
+
+            Spacer(modifier = Modifier.height(6.dp))
+
             Surface(
-                modifier = Modifier.size(84.dp),
-                shape = CircleShape,
-                color = Color.White,
-                shadowElevation = 6.dp
+                color = RoyalBlue.copy(alpha = 0.25f),
+                shape = RoundedCornerShape(12.dp)
             ) {
-                Box(contentAlignment = Alignment.Center) {
-                    androidx.compose.foundation.Image(
-                        painter = androidx.compose.ui.res.painterResource(id = com.babyygurll.admin.R.drawable.brand_logo_emblem),
-                        contentDescription = "BabyyGurll Monogram",
-                        modifier = Modifier.size(56.dp)
-                    )
-                }
+                Text(
+                    text = "STUDIO ADMIN PORTAL",
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 2.sp,
+                    color = Color.White.copy(alpha = 0.9f),
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)
+                )
             }
 
-            Spacer(modifier = Modifier.height(14.dp))
-
-            Text(
-                text = "BabyyGurll Studio",
-                style = MaterialTheme.typography.headlineMedium.copy(color = Color.White),
-                fontWeight = FontWeight.Bold
-            )
-
-            Text(
-                text = "Artisanal Crochet • Admin Portal",
-                style = MaterialTheme.typography.bodyMedium.copy(color = Color.White.copy(alpha = 0.75f)),
-                modifier = Modifier.padding(top = 4.dp, bottom = 24.dp)
-            )
+            Spacer(modifier = Modifier.height(24.dp))
 
             // Auth Card
             Card(
