@@ -41,6 +41,7 @@ data class Product(
     @SerializedName("colors") val colors: List<ProductColor> = emptyList(),
     @SerializedName("sizes") val sizes: List<String> = emptyList(),
     @SerializedName("variants") val variants: List<ProductVariant> = emptyList(),
+    @SerializedName("tags") val tags: List<String> = emptyList(),
     @SerializedName("inStock") val inStock: Boolean = true
 ) {
     val effectiveId: String

@@ -61,7 +61,8 @@ fun SearchScreen(
             allProducts.filter {
                 it.name.contains(searchQuery, ignoreCase = true) ||
                 it.category.contains(searchQuery, ignoreCase = true) ||
-                it.description.contains(searchQuery, ignoreCase = true)
+                it.description.contains(searchQuery, ignoreCase = true) ||
+                it.tags.any { tag -> tag.contains(searchQuery, ignoreCase = true) }
             }
         }
     }

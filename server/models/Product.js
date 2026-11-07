@@ -39,6 +39,7 @@ const productSchema = new mongoose.Schema({
   colors: [colorSchema],
   sizes: [{ type: String }],
   variants: [variantSchema],
+  tags: [{ type: String, index: true }],
   inStock: { type: Boolean, default: true }
 }, { timestamps: true });
 

@@ -83,7 +83,8 @@ class StoreViewModel(application: Application) : AndroidViewModel(application) {
                 it.name.lowercase().contains(q) ||
                 it.description.lowercase().contains(q) ||
                 it.categoryName.lowercase().contains(q) ||
-                (it.subcategoryName ?: "").lowercase().contains(q)
+                (it.subcategoryName ?: "").lowercase().contains(q) ||
+                it.tags.any { tag -> tag.lowercase().contains(q) }
             }
         }
         when (sort) {

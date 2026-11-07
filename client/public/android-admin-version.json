@@ -1,8 +1,8 @@
 {
-  "latestVersionCode": 23,
-  "latestVersionName": "1.7.4",
+  "latestVersionCode": 24,
+  "latestVersionName": "1.7.5",
   "minRequiredVersionCode": 1,
-  "releaseNotes": "• Removed all placeholder texts and mock data when adding or editing products\n• Form starts completely clean with zero default colors or variants\n• Fixed timezone and order revenue calculations (Saturday Nov 7)\n• Fixed subcategories matching across all 8 departments\n• Removed repeating notifications & silenced test alerts\n• Official 'BG' monogram studio icon & luxury branding",
+  "releaseNotes": "• Automated product tags by analyzing category, subcategory, title and description\n• One-click Auto-analyze button and interactive hashtag chips\n• Removed all placeholder texts and mock data when adding or editing products\n• Form starts completely clean with zero default colors or variants\n• Official 'BG' monogram studio icon & luxury branding",
   "downloadUrl": "https://raw.githubusercontent.com/NarayanPhukan/SimpleCo/main/android-admin/babyygurll-admin.apk",
   "releaseDate": "2026-11-07",
   "critical": false

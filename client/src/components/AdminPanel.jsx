@@ -74,7 +74,8 @@ export const AdminPanel = ({ isOpen, onClose, onShowToast, onProductCatalogUpdat
     badge: '',
     inStock: true,
     description: '',
-    leadTime: ''
+    leadTime: '',
+    tags: ''
   });
 
   // Orders State
@@ -232,6 +233,113 @@ export const AdminPanel = ({ isOpen, onClose, onShowToast, onProductCatalogUpdat
       onShowToast('Photo uploaded and preview ready', '✓');
     };
     reader.readAsDataURL(file);
+  };
+
+  // Automated Tag Analyzer for Product Form
+  const handleAutoGenerateTags = () => {
+    const text = [
+      productForm.category,
+      productForm.categoryName,
+      productForm.subcategory,
+      productForm.subcategoryName,
+      productForm.name,
+      productForm.description
+    ].filter(Boolean).join(' ').toLowerCase();
+
+    const tags = new Set();
+    tags.add('crochet');
+    tags.add('handmade');
+
+    const hasWord = (word) => {
+      const escaped = word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      return new RegExp(`(?:^|[^a-z0-9])${escaped}(?:$|[^a-z0-9])`, 'i').test(text);
+    };
+
+    const phraseMatches = [
+      'triangle bandana', 'hair scarf', 'head scarf', 'hair accessory', 'hair accessories',
+      'tote bag', 'shoulder bag', 'crossbody bag', 'granny square', 'milk cotton',
+      'gift for her', 'desk decor', 'home decor', 'wall hanging', 'mug rug',
+      'bucket hat', 'crop top', 'cushion cover', 'bag charm', 'plushie keychain',
+      'strawberry cow', 'forever flowers', 'open knit', 'cottagecore', 'cozy'
+    ];
+    for (const phrase of phraseMatches) {
+      if (text.includes(phrase)) tags.add(phrase);
+    }
+
+    const keywordMap = {
+      'bandana': ['bandana', 'headwear'],
+      'headscarf': ['headscarf', 'hair scarf'],
+      'scrunchie': ['scrunchie', 'hair tie', 'hair accessory'],
+      'plush': ['plushie', 'amigurumi'],
+      'plushie': ['plushie', 'amigurumi'],
+      'amigurumi': ['amigurumi', 'plushie'],
+      'bag': ['crochet bag'],
+      'tote': ['tote bag', 'crochet bag'],
+      'purse': ['purse', 'crochet bag'],
+      'tulip': ['tulip', 'floral', 'flower bouquet'],
+      'rose': ['rose', 'floral', 'flower bouquet'],
+      'sunflower': ['sunflower', 'floral'],
+      'daisy': ['daisy', 'floral'],
+      'bouquet': ['bouquet', 'forever flowers'],
+      'flower': ['floral', 'flowers'],
+      'bloom': ['floral'],
+      'coaster': ['coaster', 'tableware', 'home decor'],
+      'cardigan': ['cardigan', 'apparel', 'knitwear'],
+      'sweater': ['sweater', 'apparel'],
+      'vest': ['vest', 'apparel'],
+      'scarf': ['scarf'],
+      'beanie': ['beanie', 'winter hat'],
+      'beret': ['beret'],
+      'hat': ['crochet hat'],
+      'keychain': ['keychain', 'bag charm'],
+      'cow': ['cow plush', 'cute animal'],
+      'bunny': ['bunny plush', 'cute animal'],
+      'cat': ['cat plush', 'cute animal'],
+      'dog': ['dog plush', 'cute animal'],
+      'boho': ['boho', 'bohemian'],
+      'vintage': ['vintage'],
+      'cotton': ['milk cotton'],
+      'chenille': ['chenille yarn'],
+      'wool': ['wool'],
+      'aesthetic': ['aesthetic'],
+      'pastel': ['pastel'],
+      'retro': ['retro'],
+      'triangle': ['triangle bandana'],
+      'summer': ['summer style'],
+      'beach': ['beach wear'],
+      'gift': ['gift for her']
+    };
+
+    for (const [key, mapped] of Object.entries(keywordMap)) {
+      if (hasWord(key)) {
+        mapped.forEach(t => tags.add(t));
+      }
+    }
+
+    const sub = (productForm.subcategoryName || productForm.subcategory || '').toLowerCase();
+    if (sub.includes('bandana')) { tags.add('bandana'); tags.add('headwear'); tags.add('hair accessories'); }
+    if (sub.includes('scrunchie')) { tags.add('scrunchie'); tags.add('hair accessories'); }
+    if (sub.includes('tote')) { tags.add('tote bag'); tags.add('crochet bag'); }
+    if (sub.includes('shoulder')) { tags.add('shoulder bag'); tags.add('crochet bag'); }
+    if (sub.includes('hat') || sub.includes('beanie')) { tags.add('crochet hat'); }
+    if (sub.includes('plush') || sub.includes('amigurumi')) { tags.add('amigurumi'); tags.add('plushie'); }
+    if (sub.includes('bouquet') || sub.includes('flower')) { tags.add('forever flowers'); tags.add('floral'); }
+    if (sub.includes('coaster') || sub.includes('rug')) { tags.add('home decor'); tags.add('coaster'); }
+    if (sub.includes('cardigan') || sub.includes('sweater') || sub.includes('top')) { tags.add('knitwear'); tags.add('apparel'); }
+
+    const stopWords = new Set(['with', 'from', 'this', 'that', 'your', 'made', 'item', 'boutique', 'babyygurll', 'piece', 'hand']);
+    const titleTokens = (productForm.name || '').toLowerCase()
+      .replace(/[^a-z0-9\s]/g, ' ')
+      .split(/\s+/)
+      .filter(w => w.length >= 4 && !stopWords.has(w) && w !== 'crochet' && w !== 'handmade' && w !== 'handcrafted');
+
+    for (const token of titleTokens) {
+      tags.add(token);
+    }
+
+    const generated = Array.from(tags).filter(Boolean).slice(0, 15).join(', ');
+    setProductForm(prev => ({ ...prev, tags: generated }));
+    onShowToast('Automated tags generated from product details', '✓');
   };
 
   // Product Save (Create or Update)
@@ -1132,7 +1240,8 @@ export const AdminPanel = ({ isOpen, onClose, onShowToast, onProductCatalogUpdat
                               badge: '',
                               inStock: true,
                               description: '',
-                              leadTime: ''
+                              leadTime: '',
+                              tags: ''
                             });
                             setIsEditingProduct(true);
                             setActiveNav('products');
@@ -1324,7 +1433,8 @@ export const AdminPanel = ({ isOpen, onClose, onShowToast, onProductCatalogUpdat
                             badge: '',
                             inStock: true,
                             description: '',
-                            leadTime: ''
+                            leadTime: '',
+                            tags: ''
                           });
                           setIsEditingProduct(true);
                         }}
@@ -1441,7 +1551,8 @@ export const AdminPanel = ({ isOpen, onClose, onShowToast, onProductCatalogUpdat
                                           badge: p.badge || 'Handcrafted',
                                           inStock: p.inStock !== false,
                                           description: p.description || '',
-                                          leadTime: p.leadTime || 'Ready to ship (1-2 days)'
+                                          leadTime: p.leadTime || '',
+                                          tags: Array.isArray(p.tags) ? p.tags.join(', ') : (p.tags || '')
                                         });
                                         setIsEditingProduct(true);
                                       }}
@@ -1753,6 +1864,61 @@ export const AdminPanel = ({ isOpen, onClose, onShowToast, onProductCatalogUpdat
                               value={productForm.description}
                               onChange={e => setProductForm({ ...productForm, description: e.target.value })}
                             />
+                          </div>
+
+                          <div className="form-group">
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
+                              <label className="form-label" style={{ margin: 0 }}>Product Tags (Automated / Comma-separated)</label>
+                              <button
+                                type="button"
+                                className="btn btn-secondary"
+                                style={{ padding: '0.25rem 0.65rem', fontSize: '0.75rem', display: 'inline-flex', alignItems: 'center', gap: '0.35rem', color: '#0284C7', borderColor: '#BAE6FD', background: '#F0F9FF' }}
+                                onClick={handleAutoGenerateTags}
+                              >
+                                <span>✦ Auto-analyze</span>
+                              </button>
+                            </div>
+                            <input 
+                              type="text" 
+                              className="form-input" 
+                              value={productForm.tags || ''}
+                              onChange={e => setProductForm({ ...productForm, tags: e.target.value })}
+                            />
+                            {productForm.tags && (
+                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem', marginTop: '0.5rem' }}>
+                                {productForm.tags.split(',').map(t => t.trim()).filter(Boolean).map((t, idx) => (
+                                  <span 
+                                    key={idx} 
+                                    style={{
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      gap: '0.3rem',
+                                      background: '#EFF6FF',
+                                      color: '#1D4ED8',
+                                      border: '1px solid #BFDBFE',
+                                      borderRadius: '12px',
+                                      padding: '0.15rem 0.55rem',
+                                      fontSize: '0.74rem',
+                                      fontWeight: 600
+                                    }}
+                                  >
+                                    #{t}
+                                    <span 
+                                      style={{ cursor: 'pointer', marginLeft: '2px', opacity: 0.7 }}
+                                      onClick={() => {
+                                        const remaining = productForm.tags.split(',').map(x => x.trim()).filter(x => x && x !== t);
+                                        setProductForm({ ...productForm, tags: remaining.join(', ') });
+                                      }}
+                                    >
+                                      ×
+                                    </span>
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                            <div style={{ fontSize: '0.75rem', color: '#64748B', marginTop: '0.3rem' }}>
+                              Automated by analyzing category, subcategory, title & description.
+                            </div>
                           </div>
 
                           <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>

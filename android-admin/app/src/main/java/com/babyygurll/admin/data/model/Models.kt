@@ -50,6 +50,7 @@ data class Product(
     @SerializedName("colors") val colors: List<ProductColor> = emptyList(),
     @SerializedName("sizes") val sizes: List<String> = emptyList(),
     @SerializedName("variants") val variants: List<ProductVariant> = emptyList(),
+    @SerializedName("tags") val tags: List<String> = emptyList(),
     @SerializedName("stock") val stock: Int? = null
 ) {
     val resolvedPrimaryImage: String
@@ -159,6 +160,7 @@ data class ProductCreateRequest(
     @SerializedName("colors") val colors: List<ProductColor> = emptyList(),
     @SerializedName("sizes") val sizes: List<String> = emptyList(),
     @SerializedName("variants") val variants: List<ProductVariant> = emptyList(),
+    @SerializedName("tags") val tags: List<String> = emptyList(),
     @SerializedName("inStock") val inStock: Boolean = true
 )
 

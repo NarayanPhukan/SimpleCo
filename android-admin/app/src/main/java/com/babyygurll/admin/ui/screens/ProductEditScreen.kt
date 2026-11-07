@@ -39,6 +39,7 @@ import coil.compose.AsyncImage
 import com.babyygurll.admin.data.model.*
 import com.babyygurll.admin.ui.theme.*
 import com.babyygurll.admin.util.AdminProductImage
+import com.babyygurll.admin.util.TagAutomation
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -113,7 +114,46 @@ fun ProductEditScreen(
     val category = selectedBoutiqueCategory.name
     val subcategory = selectedBoutiqueSubcategory.name
     var sku by remember(product?.id) { mutableStateOf(product?.sku ?: "") }
-    var productTags by remember(product?.id) { mutableStateOf("") }
+    var hasManuallyEditedTags by remember(product?.id) { mutableStateOf(false) }
+
+    var productTags by remember(product?.id) {
+        val existing = product?.tags?.joinToString(", ") ?: ""
+        if (existing.isNotBlank()) {
+            mutableStateOf(existing)
+        } else if (product != null) {
+            val auto = TagAutomation.generateTags(
+                category = product.category,
+                categoryName = product.categoryName,
+                subcategory = product.subcategory ?: "",
+                subcategoryName = product.subcategoryName ?: "",
+                title = product.name,
+                description = product.description
+            )
+            mutableStateOf(auto.joinToString(", "))
+        } else {
+            mutableStateOf("")
+        }
+    }
+
+    val autoGenerateTags = {
+        val generated = TagAutomation.generateTags(
+            category = selectedBoutiqueCategory.id,
+            categoryName = selectedBoutiqueCategory.name,
+            subcategory = selectedBoutiqueSubcategory.id,
+            subcategoryName = selectedBoutiqueSubcategory.name,
+            title = productName.trim(),
+            description = shortDescription.trim()
+        )
+        if (generated.isNotEmpty()) {
+            productTags = generated.joinToString(", ")
+        }
+    }
+
+    LaunchedEffect(productName, selectedBoutiqueCategory, selectedBoutiqueSubcategory) {
+        if (!hasManuallyEditedTags && productName.isNotBlank()) {
+            autoGenerateTags()
+        }
+    }
 
     var showCategoryMenu by remember { mutableStateOf(false) }
     var showSubcategoryMenu by remember { mutableStateOf(false) }
@@ -320,6 +360,23 @@ fun ProductEditScreen(
         val effectiveColors = (colorChips + dynamicVariants.mapNotNull { it.color }).distinct().filter { it.isNotBlank() }
         val effectiveSizes = (sizeChips + dynamicVariants.mapNotNull { it.size }).distinct().filter { it.isNotBlank() }
 
+        val parsedTags = productTags.split(",")
+            .map { it.trim().lowercase() }
+            .filter { it.isNotBlank() }
+            .distinct()
+        val finalTags = if (parsedTags.isNotEmpty()) {
+            parsedTags
+        } else {
+            TagAutomation.generateTags(
+                category = selectedBoutiqueCategory.id,
+                categoryName = selectedBoutiqueCategory.name,
+                subcategory = selectedBoutiqueSubcategory.id,
+                subcategoryName = selectedBoutiqueSubcategory.name,
+                title = productName.trim(),
+                description = shortDescription.trim()
+            )
+        }
+
         val req = ProductCreateRequest(
             name = productName.trim(),
             category = selectedBoutiqueCategory.id,
@@ -336,6 +393,7 @@ fun ProductEditScreen(
             colors = effectiveColors.map { ProductColor(name = it, hex = "#255DCE") },
             sizes = effectiveSizes,
             variants = finalVariants,
+            tags = finalTags,
             inStock = !isDraft && (availableQuantityText.toIntOrNull() ?: 0) > 0
         )
         onSave(req, product?.id ?: product?.mongoId)
@@ -793,10 +851,51 @@ fun ProductEditScreen(
                                     color = TextMuted
                                 )
 
-                                FieldHeader("Product tags", isRequired = false)
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    FieldHeader("Product tags", isRequired = false)
+
+                                    Surface(
+                                        shape = RoundedCornerShape(8.dp),
+                                        color = Color(0xFFEFF6FF),
+                                        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFBFDBFE)),
+                                        modifier = Modifier
+                                            .clip(RoundedCornerShape(8.dp))
+                                            .clickable {
+                                                hasManuallyEditedTags = false
+                                                autoGenerateTags()
+                                            }
+                                    ) {
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.AutoAwesome,
+                                                contentDescription = null,
+                                                tint = RoyalBlue,
+                                                modifier = Modifier.size(13.dp)
+                                            )
+                                            Spacer(modifier = Modifier.width(4.dp))
+                                            Text(
+                                                text = "Auto-analyze",
+                                                fontSize = 11.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = RoyalBlue
+                                            )
+                                        }
+                                    }
+                                }
+
                                 OutlinedTextField(
                                     value = productTags,
-                                    onValueChange = { productTags = it },
+                                    onValueChange = {
+                                        productTags = it
+                                        hasManuallyEditedTags = true
+                                    },
                                     singleLine = true,
                                     modifier = Modifier.fillMaxWidth(),
                                     shape = RoundedCornerShape(10.dp),
@@ -804,6 +903,57 @@ fun ProductEditScreen(
                                         focusedBorderColor = RoyalBlue,
                                         unfocusedBorderColor = BrandBorder
                                     )
+                                )
+
+                                val activeTagList = remember(productTags) {
+                                    productTags.split(",").map { it.trim() }.filter { it.isNotBlank() }
+                                }
+                                if (activeTagList.isNotEmpty()) {
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .horizontalScroll(rememberScrollState()),
+                                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                    ) {
+                                        activeTagList.forEach { tag ->
+                                            Surface(
+                                                shape = RoundedCornerShape(14.dp),
+                                                color = Color(0xFFEFF6FF),
+                                                border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFBFDBFE))
+                                            ) {
+                                                Row(
+                                                    verticalAlignment = Alignment.CenterVertically,
+                                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                                ) {
+                                                    Text(
+                                                        text = "#$tag",
+                                                        fontSize = 11.sp,
+                                                        fontWeight = FontWeight.SemiBold,
+                                                        color = RoyalBlue
+                                                    )
+                                                    Spacer(modifier = Modifier.width(4.dp))
+                                                    Icon(
+                                                        imageVector = Icons.Default.Close,
+                                                        contentDescription = "Remove tag",
+                                                        tint = RoyalBlue.copy(alpha = 0.7f),
+                                                        modifier = Modifier
+                                                            .size(12.dp)
+                                                            .clickable {
+                                                                val remaining = activeTagList.filter { it != tag }
+                                                                productTags = remaining.joinToString(", ")
+                                                                hasManuallyEditedTags = true
+                                                            }
+                                                    )
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+
+                                Text(
+                                    text = "Automated by analyzing category, subcategory, title & description. Comma-separated.",
+                                    fontSize = 11.sp,
+                                    color = TextMuted
                                 )
                             }
                         }

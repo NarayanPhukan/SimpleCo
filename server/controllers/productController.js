@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const Product = require('../models/Product');
+const { generateAutomatedTags } = require('../utils/tagAutomation');
 
 // Helper to construct robust query matching by slug ID or MongoDB _id
 const buildProductQuery = (rawId) => {
@@ -42,7 +43,9 @@ exports.getProducts = async (req, res) => {
       query.$or = [
         { name: { $regex: q, $options: 'i' } },
         { description: { $regex: q, $options: 'i' } },
-        { categoryName: { $regex: q, $options: 'i' } }
+        { categoryName: { $regex: q, $options: 'i' } },
+        { subcategoryName: { $regex: q, $options: 'i' } },
+        { tags: { $regex: q, $options: 'i' } }
       ];
     }
 
@@ -97,6 +100,7 @@ exports.createProduct = async (req, res) => {
       colors,
       sizes,
       variants,
+      tags,
       inStock,
       specs
     } = req.body;
@@ -113,6 +117,22 @@ exports.createProduct = async (req, res) => {
     const primaryImage = nonMockImage || validImages[0] || (image && !image.includes('/assets/images/') ? image : '') || '';
 
     const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '') + '-' + Math.floor(100 + Math.random() * 900);
+
+    let finalTags = [];
+    if (Array.isArray(tags)) {
+      finalTags = tags.map(t => String(t).trim().toLowerCase()).filter(Boolean);
+    } else if (typeof tags === 'string' && tags.trim()) {
+      finalTags = tags.split(',').map(t => t.trim().toLowerCase()).filter(Boolean);
+    }
+    const autoTags = generateAutomatedTags({
+      category,
+      categoryName,
+      subcategory,
+      subcategoryName,
+      name,
+      description
+    });
+    finalTags = Array.from(new Set([...finalTags, ...autoTags])).slice(0, 15);
 
     const newProduct = await Product.create({
       id: slug,
@@ -134,6 +154,7 @@ exports.createProduct = async (req, res) => {
       colors: Array.isArray(colors) ? colors : [],
       sizes: Array.isArray(sizes) ? sizes : [],
       variants: Array.isArray(variants) ? variants : [],
+      tags: finalTags,
       inStock: inStock !== undefined ? Boolean(inStock) : true
     });
 
@@ -163,6 +184,25 @@ exports.updateProduct = async (req, res) => {
       } else if (!updates.image) {
         updates.image = updates.images[0];
       }
+    }
+
+    if (updates.tags !== undefined) {
+      if (Array.isArray(updates.tags)) {
+        updates.tags = updates.tags.map(t => String(t).trim().toLowerCase()).filter(Boolean);
+      } else if (typeof updates.tags === 'string') {
+        updates.tags = updates.tags.split(',').map(t => t.trim().toLowerCase()).filter(Boolean);
+      }
+    }
+    if (!updates.tags || updates.tags.length === 0) {
+      const autoTags = generateAutomatedTags({
+        category: updates.category || product.category,
+        categoryName: updates.categoryName || product.categoryName,
+        subcategory: updates.subcategory || product.subcategory,
+        subcategoryName: updates.subcategoryName || product.subcategoryName,
+        name: updates.name || product.name,
+        description: updates.description || product.description
+      });
+      updates.tags = Array.from(new Set([...(product.tags || []), ...autoTags])).slice(0, 15);
     }
 
     // Do not overwrite immutable MongoDB identifiers or version keys
