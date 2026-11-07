@@ -164,21 +164,55 @@ class StoreRepository(private val context: Context) {
             }
         }
 
+    // Default boutique alerts when backend is starting or offline
+    private val defaultBoutiqueNotifications = listOf(
+        StoreNotification(
+            id = "notif_welcome_cust",
+            recipient = "all",
+            role = "customer",
+            title = "Welcome to BabyyGurll Boutique 🌸",
+            message = "Discover our handmade crochet scrunchies, plushies, bags & accessories crafted with love.",
+            type = "promotion",
+            isRead = false,
+            createdAt = java.time.Instant.now().toString()
+        ),
+        StoreNotification(
+            id = "notif_dept_cust",
+            recipient = "all",
+            role = "customer",
+            title = "8 Handcrafted Boutique Departments 🧵",
+            message = "Explore Hair Accessories, Bags & Purses, Flowers & Bouquets, Plushies, and more!",
+            type = "promotion",
+            isRead = false,
+            createdAt = java.time.Instant.now().minusSeconds(1800).toString()
+        ),
+        StoreNotification(
+            id = "notif_ship_cust",
+            recipient = "all",
+            role = "customer",
+            title = "Complimentary Shipping Across India ✨",
+            message = "Enjoy free tracked shipping on all orders over ₹999 across all pin codes.",
+            type = "promotion",
+            isRead = false,
+            createdAt = java.time.Instant.now().minusSeconds(3600).toString()
+        )
+    )
+
     // Notifications
     suspend fun getNotifications(userEmail: String): Result<Pair<List<StoreNotification>, Int>> =
         withContext(Dispatchers.IO) {
             try {
                 val response = api.getNotifications(userEmail = userEmail, role = "customer")
                 val body = response.body()
-                if (response.isSuccessful && body != null) {
+                if (response.isSuccessful && body != null && body.data.isNotEmpty()) {
                     Result.success(Pair(body.data, body.unreadCount))
                 } else {
-                    // Graceful fallback on 404 or backend waking up
-                    Result.success(Pair(emptyList(), 0))
+                    // Graceful fallback to initial boutique alerts
+                    Result.success(Pair(defaultBoutiqueNotifications, defaultBoutiqueNotifications.count { !it.isRead }))
                 }
             } catch (e: Exception) {
-                // Graceful fallback on network error/timeout
-                Result.success(Pair(emptyList(), 0))
+                // Graceful fallback on network error/timeout/backend waking up
+                Result.success(Pair(defaultBoutiqueNotifications, defaultBoutiqueNotifications.count { !it.isRead }))
             }
         }
 

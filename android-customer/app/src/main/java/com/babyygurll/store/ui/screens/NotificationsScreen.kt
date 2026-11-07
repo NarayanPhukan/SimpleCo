@@ -104,6 +104,18 @@ fun NotificationsScreen(
                         )
                     }
 
+                    IconButton(
+                        onClick = { viewModel.triggerTestNotification() },
+                        modifier = Modifier.size(36.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.NotificationsActive,
+                            contentDescription = "Test Notification",
+                            tint = BrandDarkNavy,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+
                     if (unreadCount > 0) {
                         IconButton(
                             onClick = { viewModel.markAllNotificationsRead() },
@@ -200,12 +212,21 @@ fun NotificationsScreen(
                             textAlign = TextAlign.Center,
                             lineHeight = 18.sp
                         )
-                        OutlinedButton(
-                            onClick = { viewModel.fetchNotifications() },
-                            shape = RoundedCornerShape(10.dp),
-                            border = BorderStroke(1.dp, SurfaceBorder)
-                        ) {
-                            Text("Refresh Alerts", color = BrandDarkNavy, fontSize = 13.sp)
+                        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                            OutlinedButton(
+                                onClick = { viewModel.fetchNotifications() },
+                                shape = RoundedCornerShape(10.dp),
+                                border = BorderStroke(1.dp, SurfaceBorder)
+                            ) {
+                                Text("Refresh Alerts", color = BrandDarkNavy, fontSize = 13.sp)
+                            }
+                            Button(
+                                onClick = { viewModel.triggerTestNotification() },
+                                shape = RoundedCornerShape(10.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = BrandDarkNavy)
+                            ) {
+                                Text("Test Notification", color = Color.White, fontSize = 13.sp)
+                            }
                         }
                     }
                 }

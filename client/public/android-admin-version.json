@@ -1,8 +1,8 @@
 {
-  "latestVersionCode": 18,
-  "latestVersionName": "1.6.1",
+  "latestVersionCode": 19,
+  "latestVersionName": "1.7.0",
   "minRequiredVersionCode": 1,
-  "releaseNotes": "• Added all 8 boutique categories & 70+ dynamic subcategories in Product Studio\n• Instant subcategory dropdown sync when changing category\n• Real-time catalog and inventory subcategory searching",
+  "releaseNotes": "• Complete Notification Center & customer broadcast notifications\n• Android 13+ runtime permissions with sound, vibration & heads-up shade alerts\n• One-tap test notification button to verify alert delivery on device\n• Real-time dispatch alerts and low-stock updates",
   "downloadUrl": "https://raw.githubusercontent.com/NarayanPhukan/SimpleCo/main/android-admin/babyygurll-admin.apk",
   "releaseDate": "2026-11-07",
   "critical": false

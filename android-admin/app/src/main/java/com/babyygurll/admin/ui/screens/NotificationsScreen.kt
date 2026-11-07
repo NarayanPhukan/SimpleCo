@@ -34,7 +34,8 @@ fun NotificationsScreen(
     onMarkAllRead: () -> Unit,
     onDeleteNotification: (String) -> Unit,
     onSendBroadcast: (title: String, message: String, type: String) -> Unit,
-    onRefresh: () -> Unit
+    onRefresh: () -> Unit,
+    onTestNotification: () -> Unit = {}
 ) {
     var selectedFilter by remember { mutableStateOf("All") }
     var showBroadcastDialog by remember { mutableStateOf(false) }
@@ -119,6 +120,18 @@ fun NotificationsScreen(
                                 tint = RoyalBlue
                             )
                         }
+                    }
+
+                    // Test notification button
+                    IconButton(
+                        onClick = onTestNotification,
+                        modifier = Modifier.size(40.dp)
+                    ) {
+                        Icon(
+                            Icons.Outlined.NotificationsActive,
+                            contentDescription = "Test Notification",
+                            tint = RoyalBlue
+                        )
                     }
 
                     // Broadcast button
@@ -219,15 +232,27 @@ fun NotificationsScreen(
                             textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                             modifier = Modifier.padding(horizontal = 32.dp)
                         )
-                        Button(
-                            onClick = onRefresh,
-                            colors = ButtonDefaults.buttonColors(containerColor = RoyalBlue),
-                            shape = RoundedCornerShape(10.dp),
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(10.dp),
                             modifier = Modifier.padding(top = 8.dp)
                         ) {
-                            Icon(Icons.Outlined.Refresh, contentDescription = null, modifier = Modifier.size(16.dp))
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text("Refresh Alerts", fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                            OutlinedButton(
+                                onClick = onRefresh,
+                                shape = RoundedCornerShape(10.dp)
+                            ) {
+                                Icon(Icons.Outlined.Refresh, contentDescription = null, modifier = Modifier.size(16.dp))
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text("Refresh Alerts", fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                            }
+                            Button(
+                                onClick = onTestNotification,
+                                colors = ButtonDefaults.buttonColors(containerColor = RoyalBlue),
+                                shape = RoundedCornerShape(10.dp)
+                            ) {
+                                Icon(Icons.Outlined.NotificationsActive, contentDescription = null, modifier = Modifier.size(16.dp))
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text("Test Alert", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
+                            }
                         }
                     }
                 }

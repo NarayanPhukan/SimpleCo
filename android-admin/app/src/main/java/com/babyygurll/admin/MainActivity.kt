@@ -1,9 +1,15 @@
 package com.babyygurll.admin
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
+import androidx.core.content.ContextCompat
 import androidx.compose.animation.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -33,6 +39,7 @@ import com.babyygurll.admin.ui.theme.MidnightNavy
 import com.babyygurll.admin.ui.theme.RoyalBlue
 import com.babyygurll.admin.ui.theme.TextMuted
 import com.babyygurll.admin.ui.viewmodel.AdminViewModel
+import com.babyygurll.admin.util.NotificationHelper
 import kotlinx.coroutines.flow.collectLatest
 
 sealed class BottomNavItem(
@@ -55,12 +62,34 @@ class MainActivity : ComponentActivity() {
     @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        NotificationHelper.initChannel(this)
 
         setContent {
             BabyyGurllAdminTheme {
                 val uiState by viewModel.uiState.collectAsState()
                 val snackbarHostState = remember { SnackbarHostState() }
                 var showServerConfigDialog by remember { mutableStateOf(false) }
+
+                // Android 13+ (API 33+) Runtime Notification Permission
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    val permissionLauncher = rememberLauncherForActivityResult(
+                        contract = ActivityResultContracts.RequestPermission()
+                    ) { isGranted ->
+                        if (isGranted) {
+                            viewModel.fetchNotifications(silent = true)
+                        }
+                    }
+
+                    LaunchedEffect(Unit) {
+                        if (ContextCompat.checkSelfPermission(
+                                this@MainActivity,
+                                Manifest.permission.POST_NOTIFICATIONS
+                            ) != PackageManager.PERMISSION_GRANTED
+                        ) {
+                            permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                        }
+                    }
+                }
 
                 // Collect transient toast / snackbar messages from ViewModel
                 LaunchedEffect(Unit) {
@@ -460,7 +489,8 @@ class MainActivity : ComponentActivity() {
                                     onSendBroadcast = { title, message, type ->
                                         viewModel.sendBroadcast(title, message, type)
                                     },
-                                    onRefresh = { viewModel.fetchNotifications() }
+                                    onRefresh = { viewModel.fetchNotifications() },
+                                    onTestNotification = { viewModel.triggerTestNotification() }
                                 )
                             }
 

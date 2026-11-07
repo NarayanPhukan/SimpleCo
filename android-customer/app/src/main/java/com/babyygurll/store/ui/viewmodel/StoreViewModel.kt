@@ -599,17 +599,19 @@ class StoreViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    private val notifiedNotificationIds = mutableSetOf<String>()
+
     // Customer Notification Actions
     fun fetchNotifications(silent: Boolean = false) {
         viewModelScope.launch {
             val email = currentUser.value?.email ?: "guest@babyygurll.in"
             if (!silent) _isLoadingNotifications.value = true
-            val prevIds = _notifications.value.map { it.id }.toSet()
             val result = storeRepo.getNotifications(email)
             result.onSuccess { (list, unread) ->
-                val newUnread = list.filter { !it.isRead && it.id !in prevIds }
-                if (newUnread.isNotEmpty() && prevIds.isNotEmpty()) {
-                    val latest = newUnread.first()
+                val unnotified = list.filter { !it.isRead && it.id !in notifiedNotificationIds }
+                if (unnotified.isNotEmpty()) {
+                    val latest = unnotified.first()
+                    notifiedNotificationIds.add(latest.id)
                     NotificationHelper.showNotification(
                         getApplication(),
                         latest.id.hashCode(),
@@ -622,6 +624,22 @@ class StoreViewModel(application: Application) : AndroidViewModel(application) {
                 _isLoadingNotifications.value = false
             }.onFailure {
                 _isLoadingNotifications.value = false
+            }
+        }
+    }
+
+    fun triggerTestNotification() {
+        val success = NotificationHelper.showNotification(
+            getApplication(),
+            (System.currentTimeMillis() % 100000).toInt(),
+            "BabyyGurll Boutique 🌸",
+            "Handmade with love! Notifications are connected & working seamlessly ✨"
+        )
+        viewModelScope.launch {
+            if (success) {
+                _eventMessage.emit("Test notification sent! Check notification shade 🌸")
+            } else {
+                _eventMessage.emit("Please enable notifications in Android Settings for BabyyGurll")
             }
         }
     }

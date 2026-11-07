@@ -1010,16 +1010,18 @@ class AdminViewModel : ViewModel() {
         }
     }
 
+    private val notifiedAdminNotificationIds = mutableSetOf<String>()
+
     // Notification Center & Broadcast
     fun fetchNotifications(silent: Boolean = false) {
         viewModelScope.launch {
             if (!silent) _uiState.update { it.copy(isLoadingNotifications = true) }
-            val prevIds = _uiState.value.notifications.map { it.id }.toSet()
             val result = repository.fetchNotifications()
             result.onSuccess { (list, unread) ->
-                val newUnread = list.filter { !it.isRead && it.id !in prevIds }
-                if (newUnread.isNotEmpty() && prevIds.isNotEmpty()) {
-                    val latest = newUnread.first()
+                val unnotified = list.filter { !it.isRead && it.id !in notifiedAdminNotificationIds }
+                if (unnotified.isNotEmpty()) {
+                    val latest = unnotified.first()
+                    notifiedAdminNotificationIds.add(latest.id)
                     NotificationHelper.showNotification(
                         BabyyGurllAdminApp.instance,
                         latest.id.hashCode(),
@@ -1036,6 +1038,22 @@ class AdminViewModel : ViewModel() {
                 }
             }.onFailure {
                 _uiState.update { it.copy(isLoadingNotifications = false) }
+            }
+        }
+    }
+
+    fun triggerTestNotification() {
+        val success = NotificationHelper.showNotification(
+            BabyyGurllAdminApp.instance,
+            (System.currentTimeMillis() % 100000).toInt(),
+            "BabyyGurll Studio Admin ⚡",
+            "Admin alerts & dispatch updates are active and operational! ✓"
+        )
+        viewModelScope.launch {
+            if (success) {
+                _eventMessage.emit("Test notification sent! Check notification shade ⚡")
+            } else {
+                _eventMessage.emit("Please enable notifications in Android Settings for BabyyGurll Admin")
             }
         }
     }
@@ -1088,6 +1106,12 @@ class AdminViewModel : ViewModel() {
             val result = repository.sendBroadcastNotification(title, message, type)
             _uiState.update { it.copy(isSendingBroadcast = false) }
             result.onSuccess {
+                NotificationHelper.showNotification(
+                    BabyyGurllAdminApp.instance,
+                    (System.currentTimeMillis() % 100000).toInt(),
+                    "📢 Broadcast Sent: $title",
+                    message
+                )
                 _eventMessage.emit("Broadcast notification sent to all customers!")
                 fetchNotifications(silent = true)
                 onComplete(true)

@@ -1,10 +1,16 @@
 package com.babyygurll.store
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
+import androidx.core.content.ContextCompat
 import androidx.compose.animation.*
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.border
@@ -31,6 +37,7 @@ import com.babyygurll.store.data.model.ShippingAddress
 import com.babyygurll.store.ui.screens.*
 import com.babyygurll.store.ui.theme.*
 import com.babyygurll.store.ui.viewmodel.StoreViewModel
+import com.babyygurll.store.util.NotificationHelper
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
 import com.razorpay.Checkout
@@ -73,6 +80,7 @@ class MainActivity : ComponentActivity(), PaymentResultWithDataListener {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        NotificationHelper.initChannel(this)
         Checkout.preload(applicationContext)
 
         setContent {
@@ -80,6 +88,27 @@ class MainActivity : ComponentActivity(), PaymentResultWithDataListener {
                 val navController = rememberNavController()
                 val navBackStackEntry by navController.currentBackStackEntryAsState()
                 val currentRoute = navBackStackEntry?.destination?.route
+
+                // Android 13+ (API 33+) Runtime Notification Permission
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    val permissionLauncher = rememberLauncherForActivityResult(
+                        contract = ActivityResultContracts.RequestPermission()
+                    ) { isGranted ->
+                        if (isGranted) {
+                            viewModel.fetchNotifications(silent = true)
+                        }
+                    }
+
+                    LaunchedEffect(Unit) {
+                        if (ContextCompat.checkSelfPermission(
+                                this@MainActivity,
+                                Manifest.permission.POST_NOTIFICATIONS
+                            ) != PackageManager.PERMISSION_GRANTED
+                        ) {
+                            permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                        }
+                    }
+                }
 
                 val cartItems by viewModel.cartItems.collectAsState()
                 val cartBadgeCount = remember(cartItems) { cartItems.sumOf { it.quantity } }
