@@ -47,13 +47,14 @@ object CustomerUpdateDownloader {
             try {
                 _downloadState.value = UpdateDownloadState.Downloading(0, 0, 0)
 
-                // High-speed CDN mirror endpoints in order of performance
+                // Reliable direct download endpoints (bypassing blocking CDNs and sleeping servers)
                 val candidates = mutableListOf<String>()
-                if (rawUrl.isNotBlank() && !rawUrl.contains("onrender.com")) {
+                val directGitUrl = "https://raw.githubusercontent.com/NarayanPhukan/SimpleCo/main/android-customer/babyygurll-boutique.apk"
+                candidates.add(directGitUrl)
+
+                if (rawUrl.isNotBlank() && !rawUrl.contains("onrender.com") && !rawUrl.contains("jsdelivr.net") && rawUrl.trim() != directGitUrl) {
                     candidates.add(rawUrl.trim())
                 }
-                candidates.add("https://cdn.jsdelivr.net/gh/NarayanPhukan/SimpleCo@main/android-customer/babyygurll-boutique.apk")
-                candidates.add("https://raw.githubusercontent.com/NarayanPhukan/SimpleCo/main/android-customer/babyygurll-boutique.apk")
 
                 var response: okhttp3.Response? = null
                 var lastErr: Exception? = null
@@ -70,6 +71,7 @@ object CustomerUpdateDownloader {
                             response = res
                             break
                         } else {
+                            lastErr = Exception("Update server returned HTTP ${res.code}")
                             res.close()
                         }
                     } catch (e: Exception) {

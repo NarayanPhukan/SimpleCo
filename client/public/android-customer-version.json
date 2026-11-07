@@ -3,7 +3,7 @@
   "latestVersionName": "1.4.2",
   "minRequiredVersionCode": 1,
   "releaseNotes": "• Official 'BG' monogram launcher icon\n• Official 'BG BABYYGURLL BOUTIQUE' serif brand identity\n• Real-time MB progress download indicator\n• Ultra-fast Cloudflare Edge CDN delivery",
-  "downloadUrl": "https://cdn.jsdelivr.net/gh/NarayanPhukan/SimpleCo@main/android-customer/babyygurll-boutique.apk",
+  "downloadUrl": "https://raw.githubusercontent.com/NarayanPhukan/SimpleCo/main/android-customer/babyygurll-boutique.apk",
   "releaseDate": "2026-11-07",
   "critical": false
 }
