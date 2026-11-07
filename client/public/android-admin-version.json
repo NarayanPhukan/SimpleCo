@@ -1,8 +1,8 @@
 {
-  "latestVersionCode": 22,
-  "latestVersionName": "1.7.3",
+  "latestVersionCode": 23,
+  "latestVersionName": "1.7.4",
   "minRequiredVersionCode": 1,
-  "releaseNotes": "• Fixed timezone and order revenue calculations (Saturday Nov 7)\n• Fixed subcategories matching across all 8 departments\n• Removed repeating notifications & silenced test alerts\n• Fixed customer hero banner and luxury brand identity\n• Official 'BG' monogram studio icon & luxury branding",
+  "releaseNotes": "• Removed all placeholder texts and mock data when adding or editing products\n• Form starts completely clean with zero default colors or variants\n• Fixed timezone and order revenue calculations (Saturday Nov 7)\n• Fixed subcategories matching across all 8 departments\n• Removed repeating notifications & silenced test alerts\n• Official 'BG' monogram studio icon & luxury branding",
   "downloadUrl": "https://raw.githubusercontent.com/NarayanPhukan/SimpleCo/main/android-admin/babyygurll-admin.apk",
   "releaseDate": "2026-11-07",
   "critical": false

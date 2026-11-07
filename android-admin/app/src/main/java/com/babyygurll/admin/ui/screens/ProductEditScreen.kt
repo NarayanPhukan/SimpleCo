@@ -186,9 +186,9 @@ fun ProductEditScreen(
     // Step 4: Inventory
     var trackInventory by remember { mutableStateOf(true) }
     var availableQuantityText by remember(product?.id) {
-        mutableStateOf(product?.stockCount?.toString() ?: "5")
+        mutableStateOf(product?.stockCount?.toString() ?: "")
     }
-    var lowStockThresholdText by remember { mutableStateOf("2") }
+    var lowStockThresholdText by remember { mutableStateOf("") }
     var allowBackorders by remember { mutableStateOf(false) }
 
     // Step 5: Variants
@@ -196,14 +196,14 @@ fun ProductEditScreen(
         mutableStateOf<List<String>>(
             if (!product?.colors.isNullOrEmpty()) product!!.colors.map { it.name }
             else if (!product?.variants.isNullOrEmpty()) product!!.variants.mapNotNull { it.color }.distinct()
-            else listOf("Pastel Blue", "Midnight Navy")
+            else emptyList()
         )
     }
     var sizeChips by remember {
         mutableStateOf<List<String>>(
             if (!product?.sizes.isNullOrEmpty()) product!!.sizes
             else if (!product?.variants.isNullOrEmpty()) product!!.variants.mapNotNull { it.size }.distinct()
-            else listOf("Standard", "Jumbo")
+            else emptyList()
         )
     }
     var dynamicVariants by remember {
@@ -226,46 +226,52 @@ fun ProductEditScreen(
     var newVariantSku by remember { mutableStateOf("") }
 
     val regenerateVariants: (List<String>, List<String>, List<ProductVariant>) -> List<ProductVariant> = { colors, sizes, existing ->
-        val basePrice = sellingPriceText.toDoubleOrNull() ?: 0.0
-        val baseStock = availableQuantityText.toIntOrNull() ?: 5
-        val baseOrigPrice = originalPriceText.toDoubleOrNull()
+        if (colors.isEmpty() && sizes.isEmpty()) {
+            emptyList()
+        } else {
+            val basePrice = sellingPriceText.toDoubleOrNull() ?: 0.0
+            val baseStock = availableQuantityText.toIntOrNull() ?: 0
+            val baseOrigPrice = originalPriceText.toDoubleOrNull()
 
-        val activeColors = if (colors.isNotEmpty()) colors else listOf("")
-        val activeSizes = if (sizes.isNotEmpty()) sizes else listOf("")
+            val activeColors = if (colors.isNotEmpty()) colors else listOf("")
+            val activeSizes = if (sizes.isNotEmpty()) sizes else listOf("")
 
-        val result = mutableListOf<ProductVariant>()
-        for (c in activeColors) {
-            for (s in activeSizes) {
-                val name = when {
-                    c.isNotBlank() && s.isNotBlank() -> "$s / $c"
-                    c.isNotBlank() -> c
-                    s.isNotBlank() -> s
-                    else -> "Standard edition"
-                }
-                val prev = existing.firstOrNull {
-                    (it.color.orEmpty().equals(c, ignoreCase = true) || it.name.contains(c, ignoreCase = true)) &&
-                    (it.size.orEmpty().equals(s, ignoreCase = true) || it.name.contains(s, ignoreCase = true))
-                }
-                result.add(
-                    prev ?: ProductVariant(
-                        id = "${c.lowercase().replace(" ", "-")}-${s.lowercase().replace(" ", "-")}".trim('-').ifBlank { "var-${(100..999).random()}" },
-                        name = name,
-                        size = s.ifBlank { null },
-                        color = c.ifBlank { null },
-                        colorHex = "#255DCE",
-                        price = basePrice,
-                        originalPrice = baseOrigPrice,
-                        stock = baseStock,
-                        sku = if (c.isNotBlank()) "$sku-${c.take(3).uppercase()}" else sku
+            val result = mutableListOf<ProductVariant>()
+            for (c in activeColors) {
+                for (s in activeSizes) {
+                    val name = when {
+                        c.isNotBlank() && s.isNotBlank() -> "$s / $c"
+                        c.isNotBlank() -> c
+                        s.isNotBlank() -> s
+                        else -> ""
+                    }
+                    if (name.isBlank()) continue
+
+                    val prev = existing.firstOrNull {
+                        (it.color.orEmpty().equals(c, ignoreCase = true) || it.name.contains(c, ignoreCase = true)) &&
+                        (it.size.orEmpty().equals(s, ignoreCase = true) || it.name.contains(s, ignoreCase = true))
+                    }
+                    result.add(
+                        prev ?: ProductVariant(
+                            id = "${c.lowercase().replace(" ", "-")}-${s.lowercase().replace(" ", "-")}".trim('-').ifBlank { "var-${(100..999).random()}" },
+                            name = name,
+                            size = s.ifBlank { null },
+                            color = c.ifBlank { null },
+                            colorHex = "#255DCE",
+                            price = basePrice,
+                            originalPrice = baseOrigPrice,
+                            stock = baseStock,
+                            sku = if (c.isNotBlank()) "$sku-${c.take(3).uppercase()}" else sku
+                        )
                     )
-                )
+                }
             }
+            result
         }
-        result
     }
 
     LaunchedEffect(Unit) {
-        if (dynamicVariants.isEmpty()) {
+        if (dynamicVariants.isEmpty() && (colorChips.isNotEmpty() || sizeChips.isNotEmpty())) {
             dynamicVariants = regenerateVariants(colorChips, sizeChips, emptyList())
         }
     }
@@ -277,9 +283,9 @@ fun ProductEditScreen(
     var productionType by remember { mutableStateOf("Made to order") }
     var showProductionTypeMenu by remember { mutableStateOf(false) }
     val productionTypeOptions = listOf("Made to order", "Ready to ship", "Made in small batches")
-    var estimatedProductionTime by remember { mutableStateOf("3–5 business days") }
+    var estimatedProductionTime by remember { mutableStateOf("") }
     var customisationAvailable by remember { mutableStateOf(true) }
-    var careInstructions by remember { mutableStateOf("Spot clean gently. Do not machine wash.") }
+    var careInstructions by remember { mutableStateOf("") }
 
     // Step 7: Shipping information
     var weightText by remember { mutableStateOf("") }
@@ -289,7 +295,7 @@ fun ProductEditScreen(
     var parcelLength by remember { mutableStateOf("") }
     var parcelWidth by remember { mutableStateOf("") }
     var parcelHeight by remember { mutableStateOf("") }
-    var processingTime by remember { mutableStateOf("1–2 business days") }
+    var processingTime by remember { mutableStateOf("") }
     var shippingNote by remember { mutableStateOf("") }
 
     // Step 8: Storefront visibility
@@ -304,12 +310,18 @@ fun ProductEditScreen(
         val finalPrice = sellingPriceText.toDoubleOrNull() ?: 0.0
         val finalOrigPrice = originalPriceText.toDoubleOrNull()
         val primaryImg = imagesList.firstOrNull() ?: ""
-        val finalVariants = if (dynamicVariants.isNotEmpty()) dynamicVariants else regenerateVariants(colorChips, sizeChips, emptyList())
+        val finalVariants = if (dynamicVariants.isNotEmpty()) {
+            dynamicVariants
+        } else if (colorChips.isNotEmpty() || sizeChips.isNotEmpty()) {
+            regenerateVariants(colorChips, sizeChips, emptyList())
+        } else {
+            emptyList()
+        }
         val effectiveColors = (colorChips + dynamicVariants.mapNotNull { it.color }).distinct().filter { it.isNotBlank() }
         val effectiveSizes = (sizeChips + dynamicVariants.mapNotNull { it.size }).distinct().filter { it.isNotBlank() }
 
         val req = ProductCreateRequest(
-            name = productName.trim().ifBlank { "Untitled Handcrafted Piece" },
+            name = productName.trim(),
             category = selectedBoutiqueCategory.id,
             categoryName = selectedBoutiqueCategory.name,
             subcategory = selectedBoutiqueSubcategory.id,
@@ -320,13 +332,11 @@ fun ProductEditScreen(
             images = imagesList,
             badge = if (isDraft) "Draft" else "Published",
             leadTime = estimatedProductionTime,
-            description = shortDescription.trim().ifBlank {
-                "A structured hand-crocheted piece made with premium milk cotton yarn. Finished with artisan detailing and durable stitching."
-            },
+            description = shortDescription.trim(),
             colors = effectiveColors.map { ProductColor(name = it, hex = "#255DCE") },
             sizes = effectiveSizes,
             variants = finalVariants,
-            inStock = !isDraft && (availableQuantityText.toIntOrNull() ?: 1) > 0
+            inStock = !isDraft && (availableQuantityText.toIntOrNull() ?: 0) > 0
         )
         onSave(req, product?.id ?: product?.mongoId)
     }
@@ -625,7 +635,6 @@ fun ProductEditScreen(
                                 OutlinedTextField(
                                     value = productName,
                                     onValueChange = { productName = it },
-                                    placeholder = { Text("Ocean Bloom Crochet Bag") },
                                     singleLine = true,
                                     modifier = Modifier.fillMaxWidth(),
                                     shape = RoundedCornerShape(10.dp),
@@ -639,7 +648,6 @@ fun ProductEditScreen(
                                 OutlinedTextField(
                                     value = shortDescription,
                                     onValueChange = { shortDescription = it },
-                                    placeholder = { Text("A structured hand-crocheted shoulder bag") },
                                     modifier = Modifier.fillMaxWidth(),
                                     shape = RoundedCornerShape(10.dp),
                                     colors = OutlinedTextFieldDefaults.colors(
@@ -744,7 +752,6 @@ fun ProductEditScreen(
                                         TextField(
                                             value = sku,
                                             onValueChange = { sku = it },
-                                            placeholder = { Text("BGB-OCB-042") },
                                             singleLine = true,
                                             colors = TextFieldDefaults.colors(
                                                 focusedContainerColor = Color.Transparent,
@@ -790,7 +797,6 @@ fun ProductEditScreen(
                                 OutlinedTextField(
                                     value = productTags,
                                     onValueChange = { productTags = it },
-                                    placeholder = { Text("crochet, handmade, blue, shoulder bag") },
                                     singleLine = true,
                                     modifier = Modifier.fillMaxWidth(),
                                     shape = RoundedCornerShape(10.dp),
@@ -1790,7 +1796,6 @@ fun ProductEditScreen(
                                 OutlinedTextField(
                                     value = materialsUsed,
                                     onValueChange = { materialsUsed = it },
-                                    placeholder = { Text("Milk cotton yarn, cotton lining") },
                                     singleLine = true,
                                     modifier = Modifier.fillMaxWidth(),
                                     shape = RoundedCornerShape(10.dp),
@@ -1804,7 +1809,6 @@ fun ProductEditScreen(
                                 OutlinedTextField(
                                     value = yarnType,
                                     onValueChange = { yarnType = it },
-                                    placeholder = { Text("4-ply milk cotton") },
                                     singleLine = true,
                                     modifier = Modifier.fillMaxWidth(),
                                     shape = RoundedCornerShape(10.dp),
@@ -1818,7 +1822,6 @@ fun ProductEditScreen(
                                 OutlinedTextField(
                                     value = yarnColour,
                                     onValueChange = { yarnColour = it },
-                                    placeholder = { Text("Midnight blue") },
                                     singleLine = true,
                                     modifier = Modifier.fillMaxWidth(),
                                     shape = RoundedCornerShape(10.dp),
@@ -1871,7 +1874,6 @@ fun ProductEditScreen(
                                 OutlinedTextField(
                                     value = estimatedProductionTime,
                                     onValueChange = { estimatedProductionTime = it },
-                                    placeholder = { Text("3–5 business days") },
                                     singleLine = true,
                                     modifier = Modifier.fillMaxWidth(),
                                     shape = RoundedCornerShape(10.dp),
@@ -1903,7 +1905,6 @@ fun ProductEditScreen(
                                 OutlinedTextField(
                                     value = careInstructions,
                                     onValueChange = { careInstructions = it },
-                                    placeholder = { Text("Spot clean gently. Do not machine wash.") },
                                     modifier = Modifier.fillMaxWidth(),
                                     shape = RoundedCornerShape(10.dp),
                                     colors = OutlinedTextFieldDefaults.colors(
@@ -1954,7 +1955,6 @@ fun ProductEditScreen(
                                         OutlinedTextField(
                                             value = weightText,
                                             onValueChange = { weightText = it },
-                                            placeholder = { Text("420 g") },
                                             singleLine = true,
                                             modifier = Modifier.fillMaxWidth(),
                                             shape = RoundedCornerShape(10.dp),
@@ -2023,7 +2023,6 @@ fun ProductEditScreen(
                                         OutlinedTextField(
                                             value = parcelLength,
                                             onValueChange = { parcelLength = it },
-                                            placeholder = { Text("30 cm") },
                                             singleLine = true,
                                             modifier = Modifier.fillMaxWidth(),
                                             shape = RoundedCornerShape(10.dp)
@@ -2035,7 +2034,6 @@ fun ProductEditScreen(
                                         OutlinedTextField(
                                             value = parcelWidth,
                                             onValueChange = { parcelWidth = it },
-                                            placeholder = { Text("24 cm") },
                                             singleLine = true,
                                             modifier = Modifier.fillMaxWidth(),
                                             shape = RoundedCornerShape(10.dp)
@@ -2047,7 +2045,6 @@ fun ProductEditScreen(
                                         OutlinedTextField(
                                             value = parcelHeight,
                                             onValueChange = { parcelHeight = it },
-                                            placeholder = { Text("10 cm") },
                                             singleLine = true,
                                             modifier = Modifier.fillMaxWidth(),
                                             shape = RoundedCornerShape(10.dp)
@@ -2059,7 +2056,6 @@ fun ProductEditScreen(
                                 OutlinedTextField(
                                     value = processingTime,
                                     onValueChange = { processingTime = it },
-                                    placeholder = { Text("1–2 business days") },
                                     singleLine = true,
                                     modifier = Modifier.fillMaxWidth(),
                                     shape = RoundedCornerShape(10.dp),
@@ -2073,7 +2069,6 @@ fun ProductEditScreen(
                                 OutlinedTextField(
                                     value = shippingNote,
                                     onValueChange = { shippingNote = it },
-                                    placeholder = { Text("Packed in a reusable cotton dust bag.") },
                                     modifier = Modifier.fillMaxWidth(),
                                     shape = RoundedCornerShape(10.dp),
                                     colors = OutlinedTextFieldDefaults.colors(
@@ -2457,7 +2452,6 @@ fun ProductEditScreen(
                         OutlinedTextField(
                             value = newColorInput,
                             onValueChange = { newColorInput = it },
-                            placeholder = { Text("e.g. Pastel Lilac, Lavender") },
                             singleLine = true,
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(8.dp),
@@ -2513,7 +2507,6 @@ fun ProductEditScreen(
                         OutlinedTextField(
                             value = newSizeInput,
                             onValueChange = { newSizeInput = it },
-                            placeholder = { Text("e.g. Mini, Standard, Jumbo") },
                             singleLine = true,
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(8.dp),
@@ -2575,7 +2568,6 @@ fun ProductEditScreen(
                             value = newVariantName,
                             onValueChange = { newVariantName = it },
                             label = { Text("Variant Name *") },
-                            placeholder = { Text("e.g. Pastel Lilac / Medium") },
                             singleLine = true,
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(8.dp),
@@ -2594,7 +2586,6 @@ fun ProductEditScreen(
                                 value = newVariantColor,
                                 onValueChange = { newVariantColor = it },
                                 label = { Text("Colour") },
-                                placeholder = { Text("e.g. Lilac") },
                                 singleLine = true,
                                 modifier = Modifier.weight(1f),
                                 shape = RoundedCornerShape(8.dp),
@@ -2607,7 +2598,6 @@ fun ProductEditScreen(
                                 value = newVariantSize,
                                 onValueChange = { newVariantSize = it },
                                 label = { Text("Size") },
-                                placeholder = { Text("e.g. Medium") },
                                 singleLine = true,
                                 modifier = Modifier.weight(1f),
                                 shape = RoundedCornerShape(8.dp),
@@ -2627,7 +2617,6 @@ fun ProductEditScreen(
                                 value = newVariantPrice,
                                 onValueChange = { newVariantPrice = it },
                                 label = { Text("Price (₹) *") },
-                                placeholder = { Text(sellingPriceText.ifBlank { "0" }) },
                                 singleLine = true,
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                                 modifier = Modifier.weight(1f),
@@ -2641,7 +2630,6 @@ fun ProductEditScreen(
                                 value = newVariantStock,
                                 onValueChange = { newVariantStock = it },
                                 label = { Text("Stock Units") },
-                                placeholder = { Text("5") },
                                 singleLine = true,
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                                 modifier = Modifier.weight(1f),
@@ -2658,7 +2646,6 @@ fun ProductEditScreen(
                             value = newVariantSku,
                             onValueChange = { newVariantSku = it },
                             label = { Text("Custom SKU (optional)") },
-                            placeholder = { Text("e.g. BGC-SCARF-LILAC") },
                             singleLine = true,
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(8.dp),
@@ -2683,7 +2670,7 @@ fun ProductEditScreen(
                                 }
                             }
                             val p = newVariantPrice.toDoubleOrNull() ?: sellingPriceText.toDoubleOrNull() ?: 0.0
-                            val s = newVariantStock.toIntOrNull() ?: availableQuantityText.toIntOrNull() ?: 5
+                            val s = newVariantStock.toIntOrNull() ?: availableQuantityText.toIntOrNull() ?: 0
                             val autoSku = newVariantSku.trim().ifBlank {
                                 val code = name.filter { it.isLetter() }.take(3).uppercase()
                                 "$sku-$code"

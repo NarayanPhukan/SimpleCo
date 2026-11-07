@@ -1,8 +1,8 @@
 {
-  "latestVersionCode": 19,
-  "latestVersionName": "1.4.3",
+  "latestVersionCode": 20,
+  "latestVersionName": "1.4.4",
   "minRequiredVersionCode": 1,
-  "releaseNotes": "• Fixed subcategory browsing across all 8 craft departments\n• Shows all newly published boutique creations instantly\n• Dedicated fixed luxury hero banner on home boutique\n• Official 'BG' monogram launcher icon & luxury branding",
+  "releaseNotes": "• Cleaned up product colors across boutique catalog\n• Fixed subcategory browsing across all 8 craft departments\n• Shows all newly published boutique creations instantly\n• Dedicated fixed luxury hero banner on home boutique\n• Official 'BG' monogram launcher icon & luxury branding",
   "downloadUrl": "https://raw.githubusercontent.com/NarayanPhukan/SimpleCo/main/android-customer/babyygurll-boutique.apk",
   "releaseDate": "2026-11-07",
   "critical": false

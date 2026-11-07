@@ -70,11 +70,11 @@ export const AdminPanel = ({ isOpen, onClose, onShowToast, onProductCatalogUpdat
     subcategoryName: 'Shoulder Bags',
     price: '',
     originalPrice: '',
-    image: STUDIO_PHOTO_PRESETS[0].url,
-    badge: 'Handcrafted',
+    image: '',
+    badge: '',
     inStock: true,
     description: '',
-    leadTime: 'Ready to ship (1-2 days)'
+    leadTime: ''
   });
 
   // Orders State
@@ -1128,11 +1128,11 @@ export const AdminPanel = ({ isOpen, onClose, onShowToast, onProductCatalogUpdat
                               subcategoryName: 'Crochet Tote Bags',
                               price: '',
                               originalPrice: '',
-                              image: STUDIO_PHOTO_PRESETS[0].url,
-                              badge: 'New Arrival',
+                              image: '',
+                              badge: '',
                               inStock: true,
-                              description: 'Bespoke hand-crocheted piece crafted with gentle intention.',
-                              leadTime: 'Ready to ship (1-2 days)'
+                              description: '',
+                              leadTime: ''
                             });
                             setIsEditingProduct(true);
                             setActiveNav('products');
@@ -1320,11 +1320,11 @@ export const AdminPanel = ({ isOpen, onClose, onShowToast, onProductCatalogUpdat
                             subcategoryName: 'Crochet Tote Bags',
                             price: '',
                             originalPrice: '',
-                            image: STUDIO_PHOTO_PRESETS[0].url,
-                            badge: 'Handcrafted',
+                            image: '',
+                            badge: '',
                             inStock: true,
-                            description: 'Bespoke hand-crocheted piece crafted with gentle intention.',
-                            leadTime: 'Ready to ship (1-2 days)'
+                            description: '',
+                            leadTime: ''
                           });
                           setIsEditingProduct(true);
                         }}
@@ -1490,7 +1490,6 @@ export const AdminPanel = ({ isOpen, onClose, onShowToast, onProductCatalogUpdat
                               type="text" 
                               className="form-input" 
                               required
-                              placeholder="e.g. Lavender Daisy Bucket Hat"
                               value={productForm.name}
                               onChange={e => setProductForm({ ...productForm, name: e.target.value })}
                             />
@@ -1549,7 +1548,6 @@ export const AdminPanel = ({ isOpen, onClose, onShowToast, onProductCatalogUpdat
                               <input 
                                 type="text" 
                                 className="form-input" 
-                                placeholder="e.g. Bestseller, New Arrival, Limited Edition"
                                 value={productForm.badge}
                                 onChange={e => setProductForm({ ...productForm, badge: e.target.value })}
                               />
@@ -1559,7 +1557,6 @@ export const AdminPanel = ({ isOpen, onClose, onShowToast, onProductCatalogUpdat
                               <input 
                                 type="text" 
                                 className="form-input" 
-                                placeholder="e.g. Ready to ship (1-2 days)"
                                 value={productForm.leadTime || ''}
                                 onChange={e => setProductForm({ ...productForm, leadTime: e.target.value })}
                               />
@@ -1573,7 +1570,6 @@ export const AdminPanel = ({ isOpen, onClose, onShowToast, onProductCatalogUpdat
                                 type="number" 
                                 className="form-input" 
                                 required
-                                placeholder="1499"
                                 value={productForm.price}
                                 onChange={e => setProductForm({ ...productForm, price: e.target.value })}
                               />
@@ -1583,7 +1579,6 @@ export const AdminPanel = ({ isOpen, onClose, onShowToast, onProductCatalogUpdat
                               <input 
                                 type="number" 
                                 className="form-input" 
-                                placeholder="1999"
                                 value={productForm.originalPrice}
                                 onChange={e => setProductForm({ ...productForm, originalPrice: e.target.value })}
                               />
@@ -1742,7 +1737,6 @@ export const AdminPanel = ({ isOpen, onClose, onShowToast, onProductCatalogUpdat
                                 <input 
                                   type="url"
                                   className="form-input"
-                                  placeholder="https://images.unsplash.com/..."
                                   value={productForm.image}
                                   onChange={e => setProductForm(prev => ({ ...prev, image: e.target.value }))}
                                   style={{ fontSize: '0.85rem' }}
@@ -1756,7 +1750,6 @@ export const AdminPanel = ({ isOpen, onClose, onShowToast, onProductCatalogUpdat
                             <textarea 
                               className="form-textarea"
                               rows="2"
-                              placeholder="Product details, yarn composition, care instructions..."
                               value={productForm.description}
                               onChange={e => setProductForm({ ...productForm, description: e.target.value })}
                             />
