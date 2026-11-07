@@ -24,6 +24,7 @@ data class ProductVariant(
 data class Product(
     @SerializedName("_id") val mongoId: String? = null,
     @SerializedName("id") val id: String = "",
+    @SerializedName("sku") val sku: String? = null,
     @SerializedName("name") val name: String = "",
     @SerializedName("category") val category: String = "plushies",
     @SerializedName("categoryName") val categoryName: String = "Amigurumi Plushies",

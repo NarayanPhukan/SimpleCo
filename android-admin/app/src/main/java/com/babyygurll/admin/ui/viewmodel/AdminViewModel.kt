@@ -779,6 +779,7 @@ class AdminViewModel : ViewModel() {
                     "colors" to req.colors,
                     "sizes" to req.sizes,
                     "variants" to req.variants,
+                    "tags" to req.tags,
                     "stock" to if (req.variants.isNotEmpty()) req.variants.sumOf { it.stock } else null,
                     "inStock" to req.inStock
                 ))

@@ -63,6 +63,7 @@ export const AdminPanel = ({ isOpen, onClose, onShowToast, onProductCatalogUpdat
   const [productForm, setProductForm] = useState({
     _id: '',
     id: '',
+    sku: '',
     name: '',
     category: 'bags-purses',
     categoryName: 'Bags & Purses',
@@ -351,13 +352,26 @@ export const AdminPanel = ({ isOpen, onClose, onShowToast, onProductCatalogUpdat
         return;
       }
 
-      if (productForm._id || productForm.id) {
-        const idToUpdate = productForm._id || productForm.id;
-        await api.updateProduct(idToUpdate, productForm);
-        onShowToast(`"${productForm.name}" updated successfully`, '✓');
+      let payload = { ...productForm };
+      if (payload._id || payload.id) {
+        const idToUpdate = payload._id || payload.id;
+        // SKU is immutable and cannot be updated once product is created
+        delete payload.sku;
+        delete payload.id;
+        await api.updateProduct(idToUpdate, payload);
+        onShowToast(`"${payload.name}" updated successfully`, '✓');
       } else {
-        await api.createProduct(productForm);
-        onShowToast(`"${productForm.name}" added to catalog`, '✓');
+        if (!payload.sku) {
+          const cat = (payload.category || '').toLowerCase();
+          const prefix = cat.includes('bag') ? 'BGB-OCB'
+            : cat.includes('plush') ? 'BGB-PLS'
+            : cat.includes('floral') ? 'BGB-FLR'
+            : cat.includes('apparel') ? 'BGB-CKC'
+            : 'BGB-PWS';
+          payload.sku = `${prefix}-0${Math.floor(10 + Math.random() * 90)}`;
+        }
+        await api.createProduct(payload);
+        onShowToast(`"${payload.name}" added to catalog`, '✓');
       }
 
       setIsEditingProduct(false);
@@ -1229,6 +1243,7 @@ export const AdminPanel = ({ isOpen, onClose, onShowToast, onProductCatalogUpdat
                             setProductForm({
                               _id: '',
                               id: '',
+                              sku: '',
                               name: '',
                               category: 'bags-purses',
                               categoryName: 'Bags & Purses',
@@ -1422,6 +1437,7 @@ export const AdminPanel = ({ isOpen, onClose, onShowToast, onProductCatalogUpdat
                           setProductForm({
                             _id: '',
                             id: '',
+                            sku: '',
                             name: '',
                             category: 'bags-purses',
                             categoryName: 'Bags & Purses',
@@ -1540,6 +1556,7 @@ export const AdminPanel = ({ isOpen, onClose, onShowToast, onProductCatalogUpdat
                                         setProductForm({
                                           _id: p._id,
                                           id: p.id,
+                                          sku: p.sku || '',
                                           name: p.name,
                                           category: p.category,
                                           categoryName: p.categoryName || '',
@@ -1672,6 +1689,69 @@ export const AdminPanel = ({ isOpen, onClose, onShowToast, onProductCatalogUpdat
                                 onChange={e => setProductForm({ ...productForm, leadTime: e.target.value })}
                               />
                             </div>
+                          </div>
+
+                          <div className="form-group">
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
+                              <label className="form-label" style={{ margin: 0 }}>Product Code (SKU) *</label>
+                              {(productForm._id || productForm.id || productForm.sku) && (
+                                <span style={{ fontSize: '0.72rem', background: '#F1F5F9', color: '#475569', border: '1px solid #CBD5E1', padding: '2px 8px', borderRadius: '4px', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                                  🔒 Fixed / Locked
+                                </span>
+                              )}
+                            </div>
+                            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                              <input 
+                                type="text" 
+                                className="form-input" 
+                                style={{ 
+                                  backgroundColor: (productForm._id || productForm.id || productForm.sku) ? '#F8FAFC' : '#FFFFFF',
+                                  color: (productForm._id || productForm.id || productForm.sku) ? '#475569' : '#0F172A',
+                                  cursor: (productForm._id || productForm.id || productForm.sku) ? 'not-allowed' : 'text',
+                                  fontWeight: 600
+                                }}
+                                readOnly={Boolean(productForm._id || productForm.id || productForm.sku)}
+                                value={productForm.sku || ''}
+                                onChange={e => {
+                                  if (!productForm._id && !productForm.id && !productForm.sku) {
+                                    setProductForm({ ...productForm, sku: e.target.value });
+                                  }
+                                }}
+                              />
+                              {!(productForm._id || productForm.id || productForm.sku) ? (
+                                <button
+                                  type="button"
+                                  className="btn btn-secondary"
+                                  style={{ padding: '0.55rem 0.85rem', fontSize: '0.78rem', whiteSpace: 'nowrap', fontWeight: 600 }}
+                                  onClick={() => {
+                                    const cat = (productForm.category || '').toLowerCase();
+                                    const prefix = cat.includes('bag') ? 'BGB-OCB'
+                                      : cat.includes('plush') ? 'BGB-PLS'
+                                      : cat.includes('floral') ? 'BGB-FLR'
+                                      : cat.includes('apparel') ? 'BGB-CKC'
+                                      : 'BGB-PWS';
+                                    const generatedSku = `${prefix}-0${Math.floor(10 + Math.random() * 90)}`;
+                                    setProductForm(prev => ({ ...prev, sku: generatedSku }));
+                                  }}
+                                >
+                                  ✦ Generate
+                                </button>
+                              ) : (
+                                <button
+                                  type="button"
+                                  disabled
+                                  className="btn btn-secondary"
+                                  style={{ padding: '0.55rem 0.85rem', fontSize: '0.78rem', whiteSpace: 'nowrap', opacity: 0.6, cursor: 'not-allowed' }}
+                                >
+                                  🔒 Fixed
+                                </button>
+                              )}
+                            </div>
+                            <span style={{ fontSize: '0.74rem', color: (productForm._id || productForm.id || productForm.sku) ? '#059669' : '#64748B', marginTop: '4px', display: 'block' }}>
+                              {(productForm._id || productForm.id || productForm.sku) 
+                                ? '✓ Product code is permanently fixed and can never be changed.'
+                                : 'Click Generate to assign a permanent SKU. Once generated, it is permanently locked.'}
+                            </span>
                           </div>
 
                           <div className="form-row">

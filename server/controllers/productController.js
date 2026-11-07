@@ -134,8 +134,21 @@ exports.createProduct = async (req, res) => {
     });
     finalTags = Array.from(new Set([...finalTags, ...autoTags])).slice(0, 15);
 
+    // Generate or lock product code (SKU) - permanent once generated
+    let initialSku = (req.body.sku || '').trim();
+    if (!initialSku) {
+      const cat = (category || '').toLowerCase();
+      const catPrefix = cat.includes('bag') ? 'BGB-OCB'
+        : cat.includes('plush') ? 'BGB-PLS'
+        : cat.includes('floral') ? 'BGB-FLR'
+        : cat.includes('apparel') ? 'BGB-CKC'
+        : 'BGB-PWS';
+      initialSku = `${catPrefix}-0${Math.floor(10 + Math.random() * 90)}`;
+    }
+
     const newProduct = await Product.create({
       id: slug,
+      sku: initialSku,
       name,
       category: category || 'accessories',
       categoryName: categoryName || (category ? category.charAt(0).toUpperCase() + category.slice(1) : 'Handcrafted Accessories'),
@@ -205,12 +218,12 @@ exports.updateProduct = async (req, res) => {
       updates.tags = Array.from(new Set([...(product.tags || []), ...autoTags])).slice(0, 15);
     }
 
-    // Do not overwrite immutable MongoDB identifiers or version keys
+    // Do not overwrite immutable MongoDB identifiers, version keys, or SKU
     delete updates._id;
     delete updates.__v;
-    if (product.id && updates.id === product.id) {
-      delete updates.id;
-    }
+    delete updates.id;
+    // Product code / SKU is permanently fixed once generated/created and can never be changed
+    delete updates.sku;
 
     const updated = await Product.findOneAndUpdate(query, { $set: updates }, { new: true });
     res.json({ success: true, data: updated || product });

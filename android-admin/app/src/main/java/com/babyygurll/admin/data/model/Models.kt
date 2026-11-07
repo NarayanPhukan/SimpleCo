@@ -32,6 +32,7 @@ data class ProductVariant(
 data class Product(
     @SerializedName("_id") val mongoId: String? = null,
     @SerializedName("id") val id: String = "",
+    @SerializedName("sku") val rawSku: String? = null,
     @SerializedName("name") val name: String = "",
     @SerializedName("category") val category: String = "plushies",
     @SerializedName("categoryName") val categoryName: String = "Amigurumi Plushies",
@@ -74,6 +75,7 @@ data class Product(
 
     val sku: String
         get() {
+            if (!rawSku.isNullOrBlank()) return rawSku
             val effective = (if (id.isNotBlank()) id else mongoId.orEmpty())
             val clean = effective.filter { it.isLetterOrDigit() }.takeLast(6).uppercase()
             return if (clean.isNotBlank()) "BGC-$clean" else "BGC-ITEM"
@@ -146,6 +148,7 @@ data class Product(
 
 data class ProductCreateRequest(
     @SerializedName("name") val name: String,
+    @SerializedName("sku") val sku: String? = null,
     @SerializedName("category") val category: String,
     @SerializedName("categoryName") val categoryName: String? = null,
     @SerializedName("subcategory") val subcategory: String? = null,

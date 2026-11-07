@@ -1,8 +1,8 @@
 {
-  "latestVersionCode": 24,
-  "latestVersionName": "1.7.5",
+  "latestVersionCode": 25,
+  "latestVersionName": "1.7.6",
   "minRequiredVersionCode": 1,
-  "releaseNotes": "• Automated product tags by analyzing category, subcategory, title and description\n• One-click Auto-analyze button and interactive hashtag chips\n• Removed all placeholder texts and mock data when adding or editing products\n• Form starts completely clean with zero default colors or variants\n• Official 'BG' monogram studio icon & luxury branding",
+  "releaseNotes": "• Permanent product code (SKU) locking: once generated, SKU is permanently fixed and can never be modified\n• Server-side immutable SKU enforcement\n• Automated product tags and zero-placeholder clean creation flow\n• Official 'BG' monogram studio icon & luxury branding",
   "downloadUrl": "https://raw.githubusercontent.com/NarayanPhukan/SimpleCo/main/android-admin/babyygurll-admin.apk",
   "releaseDate": "2026-11-07",
   "critical": false

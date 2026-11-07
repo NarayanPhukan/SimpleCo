@@ -19,19 +19,19 @@ const DEFAULT_CONFIG = {
   adminPassword: 'admin123',
   adminRazorpayAccountId: '',
   appVersion: {
-    latestVersionCode: 24,
-    latestVersionName: '1.7.5',
+    latestVersionCode: 25,
+    latestVersionName: '1.7.6',
     minRequiredVersionCode: 1,
-    releaseNotes: '• Automated product tags by analyzing category, subcategory, title and description\n• One-click Auto-analyze button and interactive hashtag chips\n• Removed all placeholder texts and mock data when adding or editing products\n• Form starts completely clean with zero default colors or variants\n• Official "BG" monogram studio icon & luxury branding',
+    releaseNotes: '• Permanent product code (SKU) locking: once generated, SKU is permanently fixed and can never be modified\n• Server-side immutable SKU enforcement\n• Automated product tags and zero-placeholder clean creation flow\n• Official "BG" monogram studio icon & luxury branding',
     downloadUrl: 'https://raw.githubusercontent.com/NarayanPhukan/SimpleCo/main/android-admin/babyygurll-admin.apk',
     releaseDate: '2026-11-07',
     critical: false
   },
   customerAppVersion: {
-    latestVersionCode: 21,
-    latestVersionName: '1.4.5',
+    latestVersionCode: 22,
+    latestVersionName: '1.4.6',
     minRequiredVersionCode: 1,
-    releaseNotes: '• Integrated automated product tags into search and catalog discovery\n• Cleaned up product colors across boutique catalog\n• Fixed subcategory browsing across all 8 craft departments\n• Shows all newly published boutique creations instantly\n• Dedicated fixed luxury hero banner on home boutique\n• Official "BG" monogram launcher icon & luxury branding',
+    releaseNotes: '• Persistent product code (SKU) and enhanced product catalog discovery\n• Integrated automated product tags into search and categories\n• Dedicated fixed luxury hero banner on home boutique\n• Official "BG" monogram launcher icon & luxury branding',
     downloadUrl: 'https://raw.githubusercontent.com/NarayanPhukan/SimpleCo/main/android-customer/babyygurll-boutique.apk',
     releaseDate: '2026-11-07',
     critical: false
