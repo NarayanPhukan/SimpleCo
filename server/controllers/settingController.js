@@ -19,19 +19,19 @@ const DEFAULT_CONFIG = {
   adminPassword: 'admin123',
   adminRazorpayAccountId: '',
   appVersion: {
-    latestVersionCode: 17,
-    latestVersionName: '1.6.0',
+    latestVersionCode: 18,
+    latestVersionName: '1.6.1',
     minRequiredVersionCode: 1,
-    releaseNotes: '• New official brand identity: BabyyGurll Admin\n• New deep navy BG monogram app launcher icon\n• Real-time studio notification broadcast system with unread badges\n• Dynamic order stage tracking and product variant management',
+    releaseNotes: '• Added all 8 boutique categories & 70+ dynamic subcategories in Product Studio\n• Instant subcategory dropdown sync when changing category\n• Real-time catalog and inventory subcategory searching',
     downloadUrl: 'https://raw.githubusercontent.com/NarayanPhukan/SimpleCo/main/android-admin/babyygurll-admin.apk',
     releaseDate: '2026-11-07',
     critical: false
   },
   customerAppVersion: {
-    latestVersionCode: 14,
-    latestVersionName: '1.3.1',
+    latestVersionCode: 15,
+    latestVersionName: '1.3.2',
     minRequiredVersionCode: 1,
-    releaseNotes: '• Robust 60s timeout & automatic retry for seamless cloud wake-up\n• Instant offline catalog caching so products never disappear on launch\n• Graceful notification polling & manual Refresh Catalog button\n• BabyyGurll Boutique BG monogram app launcher icon',
+    releaseNotes: '• Added all 8 boutique departments & 70+ craft subcategories\n• Dedicated interactive department & subcategory catalog browser\n• Quick visual department directory with smooth filtering\n• Enhanced cold-boot auto-retry and offline caching',
     downloadUrl: 'https://raw.githubusercontent.com/NarayanPhukan/SimpleCo/main/android-customer/babyygurll-boutique.apk',
     releaseDate: '2026-11-07',
     critical: false

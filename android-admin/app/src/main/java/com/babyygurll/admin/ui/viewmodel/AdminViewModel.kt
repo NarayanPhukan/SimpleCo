@@ -706,6 +706,7 @@ class AdminViewModel : ViewModel() {
             val matchesQuery = if (query.isEmpty()) true else {
                 p.name.lowercase().contains(query) ||
                 p.categoryName.lowercase().contains(query) ||
+                (p.subcategoryName ?: "").lowercase().contains(query) ||
                 p.sku.lowercase().contains(query) ||
                 p.description.lowercase().contains(query)
             }
@@ -737,6 +738,8 @@ class AdminViewModel : ViewModel() {
                     "name" to req.name,
                     "category" to req.category,
                     "categoryName" to req.categoryName,
+                    "subcategory" to req.subcategory,
+                    "subcategoryName" to req.subcategoryName,
                     "price" to req.price,
                     "originalPrice" to req.originalPrice,
                     "image" to req.image,

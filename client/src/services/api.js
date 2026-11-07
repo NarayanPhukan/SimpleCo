@@ -12,6 +12,7 @@ export const api = {
   async getProducts(params = {}) {
     const query = new URLSearchParams();
     if (params.category && params.category !== 'all') query.append('category', params.category);
+    if (params.subcategory && params.subcategory !== 'all') query.append('subcategory', params.subcategory);
     if (params.search) query.append('search', params.search);
     if (params.sort) query.append('sort', params.sort);
     

@@ -25,6 +25,9 @@ class StoreViewModel(application: Application) : AndroidViewModel(application) {
     private val _selectedCategory = MutableStateFlow("all")
     val selectedCategory = _selectedCategory.asStateFlow()
 
+    private val _selectedSubcategory = MutableStateFlow("all")
+    val selectedSubcategory = _selectedSubcategory.asStateFlow()
+
     private val _searchQuery = MutableStateFlow("")
     val searchQuery = _searchQuery.asStateFlow()
 
@@ -63,16 +66,25 @@ class StoreViewModel(application: Application) : AndroidViewModel(application) {
     val products: StateFlow<List<Product>> = combine(
         _rawProducts,
         _selectedCategory,
+        _selectedSubcategory,
         _searchQuery,
         _sortOption
-    ) { raw, cat, query, sort ->
+    ) { raw, cat, subcat, query, sort ->
         var list = raw
         if (cat != "all") {
-            list = list.filter { it.category.equals(cat, ignoreCase = true) }
+            list = list.filter { it.matchesCategory(cat) }
+        }
+        if (subcat != "all") {
+            list = list.filter { it.matchesSubcategory(subcat) }
         }
         if (query.isNotBlank()) {
             val q = query.trim().lowercase()
-            list = list.filter { it.name.lowercase().contains(q) || it.description.lowercase().contains(q) }
+            list = list.filter {
+                it.name.lowercase().contains(q) ||
+                it.description.lowercase().contains(q) ||
+                it.categoryName.lowercase().contains(q) ||
+                (it.subcategoryName ?: "").lowercase().contains(q)
+            }
         }
         when (sort) {
             "price-low" -> list.sortedBy { it.price }
@@ -288,6 +300,17 @@ class StoreViewModel(application: Application) : AndroidViewModel(application) {
 
     fun selectCategory(cat: String) {
         _selectedCategory.value = cat
+        _selectedSubcategory.value = "all"
+    }
+
+    fun selectSubcategory(subcat: String) {
+        _selectedSubcategory.value = subcat
+    }
+
+    fun clearFilters() {
+        _selectedCategory.value = "all"
+        _selectedSubcategory.value = "all"
+        _searchQuery.value = ""
     }
 
     fun setSearchQuery(query: String) {

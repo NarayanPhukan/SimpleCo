@@ -27,6 +27,8 @@ data class Product(
     @SerializedName("name") val name: String = "",
     @SerializedName("category") val category: String = "plushies",
     @SerializedName("categoryName") val categoryName: String = "Amigurumi Plushies",
+    @SerializedName("subcategory") val subcategory: String? = null,
+    @SerializedName("subcategoryName") val subcategoryName: String? = null,
     @SerializedName("price") val price: Double = 0.0,
     @SerializedName("originalPrice") val originalPrice: Double? = null,
     @SerializedName("image") val image: String = "",
@@ -91,6 +93,46 @@ data class Product(
                 )
             )
         }
+
+    fun matchesCategory(catId: String): Boolean {
+        if (catId.isBlank() || catId.equals("all", ignoreCase = true)) return true
+        val c = category.lowercase().trim()
+        val cName = categoryName.lowercase().trim()
+        val target = catId.lowercase().trim()
+
+        if (c == target) return true
+
+        return when (target) {
+            "hair-accessories" -> c.contains("hair") || c.contains("scrunchie") || c.contains("accessories") || cName.contains("hair") || cName.contains("scrunchie") || cName.contains("accessories")
+            "bags-purses" -> c.contains("bag") || c.contains("purse") || c.contains("tote") || cName.contains("bag") || cName.contains("tote")
+            "flowers-bouquets" -> c.contains("flower") || c.contains("floral") || c.contains("bouquet") || cName.contains("flower") || cName.contains("floral") || cName.contains("bouquet")
+            "amigurumi-plushies" -> c.contains("plush") || c.contains("amigurumi") || cName.contains("plush") || cName.contains("amigurumi")
+            "clothing-wearables" -> c.contains("wearable") || c.contains("apparel") || c.contains("scarf") || c.contains("clothing") || cName.contains("wearable") || cName.contains("scarf")
+            "home-living" -> c.contains("home") || c.contains("living") || c.contains("decor") || cName.contains("home") || cName.contains("living")
+            "jewellery-keychains" -> c.contains("jewel") || c.contains("keychain") || cName.contains("jewel") || cName.contains("keychain")
+            "gifts-special" -> c.contains("gift") || c.contains("special") || c.contains("custom") || cName.contains("gift") || cName.contains("custom")
+            else -> c.contains(target) || cName.contains(target)
+        }
+    }
+
+    fun matchesSubcategory(subcatId: String): Boolean {
+        if (subcatId.isBlank() || subcatId.equals("all", ignoreCase = true)) return true
+        val sub = (subcategory ?: "").lowercase().trim()
+        val subName = (subcategoryName ?: "").lowercase().trim()
+        val n = name.lowercase().trim()
+        val target = subcatId.lowercase().trim()
+
+        if (sub == target) return true
+
+        val cleanedTarget = target.replace("-", " ")
+        val keywords = cleanedTarget.split(" ").filter { it.isNotBlank() && it != "crochet" }
+
+        if (keywords.all { n.contains(it) || subName.contains(it) || sub.contains(it) }) {
+            return true
+        }
+
+        return sub.contains(target) || subName.contains(cleanedTarget) || n.contains(cleanedTarget)
+    }
 }
 
 data class AppVersionInfo(

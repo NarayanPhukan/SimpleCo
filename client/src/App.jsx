@@ -26,6 +26,7 @@ import { AppDownloadModal } from './components/AppDownloadModal';
 import { AppDownloadPage } from './components/AppDownloadPage';
 import { NotificationDrawer } from './components/NotificationDrawer';
 import { IconSearch, IconPackage, IconSparkles } from './components/Icons';
+import { BOUTIQUE_CATEGORIES, getCategoryById } from './constants/categories';
 
 export const App = () => {
   const [products, setProducts] = useState(() => {
@@ -41,6 +42,7 @@ export const App = () => {
   const [loadingProducts, setLoadingProducts] = useState(false);
   const [catalogError, setCatalogError] = useState(false);
   const [activeCategory, setActiveCategory] = useState('all');
+  const [activeSubcategory, setActiveSubcategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortOrder, setSortOrder] = useState('featured');
 
@@ -86,6 +88,7 @@ export const App = () => {
       if (!silent && products.length === 0) setLoadingProducts(true);
       const res = await api.getProducts({
         category: activeCategory,
+        subcategory: activeSubcategory,
         search: searchQuery,
         sort: sortOrder
       });
@@ -106,6 +109,7 @@ export const App = () => {
           try {
             const retryRes = await api.getProducts({
               category: activeCategory,
+              subcategory: activeSubcategory,
               search: searchQuery,
               sort: sortOrder
             });
@@ -138,7 +142,7 @@ export const App = () => {
 
   useEffect(() => {
     loadProducts();
-  }, [activeCategory, searchQuery, sortOrder]);
+  }, [activeCategory, activeSubcategory, searchQuery, sortOrder]);
 
   // Refresh catalog immediately when tab regains focus or custom event fires
   useEffect(() => {
@@ -151,7 +155,7 @@ export const App = () => {
       window.removeEventListener('focus', handleFocus);
       window.removeEventListener('catalog_updated', handleFocus);
     };
-  }, [activeCategory, searchQuery, sortOrder]);
+  }, [activeCategory, activeSubcategory, searchQuery, sortOrder]);
 
   // Real-time periodic dynamic sync loop (updates catalog every 6 seconds)
   useEffect(() => {
@@ -159,7 +163,44 @@ export const App = () => {
       loadProducts(true);
     }, 6000);
     return () => clearInterval(timer);
-  }, [activeCategory, searchQuery, sortOrder]);
+  }, [activeCategory, activeSubcategory, searchQuery, sortOrder]);
+
+  const displayProducts = React.useMemo(() => {
+    let list = products;
+    if (activeCategory !== 'all') {
+      const catObj = getCategoryById(activeCategory);
+      list = list.filter(p => {
+        const pCat = (p.category || '').toLowerCase();
+        const pCatName = (p.categoryName || '').toLowerCase();
+        const activeName = (catObj?.name || '').toLowerCase();
+        const activeId = activeCategory.toLowerCase();
+        return pCat === activeId || 
+          pCatName.includes(activeName) || 
+          (activeId === 'bags-purses' && (pCat.includes('bag') || pCatName.includes('bag') || pCatName.includes('purse'))) ||
+          (activeId === 'hair-accessories' && (pCat.includes('hair') || pCatName.includes('scrunch') || pCatName.includes('clip') || pCatName.includes('bandana'))) ||
+          (activeId === 'flowers-bouquets' && (pCat.includes('flower') || pCat.includes('bouquet') || pCat.includes('rose') || pCat.includes('tulip') || pCat === 'floral')) ||
+          (activeId === 'amigurumi-plushies' && (pCat.includes('plush') || pCat.includes('amigurumi') || pCatName.includes('plush') || pCatName.includes('bear'))) ||
+          (activeId === 'clothing-wearables' && (pCat.includes('wear') || pCat.includes('cloth') || pCat.includes('sweater') || pCat.includes('cardigan') || pCat === 'wearables')) ||
+          (activeId === 'home-living' && (pCat.includes('home') || pCat.includes('living') || pCat.includes('coaster') || pCat.includes('runner') || pCat.includes('blanket'))) ||
+          (activeId === 'jewellery-keychains' && (pCat.includes('jewel') || pCat.includes('keychain') || pCat.includes('bracelet') || pCat.includes('earring'))) ||
+          (activeId === 'gifts-special' && (pCat.includes('gift') || pCat.includes('special') || pCat.includes('custom') || pCat.includes('hamper')));
+      });
+    }
+    if (activeSubcategory !== 'all') {
+      const activeSub = activeSubcategory.toLowerCase();
+      list = list.filter(p => {
+        const pSub = (p.subcategory || '').toLowerCase();
+        const pSubName = (p.subcategoryName || '').toLowerCase();
+        const pName = (p.name || '').toLowerCase();
+        const pDesc = (p.description || '').toLowerCase();
+        return pSub === activeSub ||
+          pSubName.includes(activeSub) ||
+          pName.includes(activeSub.replace(/-/g, ' ')) ||
+          pDesc.includes(activeSub.replace(/-/g, ' '));
+      });
+    }
+    return list;
+  }, [products, activeCategory, activeSubcategory]);
 
   // Listen for routes and #admin, #studio, #custom, #wishlist, #account, #orders, #checkout in URL
   useEffect(() => {
@@ -386,71 +427,99 @@ export const App = () => {
             </div>
 
             {/* Toolbar */}
-            <div className="catalog-toolbar">
-              <div className="filter-tabs">
-                <button 
-                  className={`filter-tab ${activeCategory === 'all' ? 'active' : ''}`}
-                  onClick={() => setActiveCategory('all')}
-                >
-                  All Products
-                </button>
-                <button 
-                  className={`filter-tab ${activeCategory === 'plushies' ? 'active' : ''}`}
-                  onClick={() => setActiveCategory('plushies')}
-                >
-                  Amigurumi Plushies
-                </button>
-                <button 
-                  className={`filter-tab ${activeCategory === 'floral' ? 'active' : ''}`}
-                  onClick={() => setActiveCategory('floral')}
-                >
-                  Floral & Home
-                </button>
-                <button 
-                  className={`filter-tab ${activeCategory === 'bags' ? 'active' : ''}`}
-                  onClick={() => setActiveCategory('bags')}
-                >
-                  Bags & Totes
-                </button>
-                <button 
-                  className={`filter-tab ${activeCategory === 'wearables' ? 'active' : ''}`}
-                  onClick={() => setActiveCategory('wearables')}
-                >
-                  Wearables
-                </button>
-                <button 
-                  className={`filter-tab ${activeCategory === 'accessories' ? 'active' : ''}`}
-                  onClick={() => setActiveCategory('accessories')}
-                >
-                  Accessories
-                </button>
-              </div>
-
-              <div className="toolbar-right">
-                <div className="search-input-wrapper">
-                  <span className="search-icon" style={{ display: 'inline-flex', alignItems: 'center' }}>
-                    <IconSearch size={16} />
-                  </span>
-                  <input 
-                    type="text" 
-                    placeholder="Search products..." 
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                  />
+            <div className="catalog-toolbar" style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', width: '100%' }}>
+                <div className="filter-tabs" style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '4px', maxWidth: '100%' }}>
+                  <button 
+                    className={`filter-tab ${activeCategory === 'all' ? 'active' : ''}`}
+                    onClick={() => { setActiveCategory('all'); setActiveSubcategory('all'); }}
+                  >
+                    ✨ All Products
+                  </button>
+                  {BOUTIQUE_CATEGORIES.map(cat => (
+                    <button 
+                      key={cat.id}
+                      className={`filter-tab ${activeCategory === cat.id ? 'active' : ''}`}
+                      onClick={() => { setActiveCategory(cat.id); setActiveSubcategory('all'); }}
+                    >
+                      {cat.icon} {cat.name}
+                    </button>
+                  ))}
                 </div>
 
-                <select 
-                  className="sort-select"
-                  value={sortOrder}
-                  onChange={(e) => setSortOrder(e.target.value)}
-                  aria-label="Sort products"
-                >
-                  <option value="featured">Featured</option>
-                  <option value="price-asc">Price: Low to High</option>
-                  <option value="price-desc">Price: High to Low</option>
-                  <option value="rating">Highest Rated</option>
-                </select>
+                <div className="toolbar-right" style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+                  <div className="search-input-wrapper">
+                    <span className="search-icon" style={{ display: 'inline-flex', alignItems: 'center' }}>
+                      <IconSearch size={16} />
+                    </span>
+                    <input 
+                      type="text" 
+                      placeholder="Search products..." 
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                    />
+                  </div>
+
+                  <select 
+                    className="sort-select"
+                    value={sortOrder}
+                    onChange={(e) => setSortOrder(e.target.value)}
+                    aria-label="Sort products"
+                  >
+                    <option value="featured">Featured</option>
+                    <option value="price-asc">Price: Low to High</option>
+                    <option value="price-desc">Price: High to Low</option>
+                    <option value="rating">Highest Rated</option>
+                  </select>
+                </div>
               </div>
+
+              {/* Dynamic Subcategory Chips */}
+              {activeCategory !== 'all' && (
+                <div className="subcategory-bar" style={{ display: 'flex', gap: '8px', overflowX: 'auto', padding: '4px 0 8px 0', width: '100%' }}>
+                  <button
+                    className={`subcat-chip ${activeSubcategory === 'all' ? 'active' : ''}`}
+                    onClick={() => setActiveSubcategory('all')}
+                    style={{
+                      padding: '5px 14px',
+                      fontSize: '0.82rem',
+                      fontWeight: activeSubcategory === 'all' ? '700' : '500',
+                      borderRadius: '20px',
+                      border: '1px solid',
+                      borderColor: activeSubcategory === 'all' ? '#1E293B' : '#E2E8F0',
+                      background: activeSubcategory === 'all' ? '#1E293B' : '#FFFFFF',
+                      color: activeSubcategory === 'all' ? '#FFFFFF' : '#475569',
+                      cursor: 'pointer',
+                      whiteSpace: 'nowrap',
+                      transition: 'all 0.2s ease'
+                    }}
+                  >
+                    All {getCategoryById(activeCategory)?.name || ''}
+                  </button>
+                  {getCategoryById(activeCategory)?.subcategories.map(sub => (
+                    <button
+                      key={sub.id}
+                      className={`subcat-chip ${activeSubcategory === sub.id ? 'active' : ''}`}
+                      onClick={() => setActiveSubcategory(sub.id)}
+                      style={{
+                        padding: '5px 14px',
+                        fontSize: '0.82rem',
+                        fontWeight: activeSubcategory === sub.id ? '700' : '500',
+                        borderRadius: '20px',
+                        border: '1px solid',
+                        borderColor: activeSubcategory === sub.id ? '#1E293B' : '#E2E8F0',
+                        background: activeSubcategory === sub.id ? '#1E293B' : '#FFFFFF',
+                        color: activeSubcategory === sub.id ? '#FFFFFF' : '#475569',
+                        cursor: 'pointer',
+                        whiteSpace: 'nowrap',
+                        transition: 'all 0.2s ease'
+                      }}
+                    >
+                      {sub.name}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Products Grid */}
@@ -479,7 +548,7 @@ export const App = () => {
                     ↻ Retry Now
                   </button>
                 </div>
-              ) : products.length === 0 ? (
+              ) : displayProducts.length === 0 ? (
                 <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '4rem 1rem' }}>
                   <div style={{ color: '#94A3B8', marginBottom: '1rem', display: 'flex', justifyContent: 'center' }}>
                     <IconPackage size={48} />
@@ -490,10 +559,10 @@ export const App = () => {
                   <p style={{ color: 'var(--text-muted)', marginTop: '0.5rem' }}>
                     {searchQuery ? `No pieces found matching "${searchQuery}".` : 'Try selecting another category or view all.'}
                   </p>
-                  {(activeCategory !== 'all' || searchQuery) && (
+                  {(activeCategory !== 'all' || activeSubcategory !== 'all' || searchQuery) && (
                     <button
                       className="btn btn-outline"
-                      onClick={() => { setActiveCategory('all'); setSearchQuery(''); }}
+                      onClick={() => { setActiveCategory('all'); setActiveSubcategory('all'); setSearchQuery(''); }}
                       style={{ marginTop: '1.1rem', padding: '0.45rem 1.2rem', fontSize: '0.85rem' }}
                     >
                       View All Products
@@ -501,7 +570,7 @@ export const App = () => {
                   )}
                 </div>
               ) : (
-                products.map(product => (
+                displayProducts.map(product => (
                   <ProductCard 
                     key={product.id || product._id}
                     product={product}

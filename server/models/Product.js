@@ -24,6 +24,8 @@ const productSchema = new mongoose.Schema({
   name: { type: String, required: true },
   category: { type: String, required: true, index: true },
   categoryName: { type: String, required: true },
+  subcategory: { type: String, default: '', index: true },
+  subcategoryName: { type: String, default: '' },
   price: { type: Number, required: true },
   originalPrice: { type: Number },
   image: { type: String, required: true },

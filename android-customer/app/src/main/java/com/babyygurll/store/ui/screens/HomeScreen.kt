@@ -57,6 +57,7 @@ fun HomeScreen(
 ) {
     val products by viewModel.products.collectAsState()
     val selectedCategory by viewModel.selectedCategory.collectAsState()
+    val selectedSubcategory by viewModel.selectedSubcategory.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val wishlistIds by viewModel.wishlistIds.collectAsState()
@@ -264,30 +265,100 @@ fun HomeScreen(
                 }
             }
 
-            // 4. Category Filter Chips: [All] [Plushies] [Flowers] [Scrunchies] [Bags]
+            // 4. Category Filter Chips: [All] + 8 Official Boutique Categories
             item {
                 LazyRow(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(vertical = 12.dp),
+                        .padding(top = 12.dp, bottom = if (selectedCategory == "all") 12.dp else 4.dp),
                     contentPadding = PaddingValues(horizontal = 16.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    items(BOUTIQUE_CATEGORIES) { (key, label) ->
-                        val isSelected = selectedCategory == key
+                    item {
+                        val isAllSelected = selectedCategory == "all"
+                        Surface(
+                            color = if (isAllSelected) BrandDarkNavy else Color.White,
+                            shape = RoundedCornerShape(20.dp),
+                            border = if (isAllSelected) null else BorderStroke(1.dp, SurfaceBorder),
+                            modifier = Modifier.clickable { viewModel.selectCategory("all") }
+                        ) {
+                            Text(
+                                text = "✨ All",
+                                color = if (isAllSelected) Color.White else TextPrimary,
+                                fontSize = 13.sp,
+                                fontWeight = if (isAllSelected) FontWeight.Bold else FontWeight.Medium,
+                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                            )
+                        }
+                    }
+
+                    items(com.babyygurll.store.data.model.BoutiqueCategoryData.categories) { cat ->
+                        val isSelected = selectedCategory == cat.id
                         Surface(
                             color = if (isSelected) BrandDarkNavy else Color.White,
                             shape = RoundedCornerShape(20.dp),
                             border = if (isSelected) null else BorderStroke(1.dp, SurfaceBorder),
-                            modifier = Modifier.clickable { viewModel.selectCategory(key) }
+                            modifier = Modifier.clickable { viewModel.selectCategory(cat.id) }
                         ) {
                             Text(
-                                text = label,
+                                text = "${cat.icon} ${cat.name}",
                                 color = if (isSelected) Color.White else TextPrimary,
                                 fontSize = 13.sp,
                                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
                             )
+                        }
+                    }
+                }
+            }
+
+            // 4b. Dynamic Subcategory Row if a category is active
+            if (selectedCategory != "all") {
+                val currentCategory = com.babyygurll.store.data.model.BoutiqueCategoryData.getCategoryById(selectedCategory)
+                if (currentCategory != null && currentCategory.subcategories.isNotEmpty()) {
+                    item {
+                        LazyRow(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = 12.dp, top = 4.dp),
+                            contentPadding = PaddingValues(horizontal = 16.dp),
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            item {
+                                val isAllSubSelected = selectedSubcategory == "all"
+                                Surface(
+                                    color = if (isAllSubSelected) BrandPrimary else Color.White,
+                                    shape = RoundedCornerShape(16.dp),
+                                    border = BorderStroke(1.dp, if (isAllSubSelected) BrandPrimary else SurfaceBorder),
+                                    modifier = Modifier.clickable { viewModel.selectSubcategory("all") }
+                                ) {
+                                    Text(
+                                        text = "All ${currentCategory.name}",
+                                        color = if (isAllSubSelected) Color.White else TextPrimary,
+                                        fontSize = 11.sp,
+                                        fontWeight = if (isAllSubSelected) FontWeight.Bold else FontWeight.Medium,
+                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                                    )
+                                }
+                            }
+
+                            items(currentCategory.subcategories) { subcat ->
+                                val isSubSelected = selectedSubcategory == subcat.id
+                                Surface(
+                                    color = if (isSubSelected) BrandPrimary else Color.White,
+                                    shape = RoundedCornerShape(16.dp),
+                                    border = BorderStroke(1.dp, if (isSubSelected) BrandPrimary else SurfaceBorder),
+                                    modifier = Modifier.clickable { viewModel.selectSubcategory(subcat.id) }
+                                ) {
+                                    Text(
+                                        text = subcat.name,
+                                        color = if (isSubSelected) Color.White else TextPrimary,
+                                        fontSize = 11.sp,
+                                        fontWeight = if (isSubSelected) FontWeight.Bold else FontWeight.Medium,
+                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                                    )
+                                }
+                            }
                         }
                     }
                 }

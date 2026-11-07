@@ -36,10 +36,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
-import com.babyygurll.admin.data.model.Product
-import com.babyygurll.admin.data.model.ProductColor
-import com.babyygurll.admin.data.model.ProductCreateRequest
-import com.babyygurll.admin.data.model.ProductVariant
+import com.babyygurll.admin.data.model.*
 import com.babyygurll.admin.ui.theme.*
 import com.babyygurll.admin.util.AdminProductImage
 import kotlinx.coroutines.Dispatchers
@@ -94,16 +91,32 @@ fun ProductEditScreen(
     // Step 1: Basic info
     var productName by remember(product?.id) { mutableStateOf(product?.name ?: "") }
     var shortDescription by remember(product?.id) { mutableStateOf(product?.description?.take(120) ?: "") }
-    var category by remember(product?.id) { mutableStateOf(product?.categoryName ?: "Handbags") }
-    var subcategory by remember(product?.id) { mutableStateOf("Shoulder bags") }
+    
+    val allBoutiqueCategories = BoutiqueCategoryData.categories
+    val initialCat = remember(product?.id) {
+        val catName = product?.categoryName ?: ""
+        val catKey = product?.category ?: ""
+        allBoutiqueCategories.firstOrNull { 
+            it.name.equals(catName, ignoreCase = true) || it.id.equals(catKey, ignoreCase = true)
+        } ?: allBoutiqueCategories[1] // Bags & Purses default
+    }
+    var selectedBoutiqueCategory by remember(product?.id) { mutableStateOf(initialCat) }
+    var selectedBoutiqueSubcategory by remember(product?.id, selectedBoutiqueCategory) {
+        val subId = product?.subcategory ?: ""
+        val subName = product?.subcategoryName ?: ""
+        val found = selectedBoutiqueCategory.subcategories.firstOrNull {
+            it.id.equals(subId, ignoreCase = true) || it.name.equals(subName, ignoreCase = true)
+        } ?: selectedBoutiqueCategory.subcategories.first()
+        mutableStateOf(found)
+    }
+
+    val category = selectedBoutiqueCategory.name
+    val subcategory = selectedBoutiqueSubcategory.name
     var sku by remember(product?.id) { mutableStateOf(product?.sku ?: "") }
     var productTags by remember(product?.id) { mutableStateOf("") }
 
     var showCategoryMenu by remember { mutableStateOf(false) }
     var showSubcategoryMenu by remember { mutableStateOf(false) }
-
-    val categoryOptions = listOf("Handbags", "Plushies", "Floral & Home", "Apparel", "Accessories")
-    val subcategoryOptions = listOf("Shoulder bags", "Totes & Baskets", "Mini Pouches", "Plush Amigurumi", "Sweaters & Tops", "Keychains")
 
     // Step 2: Images
     val initialImages = remember(product?.id, product?.images, product?.image) {
@@ -297,14 +310,10 @@ fun ProductEditScreen(
 
         val req = ProductCreateRequest(
             name = productName.trim().ifBlank { "Untitled Handcrafted Piece" },
-            category = when {
-                category.contains("Handbag", true) || category.contains("Bag", true) -> "bags"
-                category.contains("Plush", true) -> "plushies"
-                category.contains("Floral", true) -> "floral"
-                category.contains("Apparel", true) -> "wearables"
-                else -> "accessories"
-            },
-            categoryName = category,
+            category = selectedBoutiqueCategory.id,
+            categoryName = selectedBoutiqueCategory.name,
+            subcategory = selectedBoutiqueSubcategory.id,
+            subcategoryName = selectedBoutiqueSubcategory.name,
             price = finalPrice,
             originalPrice = finalOrigPrice,
             image = primaryImg,
@@ -312,7 +321,7 @@ fun ProductEditScreen(
             badge = if (isDraft) "Draft" else "Published",
             leadTime = estimatedProductionTime,
             description = shortDescription.trim().ifBlank {
-                "A structured hand-crocheted shoulder bag made with premium milk cotton yarn. Finished with a lined interior, magnetic closure and adjustable strap."
+                "A structured hand-crocheted piece made with premium milk cotton yarn. Finished with artisan detailing and durable stitching."
             },
             colors = effectiveColors.map { ProductColor(name = it, hex = "#255DCE") },
             sizes = effectiveSizes,
@@ -657,7 +666,7 @@ fun ProductEditScreen(
                                             horizontalArrangement = Arrangement.SpaceBetween,
                                             verticalAlignment = Alignment.CenterVertically
                                         ) {
-                                            Text(text = category, fontSize = 14.sp, color = MidnightNavy)
+                                            Text(text = "${selectedBoutiqueCategory.icon} ${selectedBoutiqueCategory.name}", fontSize = 14.sp, color = MidnightNavy)
                                             Icon(Icons.Default.KeyboardArrowDown, contentDescription = null, tint = TextMuted)
                                         }
                                     }
@@ -666,11 +675,12 @@ fun ProductEditScreen(
                                         expanded = showCategoryMenu,
                                         onDismissRequest = { showCategoryMenu = false }
                                     ) {
-                                        categoryOptions.forEach { opt ->
+                                        allBoutiqueCategories.forEach { opt ->
                                             DropdownMenuItem(
-                                                text = { Text(opt) },
+                                                text = { Text("${opt.icon} ${opt.name}") },
                                                 onClick = {
-                                                    category = opt
+                                                    selectedBoutiqueCategory = opt
+                                                    selectedBoutiqueSubcategory = opt.subcategories.first()
                                                     showCategoryMenu = false
                                                 }
                                             )
@@ -696,7 +706,7 @@ fun ProductEditScreen(
                                             horizontalArrangement = Arrangement.SpaceBetween,
                                             verticalAlignment = Alignment.CenterVertically
                                         ) {
-                                            Text(text = subcategory, fontSize = 14.sp, color = MidnightNavy)
+                                            Text(text = selectedBoutiqueSubcategory.name, fontSize = 14.sp, color = MidnightNavy)
                                             Icon(Icons.Default.KeyboardArrowDown, contentDescription = null, tint = TextMuted)
                                         }
                                     }
@@ -705,11 +715,11 @@ fun ProductEditScreen(
                                         expanded = showSubcategoryMenu,
                                         onDismissRequest = { showSubcategoryMenu = false }
                                     ) {
-                                        subcategoryOptions.forEach { opt ->
+                                        selectedBoutiqueCategory.subcategories.forEach { opt ->
                                             DropdownMenuItem(
-                                                text = { Text(opt) },
+                                                text = { Text(opt.name) },
                                                 onClick = {
-                                                    subcategory = opt
+                                                    selectedBoutiqueSubcategory = opt
                                                     showSubcategoryMenu = false
                                                 }
                                             )

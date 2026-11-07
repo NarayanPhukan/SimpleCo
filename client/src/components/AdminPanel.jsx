@@ -19,6 +19,7 @@ import {
   IconTruck,
   IconSearch
 } from './Icons';
+import { BOUTIQUE_CATEGORIES, getCategoryById } from '../constants/categories';
 
 // Studio Photo Presets (curated luxury photography)
 const STUDIO_PHOTO_PRESETS = [
@@ -63,7 +64,10 @@ export const AdminPanel = ({ isOpen, onClose, onShowToast, onProductCatalogUpdat
     _id: '',
     id: '',
     name: '',
-    category: 'plushies',
+    category: 'bags-purses',
+    categoryName: 'Bags & Purses',
+    subcategory: 'shoulder-bags',
+    subcategoryName: 'Shoulder Bags',
     price: '',
     originalPrice: '',
     image: STUDIO_PHOTO_PRESETS[0].url,
@@ -1118,7 +1122,10 @@ export const AdminPanel = ({ isOpen, onClose, onShowToast, onProductCatalogUpdat
                               _id: '',
                               id: '',
                               name: '',
-                              category: 'plushies',
+                              category: 'bags-purses',
+                              categoryName: 'Bags & Purses',
+                              subcategory: 'crochet-tote-bags',
+                              subcategoryName: 'Crochet Tote Bags',
                               price: '',
                               originalPrice: '',
                               image: STUDIO_PHOTO_PRESETS[0].url,
@@ -1259,14 +1266,12 @@ export const AdminPanel = ({ isOpen, onClose, onShowToast, onProductCatalogUpdat
                         className="form-select"
                         value={productFilterCat}
                         onChange={e => setProductFilterCat(e.target.value)}
-                        style={{ maxWidth: '160px', padding: '0.55rem 0.85rem', fontSize: '0.85rem' }}
+                        style={{ maxWidth: '180px', padding: '0.55rem 0.85rem', fontSize: '0.85rem' }}
                       >
                         <option value="all">All Categories</option>
-                        <option value="plushies">Amigurumi Plushies</option>
-                        <option value="bouquets">Floral Bouquets</option>
-                        <option value="accessories">Accessories</option>
-                        <option value="wearables">Wearables</option>
-                        <option value="home-decor">Home Decor</option>
+                        {BOUTIQUE_CATEGORIES.map(cat => (
+                          <option key={cat.id} value={cat.id}>{cat.icon} {cat.name}</option>
+                        ))}
                       </select>
                       <select 
                         className="form-select"
@@ -1309,7 +1314,10 @@ export const AdminPanel = ({ isOpen, onClose, onShowToast, onProductCatalogUpdat
                             _id: '',
                             id: '',
                             name: '',
-                            category: 'plushies',
+                            category: 'bags-purses',
+                            categoryName: 'Bags & Purses',
+                            subcategory: 'crochet-tote-bags',
+                            subcategoryName: 'Crochet Tote Bags',
                             price: '',
                             originalPrice: '',
                             image: STUDIO_PHOTO_PRESETS[0].url,
@@ -1424,6 +1432,9 @@ export const AdminPanel = ({ isOpen, onClose, onShowToast, onProductCatalogUpdat
                                           id: p.id,
                                           name: p.name,
                                           category: p.category,
+                                          categoryName: p.categoryName || '',
+                                          subcategory: p.subcategory || '',
+                                          subcategoryName: p.subcategoryName || '',
                                           price: p.price,
                                           originalPrice: p.originalPrice || '',
                                           image: p.image,
@@ -1487,19 +1498,52 @@ export const AdminPanel = ({ isOpen, onClose, onShowToast, onProductCatalogUpdat
 
                           <div className="form-row">
                             <div className="form-group">
-                              <label className="form-label">Category</label>
+                              <label className="form-label">Category *</label>
                               <select 
                                 className="form-select"
                                 value={productForm.category}
-                                onChange={e => setProductForm({ ...productForm, category: e.target.value })}
+                                onChange={e => {
+                                  const newCatId = e.target.value;
+                                  const catObj = getCategoryById(newCatId);
+                                  const firstSub = catObj?.subcategories[0];
+                                  setProductForm({
+                                    ...productForm,
+                                    category: newCatId,
+                                    categoryName: catObj?.name || newCatId,
+                                    subcategory: firstSub?.id || '',
+                                    subcategoryName: firstSub?.name || ''
+                                  });
+                                }}
                               >
-                                <option value="plushies">Amigurumi Plushies</option>
-                                <option value="bouquets">Floral Bouquets</option>
-                                <option value="accessories">Accessories</option>
-                                <option value="wearables">Wearables & Cardigans</option>
-                                <option value="home-decor">Home Decor</option>
+                                {BOUTIQUE_CATEGORIES.map(cat => (
+                                  <option key={cat.id} value={cat.id}>{cat.icon} {cat.name}</option>
+                                ))}
                               </select>
                             </div>
+                            <div className="form-group">
+                              <label className="form-label">Subcategory *</label>
+                              <select 
+                                className="form-select"
+                                value={productForm.subcategory}
+                                onChange={e => {
+                                  const subId = e.target.value;
+                                  const catObj = getCategoryById(productForm.category);
+                                  const subObj = catObj?.subcategories?.find(s => s.id === subId);
+                                  setProductForm({
+                                    ...productForm,
+                                    subcategory: subId,
+                                    subcategoryName: subObj?.name || subId
+                                  });
+                                }}
+                              >
+                                {(getCategoryById(productForm.category)?.subcategories || []).map(sub => (
+                                  <option key={sub.id} value={sub.id}>{sub.name}</option>
+                                ))}
+                              </select>
+                            </div>
+                          </div>
+
+                          <div className="form-row">
                             <div className="form-group">
                               <label className="form-label">Badge Label</label>
                               <input 
@@ -1508,6 +1552,16 @@ export const AdminPanel = ({ isOpen, onClose, onShowToast, onProductCatalogUpdat
                                 placeholder="e.g. Bestseller, New Arrival, Limited Edition"
                                 value={productForm.badge}
                                 onChange={e => setProductForm({ ...productForm, badge: e.target.value })}
+                              />
+                            </div>
+                            <div className="form-group">
+                              <label className="form-label">Lead Time / Shipping Notice</label>
+                              <input 
+                                type="text" 
+                                className="form-input" 
+                                placeholder="e.g. Ready to ship (1-2 days)"
+                                value={productForm.leadTime || ''}
+                                onChange={e => setProductForm({ ...productForm, leadTime: e.target.value })}
                               />
                             </div>
                           </div>

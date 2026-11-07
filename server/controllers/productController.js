@@ -26,11 +26,15 @@ const buildProductQuery = (rawId) => {
 // @route   GET /api/products
 exports.getProducts = async (req, res) => {
   try {
-    const { category, search, sort } = req.query;
+    const { category, subcategory, search, sort } = req.query;
     let query = {};
 
     if (category && category !== 'all') {
       query.category = category;
+    }
+
+    if (subcategory && subcategory !== 'all') {
+      query.subcategory = subcategory;
     }
 
     if (search && search.trim()) {
@@ -81,6 +85,8 @@ exports.createProduct = async (req, res) => {
       name,
       category,
       categoryName,
+      subcategory,
+      subcategoryName,
       price,
       originalPrice,
       image,
@@ -113,6 +119,8 @@ exports.createProduct = async (req, res) => {
       name,
       category: category || 'accessories',
       categoryName: categoryName || (category ? category.charAt(0).toUpperCase() + category.slice(1) : 'Handcrafted Accessories'),
+      subcategory: subcategory || '',
+      subcategoryName: subcategoryName || '',
       price: Number(price),
       originalPrice: originalPrice ? Number(originalPrice) : Math.round(Number(price) * 1.3),
       image: primaryImage,
