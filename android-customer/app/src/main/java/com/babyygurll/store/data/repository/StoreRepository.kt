@@ -3,12 +3,35 @@ package com.babyygurll.store.data.repository
 import android.content.Context
 import com.babyygurll.store.data.api.ApiClient
 import com.babyygurll.store.data.model.*
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 class StoreRepository(private val context: Context) {
 
     private val api get() = ApiClient.getService(context)
+    private val prefs = context.getSharedPreferences("babyygurll_catalog_cache", Context.MODE_PRIVATE)
+    private val gson = Gson()
+
+    fun getCachedProducts(): List<Product> {
+        return try {
+            val json = prefs.getString("cached_products_json", null) ?: return emptyList()
+            val type = object : TypeToken<List<Product>>() {}.type
+            gson.fromJson(json, type) ?: emptyList()
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
+
+    private fun saveCachedProducts(products: List<Product>) {
+        try {
+            val json = gson.toJson(products)
+            prefs.edit().putString("cached_products_json", json).apply()
+        } catch (e: Exception) {
+            // Ignore cache error
+        }
+    }
 
     suspend fun getProducts(category: String? = null, search: String? = null, sort: String? = null): Result<List<Product>> =
         withContext(Dispatchers.IO) {
@@ -17,12 +40,26 @@ class StoreRepository(private val context: Context) {
                 val searchQuery = search?.trim()?.ifBlank { null }
                 val response = api.getProducts(catQuery, searchQuery, sort)
                 if (response.isSuccessful && response.body()?.data != null) {
-                    Result.success(response.body()!!.data!!)
+                    val list = response.body()!!.data!!
+                    if (list.isNotEmpty() && catQuery == null && searchQuery == null) {
+                        saveCachedProducts(list)
+                    }
+                    Result.success(list)
                 } else {
-                    Result.failure(Exception(response.body()?.message ?: "Failed to load products"))
+                    val cached = getCachedProducts()
+                    if (cached.isNotEmpty()) {
+                        Result.success(cached)
+                    } else {
+                        Result.failure(Exception(response.body()?.message ?: "Failed to load products"))
+                    }
                 }
             } catch (e: Exception) {
-                Result.failure(e)
+                val cached = getCachedProducts()
+                if (cached.isNotEmpty()) {
+                    Result.success(cached)
+                } else {
+                    Result.failure(e)
+                }
             }
         }
 
@@ -136,10 +173,12 @@ class StoreRepository(private val context: Context) {
                 if (response.isSuccessful && body != null) {
                     Result.success(Pair(body.data, body.unreadCount))
                 } else {
-                    Result.failure(Exception("Failed to fetch notifications"))
+                    // Graceful fallback on 404 or backend waking up
+                    Result.success(Pair(emptyList(), 0))
                 }
             } catch (e: Exception) {
-                Result.failure(e)
+                // Graceful fallback on network error/timeout
+                Result.success(Pair(emptyList(), 0))
             }
         }
 

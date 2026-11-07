@@ -1,8 +1,8 @@
 {
-  "latestVersionCode": 13,
-  "latestVersionName": "1.3.0",
+  "latestVersionCode": 14,
+  "latestVersionName": "1.3.1",
   "minRequiredVersionCode": 1,
-  "releaseNotes": "• New official brand identity: BabyyGurll Boutique\n• New high-resolution serif BG monogram app launcher icon\n• End-to-end real-time notification system with live notification bell\n• Verified Razorpay checkout with instant UPI & card payments",
+  "releaseNotes": "• Robust 60s timeout & automatic retry for seamless cloud wake-up\n• Instant offline catalog caching so products never disappear on launch\n• Graceful notification polling & manual Refresh Catalog button\n• BabyyGurll Boutique BG monogram app launcher icon",
   "downloadUrl": "https://raw.githubusercontent.com/NarayanPhukan/SimpleCo/main/android-customer/babyygurll-boutique.apk",
   "releaseDate": "2026-11-07",
   "critical": false

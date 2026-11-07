@@ -127,6 +127,11 @@ class StoreViewModel(application: Application) : AndroidViewModel(application) {
     val eventMessage = _eventMessage.asSharedFlow()
 
     init {
+        // Hydrate instantly from local cache so UI is never blank while cold-booting
+        val cached = storeRepo.getCachedProducts()
+        if (cached.isNotEmpty()) {
+            _rawProducts.value = cached
+        }
         loadInitialData()
         // Re-fetch notifications whenever user auth changes
         viewModelScope.launch {
@@ -137,7 +142,7 @@ class StoreViewModel(application: Application) : AndroidViewModel(application) {
         // Periodic background notification check
         viewModelScope.launch {
             while (true) {
-                kotlinx.coroutines.delay(15_000)
+                kotlinx.coroutines.delay(60_000)
                 fetchNotifications(silent = true)
             }
         }
@@ -151,17 +156,37 @@ class StoreViewModel(application: Application) : AndroidViewModel(application) {
         checkPendingCrashReport()
     }
 
-    fun fetchProducts() {
+    fun fetchProducts(retryCount: Int = 0) {
         viewModelScope.launch {
-            _isLoading.value = true
+            if (retryCount == 0 && _rawProducts.value.isEmpty()) {
+                _isLoading.value = true
+            }
             val res = storeRepo.getProducts()
             res.onSuccess { list ->
-                _rawProducts.value = list
+                if (list.isNotEmpty()) {
+                    _rawProducts.value = list
+                    _isLoading.value = false
+                } else if (retryCount < 3) {
+                    // Retry in 2.5s in case backend database was still establishing connections
+                    kotlinx.coroutines.delay(2500)
+                    fetchProducts(retryCount + 1)
+                } else {
+                    _rawProducts.value = list
+                    _isLoading.value = false
+                }
             }.onFailure { err ->
                 ErrorLogManager.logWarning("CATALOG_FETCH", "Failed to fetch products: ${err.message}")
-                _eventMessage.emit(err.message ?: "Could not load products")
+                if (retryCount < 3) {
+                    // Render cloud cold-boot auto-retry! Wait 3.5s and retry
+                    kotlinx.coroutines.delay(3500)
+                    fetchProducts(retryCount + 1)
+                } else {
+                    if (_rawProducts.value.isEmpty()) {
+                        _eventMessage.emit(err.message ?: "Could not load products")
+                    }
+                    _isLoading.value = false
+                }
             }
-            _isLoading.value = false
         }
     }
 

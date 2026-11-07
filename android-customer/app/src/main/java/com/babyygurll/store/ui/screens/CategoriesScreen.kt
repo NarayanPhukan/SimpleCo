@@ -211,6 +211,14 @@ fun CategoriesScreen(
                                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                                 color = BrandDarkNavy
                             )
+                            Spacer(modifier = Modifier.height(14.dp))
+                            Button(
+                                onClick = { viewModel.fetchProducts() },
+                                colors = ButtonDefaults.buttonColors(containerColor = BrandDarkNavy),
+                                shape = RoundedCornerShape(12.dp)
+                            ) {
+                                Text("Refresh Catalog", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                            }
                         }
                     }
                 }
