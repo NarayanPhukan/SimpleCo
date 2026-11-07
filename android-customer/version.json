@@ -3,7 +3,7 @@
   "latestVersionName": "1.4.1",
   "minRequiredVersionCode": 1,
   "releaseNotes": "• New brand logo & monogram app icon\n• Complete end-to-end notification system with Android 13+ support\n• Sound, vibration, and heads-up banner alerts for boutique drops\n• Fixed package parsing & integrity verification",
-  "downloadUrl": "https://raw.githubusercontent.com/NarayanPhukan/SimpleCo/main/android-customer/babyygurll-boutique.apk",
+  "downloadUrl": "https://cdn.jsdelivr.net/gh/NarayanPhukan/SimpleCo@main/android-customer/babyygurll-boutique.apk",
   "releaseDate": "2026-11-07",
   "critical": false
 }

@@ -136,8 +136,10 @@ fun AppUpdateDialog(
                                     .height(8.dp)
                             )
                             Spacer(modifier = Modifier.height(8.dp))
+                            val downloadedMb = String.format(java.util.Locale.US, "%.1f", downloadState.bytesDownloaded / (1024f * 1024f))
+                            val totalMb = String.format(java.util.Locale.US, "%.1f", downloadState.totalBytes / (1024f * 1024f))
                             Text(
-                                text = "Downloading update... ${downloadState.progressPercent}%",
+                                text = "Downloading update... ${downloadState.progressPercent}% ($downloadedMb MB / $totalMb MB)",
                                 style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
                                 color = BrandPrimary
                             )

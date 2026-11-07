@@ -47,22 +47,38 @@ object CustomerUpdateDownloader {
             try {
                 _downloadState.value = UpdateDownloadState.Downloading(0, 0, 0)
 
-                // High-speed direct repository endpoint (contains latest build with new logo)
-                val targetUrl = if (rawUrl.isNotBlank() && !rawUrl.contains("onrender.com")) {
-                    rawUrl.trim()
-                } else {
-                    "https://raw.githubusercontent.com/NarayanPhukan/SimpleCo/main/android-customer/babyygurll-boutique.apk"
+                // High-speed CDN mirror endpoints in order of performance
+                val candidates = mutableListOf<String>()
+                if (rawUrl.isNotBlank() && !rawUrl.contains("onrender.com")) {
+                    candidates.add(rawUrl.trim())
+                }
+                candidates.add("https://cdn.jsdelivr.net/gh/NarayanPhukan/SimpleCo@main/android-customer/babyygurll-boutique.apk")
+                candidates.add("https://raw.githubusercontent.com/NarayanPhukan/SimpleCo/main/android-customer/babyygurll-boutique.apk")
+
+                var response: okhttp3.Response? = null
+                var lastErr: Exception? = null
+
+                for (url in candidates.distinct()) {
+                    try {
+                        val req = Request.Builder()
+                            .url(url)
+                            .header("Accept-Encoding", "identity")
+                            .header("User-Agent", "BabyyGurllCustomerApp/v$versionName")
+                            .build()
+                        val res = httpClient.newCall(req).execute()
+                        if (res.isSuccessful && res.body != null) {
+                            response = res
+                            break
+                        } else {
+                            res.close()
+                        }
+                    } catch (e: Exception) {
+                        lastErr = e
+                    }
                 }
 
-                val req = Request.Builder()
-                    .url(targetUrl)
-                    .header("Accept-Encoding", "identity")
-                    .header("User-Agent", "BabyyGurllCustomerApp/v$versionName")
-                    .build()
-
-                val response = httpClient.newCall(req).execute()
-                if (!response.isSuccessful) {
-                    throw Exception("Update server returned HTTP ${response.code}")
+                if (response == null || !response.isSuccessful) {
+                    throw lastErr ?: Exception("Failed to connect to update server")
                 }
 
                 val body = response.body ?: throw Exception("Empty response when downloading update")
