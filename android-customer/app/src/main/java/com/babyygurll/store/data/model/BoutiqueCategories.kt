@@ -145,3 +145,4 @@ object BoutiqueCategoryData {
         return categories.firstOrNull { it.id == id }
     }
 }
+

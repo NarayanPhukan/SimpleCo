@@ -127,3 +127,4 @@ export const BOUTIQUE_CATEGORIES = [
 ];
 
 export const getCategoryById = (id) => BOUTIQUE_CATEGORIES.find(c => c.id === id);
+

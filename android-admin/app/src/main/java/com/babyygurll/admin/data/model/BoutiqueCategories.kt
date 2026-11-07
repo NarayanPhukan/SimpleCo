@@ -149,3 +149,4 @@ object BoutiqueCategoryData {
         return categories.firstOrNull { it.name.equals(name, ignoreCase = true) }
     }
 }
+
