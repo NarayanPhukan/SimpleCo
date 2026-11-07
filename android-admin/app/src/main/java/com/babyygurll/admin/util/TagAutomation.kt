@@ -114,3 +114,4 @@ object TagAutomation {
         return tags.filter { it.isNotBlank() }.take(15)
     }
 }
+
